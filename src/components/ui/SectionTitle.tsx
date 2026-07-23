@@ -41,8 +41,7 @@ export function SectionTitle({
           // Absolutely positioned so adjusting its offset never moves the
           // title — the two are only linked visually, not in layout flow.
           <p
-            className="font-accent absolute inset-x-0 bottom-full text-[19.5px] leading-none tracking-[0.3em] text-off-white uppercase sm:text-[22.75px]"
-            style={{ transform: "translateY(40px)" }}
+            className="font-accent absolute inset-x-0 bottom-full translate-y-[4px] text-[19.5px] leading-none tracking-[0.3em] text-off-white uppercase sm:translate-y-[40px] sm:text-[22.75px]"
           >
             {kicker}
           </p>
