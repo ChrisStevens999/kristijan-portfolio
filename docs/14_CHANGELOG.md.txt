@@ -1,0 +1,146 @@
+# CHANGELOG
+
+## Purpose
+
+This document records significant milestones during the development of the portfolio.
+
+It is not a task list.
+
+It is not a development log.
+
+Only record meaningful changes that affect the project.
+
+---
+
+# Format
+
+Date
+
+Phase
+
+Changes
+
+Reason
+
+Status
+
+---
+
+# 2026-07-16
+
+## Phase 1 — Project Foundation & Documentation System
+
+### Changes
+
+- Created project documentation (README, CLAUDE.md, and docs 01–11).
+- Established creative vision, design system and motion guidelines.
+- Defined content architecture and component library.
+- Defined typography rules and visual asset rules.
+- Established development workflow and AI collaboration guidelines.
+
+### Reason
+
+Create a strong, documented foundation before development begins.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-07-16
+
+## Phase 2 — Development Foundation
+
+### Changes
+
+- Initialized the Next.js (App Router) project with TypeScript and Tailwind CSS.
+- Added Framer Motion.
+- Created the initial design tokens (color, spacing, radius, duration).
+- Established the folder structure, content types and dedicated project/category routes.
+
+### Reason
+
+Prepare a scalable architecture before building the interface.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-07-16
+
+## Phase 3 — Typography Integration
+
+### Changes
+
+- Documented typography rules (docs/12_TYPOGRAPHY.md): Aku Kamu, Integral CF and Benzin, each with a fixed role.
+- Connected all three local font families via next/font/local, replacing the placeholder font.
+- Resolved a build-blocking font filename issue.
+- Applied each font to its assigned role in the Intro.
+
+### Reason
+
+Typography is part of the visual identity — the correct fonts needed to be loaded and assigned before any further visual work could be trusted.
+
+### Status
+
+✅ Complete — approved.
+
+---
+
+# 2026-07-16
+
+## Phase 4 — Texture System
+
+### Changes
+
+- Documented background texture rules and surface mapping (docs/11_VISUAL_ASSETS.md).
+- Replaced flat interface backgrounds with the supplied paper textures in the Intro.
+- Diagnosed and resolved image-quality and rendering issues introduced by the Next.js image pipeline.
+- Moved texture rendering to plain CSS backgrounds served from /public, bypassing next/image entirely.
+
+### Reason
+
+The design system requires tactile, non-flat backgrounds — textures needed to render at full fidelity with no compression artifacts.
+
+### Status
+
+✅ Complete — approved (as part of Intro sign-off).
+
+---
+
+# 2026-07-16
+
+## Phase 5 — Intro
+
+### Changes
+
+- Built the full Intro sequence (photograph, name, discipline, tagline, artwork).
+- Implemented session-scoped "plays once" behavior and reduced-motion handling.
+- Verified responsive behavior at desktop, tablet and mobile sizes.
+
+### Reason
+
+Establish the visual identity and first impression before any other homepage section is built.
+
+### Status
+
+✅ Complete — approved.
+
+---
+
+# Future Entries
+
+Only record changes that affect:
+
+- Architecture
+- Design
+- UX
+- Motion
+- Typography
+- Performance
+- Major features
+
+Avoid recording minor bug fixes or small styling adjustments.

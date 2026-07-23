@@ -1,0 +1,73 @@
+# TYPOGRAPHY
+
+## Philosophy
+
+Typography is part of the visual identity.
+
+Every font has a specific purpose.
+
+Never substitute these fonts.
+
+If a font cannot be loaded, stop and ask.
+
+---
+
+# Aku Kamu
+
+Purpose
+
+Intro only.
+
+Used for:
+
+- Main intro title
+- Hero statement
+- Large artistic moments
+
+Avoid using it for navigation, buttons or body copy.
+
+---
+
+# Integral CF
+
+Primary UI font.
+
+Used for:
+
+- Navigation
+- Main headings
+- Project titles
+- About section
+- Body copy
+
+This is the portfolio's primary typeface.
+
+---
+
+# Benzin
+
+Accent font.
+
+Used sparingly for:
+
+- Category names
+- Small labels
+- Metadata
+- Dates
+- Section identifiers
+
+Never use Benzin for long paragraphs.
+
+---
+
+# Rules
+
+Typography should remain HTML.
+
+Never bake text into images.
+
+Maintain generous spacing.
+
+Use hierarchy through size and weight rather than excessive font changes.
+
+Keep the experience editorial and restrained.

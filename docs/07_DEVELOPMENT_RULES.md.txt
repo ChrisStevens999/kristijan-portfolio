@@ -1,0 +1,101 @@
+# DEVELOPMENT RULES
+
+## Purpose
+
+This document defines the technical standards for the project.
+
+Every implementation should prioritize readability, maintainability and performance.
+
+---
+
+# General Rules
+
+Write clean, modular code.
+
+Avoid unnecessary complexity.
+
+Build reusable components.
+
+Never duplicate code if a reusable solution exists.
+
+---
+
+# HTML
+
+Use semantic HTML.
+
+Maintain a logical document structure.
+
+Accessibility should always be considered.
+
+---
+
+# CSS
+
+Use CSS variables for:
+
+- Colors
+- Typography
+- Spacing
+- Border radius
+- Animation duration
+
+Avoid hardcoded values whenever possible.
+
+Organize styles into logical sections.
+
+---
+
+# JavaScript
+
+Only use JavaScript when necessary.
+
+Prefer CSS solutions whenever possible.
+
+Avoid unnecessary libraries.
+
+Animations should remain lightweight.
+
+---
+
+# Images
+
+Optimize every image.
+
+Use modern formats when appropriate.
+
+Never upscale low-resolution assets.
+
+Lazy-load images outside the initial viewport.
+
+---
+
+# Responsive Design
+
+Design desktop first.
+
+Adapt thoughtfully for tablet and mobile.
+
+Layouts may change, but hierarchy should remain.
+
+---
+
+# Performance
+
+Fast loading is essential.
+
+Avoid unnecessary plugins and dependencies.
+
+Optimize animations for smooth performance.
+
+---
+
+# Documentation
+
+Before implementing new features:
+
+Read the documentation.
+
+If implementation changes the system, update the relevant documentation first.
+
+Documentation is always the source of truth.

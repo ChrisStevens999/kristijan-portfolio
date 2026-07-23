@@ -1,0 +1,129 @@
+# CONTENT ARCHITECTURE
+
+## Purpose
+
+This document defines how information is organized throughout the portfolio.
+
+It does not define the content itself.
+
+Content may change over time.
+
+The structure should remain consistent.
+
+---
+
+# Homepage
+
+The homepage is a guided experience.
+
+Visitors should discover the portfolio in the following order:
+
+1. Intro
+2. Selected Works
+3. Explore by Category
+4. About
+5. Contact
+
+Each section has a single purpose.
+
+No section should compete with another.
+
+---
+
+# Intro
+
+Purpose
+
+Create curiosity.
+
+Introduce the designer emotionally before presenting work.
+
+The intro should always transition naturally into the homepage.
+
+---
+
+# Selected Works
+
+Purpose
+
+Present only the strongest work.
+
+Selected Works is a curated collection.
+
+It is not a complete archive.
+
+Projects should be replaced whenever stronger work is created.
+
+Selection is based on quality rather than chronology.
+
+---
+
+# Explore by Category
+
+Purpose
+
+Allow visitors to explore creative disciplines.
+
+Categories function as chapters rather than filters.
+
+Each category should immediately communicate its creative identity through imagery.
+
+---
+
+# Project Pages
+
+Purpose
+
+Tell the complete story behind a project.
+
+Each project page should answer:
+
+• What was the challenge?
+
+• What was the idea?
+
+• How was it developed?
+
+• What was the final outcome?
+
+Projects should prioritize visual storytelling over long paragraphs.
+
+---
+
+# About
+
+Purpose
+
+Introduce the person behind the work.
+
+Focus on philosophy, process and personality.
+
+Avoid a traditional résumé format.
+
+---
+
+# Contact
+
+Purpose
+
+Provide a simple way to connect.
+
+The visitor should never need to search for contact information.
+
+---
+
+# Navigation
+
+Navigation should remain minimal.
+
+The portfolio should encourage exploration without overwhelming the visitor.
+
+Navigation exists to support the experience rather than dominate it.
+
+---
+
+# Future Growth
+
+The portfolio should be designed to grow naturally.
+
+New projects, categories or pages should integrate into the existing structure without requiring a redesign.

@@ -1,0 +1,133 @@
+# DECISION LOG
+
+## Purpose
+
+This document records important decisions made during the development of the portfolio.
+
+The goal is not to document every change.
+
+The goal is to preserve the reasoning behind significant creative, UX, technical and strategic decisions.
+
+Future decisions should reference this log before changing existing systems.
+
+---
+
+## Format
+
+Date
+
+Decision
+
+Reason
+
+Result (optional)
+
+---
+
+# 2026-07-16
+
+## Decision
+
+The homepage follows this structure:
+
+Intro
+
+↓
+
+Selected Works
+
+↓
+
+Explore by Category
+
+↓
+
+About
+
+↓
+
+Contact
+
+### Reason
+
+The experience should introduce emotion first, showcase the strongest work second, provide exploration third, then introduce the designer before offering contact information.
+
+This creates a narrative rather than a traditional portfolio layout.
+
+---
+
+# 2026-07-16
+
+## Decision
+
+The homepage begins with an immersive intro sequence.
+
+### Reason
+
+The intro establishes mood and identity before presenting work.
+
+The visitor should remember the experience before remembering individual projects.
+
+---
+
+# 2026-07-16
+
+## Decision
+
+Selected Works is a curated collection rather than a complete archive.
+
+### Reason
+
+Quality creates stronger perception than quantity.
+
+The homepage should always represent the best work available at that time.
+
+---
+
+# 2026-07-16
+
+## Decision
+
+Categories function as chapter covers instead of portfolio filters.
+
+### Reason
+
+The goal is exploration.
+
+Each category should feel like entering another room in an exhibition.
+
+---
+
+# 2026-07-16
+
+## Decision
+
+Typography remains HTML rather than being embedded inside imagery.
+
+### Reason
+
+Improves accessibility, responsiveness and future editing while preserving the visual direction.
+
+---
+
+# 2026-07-16
+
+## Decision
+
+Documentation is completed before development begins.
+
+### Reason
+
+The portfolio should be built intentionally rather than evolving through random implementation decisions.
+
+The documentation becomes the project's source of truth.
+
+---
+
+# Future Entries
+
+Record only meaningful decisions.
+
+Avoid documenting minor implementation details.
+
+Focus on decisions that affect the identity, structure or long-term evolution of the portfolio.

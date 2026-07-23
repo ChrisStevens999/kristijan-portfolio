@@ -1,0 +1,151 @@
+# DESIGN SYSTEM
+
+## Design Direction
+
+The portfolio should feel like a curated exhibition.
+
+Not a website.
+
+Every page should feel intentional.
+
+Visitors should slow down while browsing.
+
+The experience should encourage exploration rather than rapid consumption.
+
+---
+
+# Keywords
+
+Editorial
+
+Brutalist
+
+Minimal
+
+Luxury
+
+Streetwear
+
+Gallery
+
+Museum
+
+Experimental
+
+Cinematic
+
+Premium
+
+Timeless
+
+---
+
+# Color Palette
+
+Primary Black
+
+#080808
+
+Primary Off White
+
+#D8D4CE
+
+Primary Red
+
+#A71920
+
+No additional accent colors should be introduced into the website.
+
+Project artwork may contain any color.
+
+The interface should remain restrained.
+
+---
+
+# Typography
+
+Typography should feel editorial.
+
+Large headlines.
+
+Simple body copy.
+
+Avoid decorative fonts.
+
+Text should never overpower imagery.
+
+---
+
+# Imagery
+
+Images are the primary storytelling tool.
+
+Always use the largest image possible.
+
+Avoid unnecessary borders.
+
+Cropping should feel intentional.
+
+Every image should contribute to the narrative.
+
+---
+
+# Whitespace
+
+Whitespace creates rhythm.
+
+Empty space is part of the composition.
+
+Never fill space simply because it exists.
+
+---
+
+# Categories
+
+Category cards are chapter covers.
+
+Not thumbnails.
+
+Each card should immediately communicate the feeling of that creative discipline.
+
+Titles remain live HTML text.
+
+Never bake titles into images.
+
+---
+
+# Buttons
+
+Buttons should be minimal.
+
+Avoid large colorful call-to-actions.
+
+Interaction should feel subtle and premium.
+
+---
+
+# Cards
+
+Large.
+
+Editorial.
+
+Confident.
+
+Equal proportions.
+
+Minimal text.
+
+Large imagery.
+
+Strong hover states.
+
+---
+
+# Overall Rule
+
+Whenever there is a choice between adding or removing...
+
+Remove first.
+
+Complexity should only be introduced when it creates meaningful value.

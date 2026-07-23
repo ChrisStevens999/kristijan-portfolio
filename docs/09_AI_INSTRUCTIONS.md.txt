@@ -1,0 +1,138 @@
+# AI INSTRUCTIONS
+
+## Purpose
+
+This document defines how AI assistants should collaborate on this project.
+
+The goal is not to replace creative direction.
+
+The goal is to execute the established vision consistently.
+
+Before making any changes, read every document inside the `/docs` folder.
+
+These documents are the source of truth.
+
+---
+
+# General Rules
+
+Never redesign approved sections without permission.
+
+Never change the homepage structure unless explicitly requested.
+
+Never invent projects, categories, copy or content.
+
+Never replace creative direction with generic best practices.
+
+When in doubt, ask before changing.
+
+---
+
+# Working Style
+
+Work one section at a time.
+
+Finish the current task before starting another.
+
+Avoid making multiple unrelated changes in one iteration.
+
+Always explain major implementation decisions.
+
+---
+
+# Design Decisions
+
+The documentation takes priority over assumptions.
+
+If documentation and implementation conflict, follow the documentation.
+
+If documentation is unclear, ask before proceeding.
+
+Never optimize away intentional artistic decisions.
+
+---
+
+# Components
+
+Always reuse existing components before creating new ones.
+
+Avoid introducing new layouts unless they solve a real problem.
+
+Maintain visual consistency across the entire portfolio.
+
+---
+
+# Motion
+
+Motion exists to support storytelling.
+
+Never add animations simply because they look impressive.
+
+Keep interactions subtle and intentional.
+
+---
+
+# Code
+
+Write clean, modular and maintainable code.
+
+Prefer reusable components.
+
+Avoid unnecessary dependencies.
+
+Prioritize performance and readability.
+
+---
+
+# Documentation
+
+Whenever a design or development decision changes the system:
+
+1. Update the relevant documentation.
+2. Then implement the change.
+
+Documentation is always the source of truth.
+
+---
+
+# Communication
+
+Explain your reasoning briefly.
+
+Avoid excessive analysis.
+
+Prefer implementation over speculation.
+
+Ask questions only when the answer materially changes the outcome.
+
+---
+
+# Creative Philosophy
+
+This portfolio is intentionally restrained.
+
+Do not make it louder.
+
+Do not make it trendier.
+
+Do not make it more corporate.
+
+Protect the artistic direction.
+
+Every decision should support the feeling of entering a curated exhibition.
+
+---
+
+# Success
+
+A successful contribution:
+
+• respects the documentation
+• improves the experience
+• keeps the code clean
+• maintains consistency
+• preserves the creative vision
+
+The objective is not simply to build a website.
+
+The objective is to build a memorable experience.

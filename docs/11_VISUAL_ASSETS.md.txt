@@ -1,0 +1,221 @@
+# 11 – Visual Assets
+
+This document defines how visual assets must be used throughout the portfolio.
+
+These rules are mandatory.
+
+Never replace provided assets with AI-generated placeholders or alternative graphics unless explicitly instructed.
+
+---
+
+# General Rule
+
+Always prefer the supplied assets.
+
+If an asset is missing, unclear or cannot be loaded:
+
+STOP.
+
+Ask for clarification.
+
+Do not invent replacements.
+
+---
+
+# Background
+
+The portfolio does NOT use flat backgrounds.
+
+The background is part of the visual identity.
+
+Always use the supplied texture assets.
+
+The background should feel:
+
+- tactile
+- imperfect
+- editorial
+- grainy
+- premium
+- subtle
+
+Never use:
+
+- gradients
+- glossy effects
+- colorful backgrounds
+- random patterns
+- generated textures
+
+The background should almost disappear while still giving depth.
+The background should almost disappear while still giving depth.
+
+## Background Surface Mapping
+
+### Black Page.png
+
+Default background texture.
+
+Use for:
+
+- Intro black frames
+- Default website background
+- Project pages unless another surface is specified
+
+---
+
+### Red Page.png
+
+Accent background texture.
+
+Use only where the design intentionally switches to the primary red surface.
+
+Never overuse it.
+
+---
+
+### White Page.png
+
+Editorial background texture.
+
+Use for lighter sections when hierarchy benefits from an off-white surface.
+
+---
+
+These textures are reusable UI surfaces.
+
+They define the visual identity of the portfolio.
+
+They replace flat background colors.
+
+Never substitute them with CSS gradients or solid fills.
+
+---
+
+---
+
+# Intro Assets
+
+Use only imagery from:
+
+assets/intro/
+
+Never substitute images.
+
+Never crop important subjects.
+
+Never change the color grading unless requested.
+
+---
+
+# Featured Work
+
+Use only artwork from:
+
+assets/featured/
+
+Do not generate placeholder artwork.
+
+Do not replace projects with sample images.
+
+---
+
+# Categories
+
+Category covers are supplied.
+
+Treat them as chapter covers.
+
+Never redesign them.
+
+Never generate new artwork.
+
+Never overlay unnecessary graphics.
+
+---
+
+# Project Pages
+
+Every project uses its own supplied imagery.
+
+Images are the primary storytelling element.
+
+Allow them to dominate the layout.
+
+---
+
+# Typography Assets
+
+Use ONLY the provided font files.
+
+Never substitute fonts.
+
+If a font cannot be loaded:
+
+STOP.
+
+Ask for the correct file.
+
+Typography must always remain HTML.
+
+Never bake text into images.
+
+---
+
+# Textures
+
+Textures are part of the design system.
+
+They are NOT decorative.
+
+Use the supplied texture files.
+
+Do not replace them with CSS effects.
+
+Do not simulate grain using filters.
+
+Use the actual assets.
+
+---
+
+# Image Quality
+
+Never upscale using AI.
+
+Never heavily sharpen.
+
+Never oversaturate.
+
+Keep the original photography intact.
+
+Preserve the editorial aesthetic.
+
+---
+
+# Layout Philosophy
+
+Images should breathe.
+
+Allow generous negative space.
+
+Do not force everything into grids.
+
+Asymmetry is allowed when intentional.
+
+---
+
+# Color
+
+The interface remains restrained.
+
+Artwork provides the visual energy.
+
+The UI should never compete with the imagery.
+
+---
+
+# Important
+
+If there is any uncertainty about how an asset should be used:
+
+Stop and ask instead of making assumptions.

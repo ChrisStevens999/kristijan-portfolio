@@ -1,0 +1,149 @@
+# COMPONENT LIBRARY
+
+## Purpose
+
+This document defines every reusable UI component used throughout the portfolio.
+
+New components should only be introduced when they solve a real problem.
+
+Consistency is preferred over variety.
+
+---
+
+# INTRO
+
+Purpose
+
+Create an emotional first impression.
+
+Rules
+
+• Full screen
+• Cinematic
+• Plays once
+• Smooth transition into homepage
+• No skip button unless accessibility requires it
+
+---
+
+# SECTION TITLE
+
+Purpose
+
+Introduce a new chapter.
+
+Rules
+
+• Large editorial typography
+• Plenty of whitespace
+• Never compete with imagery
+
+---
+
+# SELECTED WORK CARD
+
+Purpose
+
+Highlight one project.
+
+Rules
+
+• Large imagery
+• Minimal text
+• Entire card clickable
+• Hover is subtle
+• Image remains the hero
+
+---
+
+# CATEGORY CARD
+
+Purpose
+
+Represent a creative discipline.
+
+Rules
+
+• Equal dimensions
+• Large cover artwork
+• Live HTML title
+• Entire card clickable
+• Dark overlay
+• Gentle image zoom on hover
+• No text beneath the image
+
+---
+
+# IMAGE BLOCK
+
+Purpose
+
+Display artwork.
+
+Rules
+
+• Prioritize image quality
+• Crop intentionally
+• Never stretch
+• Allow generous spacing
+
+---
+
+# TEXT BLOCK
+
+Purpose
+
+Support imagery.
+
+Rules
+
+• Keep concise
+• Maximum readability
+• Never dominate the layout
+
+---
+
+# BUTTON
+
+Purpose
+
+Guide interaction without demanding attention.
+
+Rules
+
+• Minimal styling
+• Clear hierarchy
+• Consistent hover behavior
+
+---
+
+# PROJECT PAGE
+
+Structure
+
+1. Hero
+2. Challenge
+3. Process
+4. Outcome
+5. Gallery
+6. Navigation to next project
+
+Every project should follow this structure unless there is a compelling reason not to.
+
+---
+
+# RESPONSIVE BEHAVIOR
+
+Desktop
+
+Design first for desktop.
+
+Tablet
+
+Simplify layouts while preserving hierarchy.
+
+Mobile
+
+Prioritize readability and imagery.
+
+Never sacrifice clarity for visual complexity.

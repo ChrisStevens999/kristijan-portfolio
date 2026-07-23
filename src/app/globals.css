@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — 03_DESIGN_SYSTEM.md / 07_DEVELOPMENT_RULES.md
+  Every color, spacing, radius and duration value used in the UI should
+  resolve back to a variable defined here. No hardcoded values in components.
+*/
+:root {
+  /* Color — exactly the 3 interface colors. Project artwork may use any color. */
+  --color-black: #080808;
+  --color-off-white: #d8d4ce;
+  --color-red: #a71920;
+
+  /* Typography — 12_TYPOGRAPHY.md. Three fonts, three fixed roles. */
+  --font-sans: var(--font-integral-cf), Arial, Helvetica, sans-serif;
+  --font-accent: var(--font-benzin), Arial, Helvetica, sans-serif;
+  --font-intro: var(--font-aku-kamu), cursive;
+
+  /* Spacing scale — editorial layouts need generous, deliberate whitespace. */
+  --space-2xs: 0.5rem;
+  --space-xs: 1rem;
+  --space-sm: 1.5rem;
+  --space-md: 2.5rem;
+  --space-lg: 4rem;
+  --space-xl: 6rem;
+  --space-2xl: 9rem;
+  --space-3xl: 13rem;
+
+  /* Radius — kept minimal/near-zero to stay editorial rather than "soft UI". */
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  /* Motion durations — 06_MOTION_GUIDELINES.md: calm, cinematic, deliberate. */
+  --duration-fast: 300ms;
+  --duration-base: 600ms;
+  --duration-slow: 1000ms;
+  --duration-intro: 2000ms;
+}
+
+@theme inline {
+  --color-black: var(--color-black);
+  --color-off-white: var(--color-off-white);
+  --color-red: var(--color-red);
+
+  --font-sans: var(--font-sans);
+  --font-accent: var(--font-accent);
+  --font-intro: var(--font-intro);
+
+  --spacing-2xs: var(--space-2xs);
+  --spacing-xs: var(--space-xs);
+  --spacing-sm: var(--space-sm);
+  --spacing-md: var(--space-md);
+  --spacing-lg: var(--space-lg);
+  --spacing-xl: var(--space-xl);
+  --spacing-2xl: var(--space-2xl);
+  --spacing-3xl: var(--space-3xl);
+
+  --radius-none: var(--radius-none);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+}
+
+body {
+  background: var(--color-black);
+  color: var(--color-off-white);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

@@ -1,0 +1,77 @@
+# ROADMAP
+
+## Purpose
+
+This document tracks the progress of the portfolio.
+
+Unlike the other documentation, this file is expected to evolve throughout the project.
+
+Completed tasks should remain documented.
+
+Future tasks should be prioritized based on impact.
+
+---
+
+# Phase 1 — Foundation
+
+- [x] Define project vision
+- [x] Create creative manifesto
+- [x] Establish design system
+- [x] Define content architecture
+- [x] Build component library
+- [x] Establish motion guidelines
+- [x] Define development rules
+
+Status: Complete
+
+---
+
+# Phase 2 — Homepage
+
+- [ ] Build homepage framework
+- [ ] Intro sequence
+- [ ] Selected Works
+- [ ] Explore by Category
+- [ ] About
+- [ ] Contact
+- [ ] Responsive adjustments
+- [ ] Accessibility review
+- [ ] Performance optimization
+
+---
+
+# Phase 3 — Project Pages
+
+- [ ] Create reusable project template
+- [ ] Build first case study
+- [ ] Build remaining case studies
+- [ ] Test navigation between projects
+
+---
+
+# Phase 4 — Polish
+
+- [ ] Motion refinement
+- [ ] Typography review
+- [ ] Spacing review
+- [ ] Image optimization
+- [ ] Final responsive testing
+- [ ] Browser testing
+
+---
+
+# Phase 5 — Launch
+
+- [ ] SEO
+- [ ] Analytics
+- [ ] Deploy
+- [ ] Final QA
+- [ ] Portfolio announcement
+
+---
+
+# Future Ideas
+
+Ideas belong here before becoming features.
+
+Only implement ideas after evaluating whether they improve the overall experience.

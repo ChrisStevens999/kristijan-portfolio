@@ -1,0 +1,95 @@
+# MOTION GUIDELINES
+
+## Purpose
+
+Motion exists to support storytelling.
+
+Animation should guide attention, create rhythm and reinforce the emotional experience.
+
+Motion should never exist simply because it looks impressive.
+
+---
+
+# Overall Feeling
+
+Motion should feel:
+
+- Calm
+- Cinematic
+- Deliberate
+- Confident
+- Premium
+
+Never:
+
+- Chaotic
+- Flashy
+- Gimmicky
+- Distracting
+
+---
+
+# Speed
+
+Animations should generally feel slower than average.
+
+Visitors should have time to appreciate imagery.
+
+Avoid sudden movements.
+
+---
+
+# Scrolling
+
+Scrolling should reveal content naturally.
+
+The visitor should feel like they are discovering the portfolio.
+
+---
+
+# Hover Effects
+
+Hover effects should be subtle.
+
+Allowed:
+
+- Small image zoom
+- Slight brightness change
+- Soft overlay transition
+
+Avoid:
+
+- Rotations
+- Bouncing
+- Large scaling
+- Overly complex effects
+
+---
+
+# Page Transitions
+
+Transitions between pages should feel seamless.
+
+Whenever possible:
+
+- Fade
+- Gentle movement
+- Smooth continuity
+
+Avoid abrupt changes.
+
+---
+
+# Intro
+
+The intro is the only highly choreographed animation.
+
+It should feel like opening the portfolio rather than entering a website.
+
+---
+
+# Principle
+
+Motion should never compete with the work.
+
+It should quietly support it.

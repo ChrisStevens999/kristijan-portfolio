@@ -1,0 +1,96 @@
+# CLAUDE.md
+
+# Kristijan Stevkovski Portfolio
+
+Welcome to the project.
+
+This is a long-term portfolio project built around a documented creative system.
+
+## Before Writing Any Code
+
+Always begin by reading:
+
+1. README.md
+2. Every document inside the `/docs` folder in numerical order.
+
+These documents define the project's vision, design language, motion philosophy, architecture and development rules.
+
+They are the source of truth.
+
+Do not make assumptions that conflict with the documentation.
+
+---
+
+## Workflow
+
+Always follow this process:
+
+1. Understand
+2. Plan
+3. Explain the approach
+4. Wait for approval (when appropriate)
+5. Implement
+6. Test
+7. Update documentation if the system changes
+
+Never skip directly to implementation without understanding the project.
+
+---
+
+## Working Style
+
+Build one feature at a time.
+
+Finish the current task before beginning another.
+
+Avoid making multiple unrelated changes in the same iteration.
+
+Never redesign approved sections unless explicitly requested.
+
+When documentation is unclear, ask questions instead of guessing.
+
+---
+
+## Design Philosophy
+
+This portfolio is intentionally restrained.
+
+Protect the artistic direction.
+
+Prioritize:
+
+- Editorial design
+- Large imagery
+- Strong typography
+- Purposeful motion
+- Storytelling
+- Simplicity
+- Consistency
+
+Avoid generic portfolio patterns.
+
+Avoid unnecessary visual effects.
+
+Motion should support the work, never compete with it.
+
+---
+
+## Code Standards
+
+Write clean, modular and maintainable code.
+
+Reuse components whenever possible.
+
+Avoid unnecessary dependencies.
+
+Optimize for performance.
+
+Keep the codebase easy to extend.
+
+---
+
+## Project Goal
+
+Build a memorable creative portfolio that feels like entering a curated exhibition rather than browsing a traditional website.
+
+Every implementation should support that goal.
