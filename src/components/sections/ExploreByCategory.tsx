@@ -28,7 +28,7 @@ export function ExploreByCategory() {
         as one tight, centered block with a small equal gap — matching the
         approved mockup's composition, not spread into separated columns.
       */}
-      <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-4 sm:gap-6 lg:w-auto lg:max-w-none lg:grid-cols-[auto_auto] lg:grid-rows-[auto_auto] lg:justify-center lg:content-center lg:gap-3">
+      <div className="mx-auto grid w-full max-w-[48rem] grid-cols-2 gap-4 sm:gap-6 lg:w-auto lg:max-w-none lg:grid-cols-[auto_auto] lg:grid-rows-[auto_auto] lg:justify-center lg:content-center lg:gap-3">
         {categories.map((category) => (
           <CategoryCard key={category.slug} category={category} />
         ))}
