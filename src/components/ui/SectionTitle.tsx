@@ -15,10 +15,13 @@ export function SectionTitle({
   title,
   kicker,
   texture,
+  onTitleVisible,
 }: {
   title: string;
   kicker?: string;
   texture: string;
+  /** Fires once, the first time the title scrolls into view — used to auto-advance to whatever follows the section (see SelectedWorks). */
+  onTitleVisible?: () => void;
 }) {
   return (
     <div
@@ -35,6 +38,7 @@ export function SectionTitle({
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.6 }}
+        onViewportEnter={onTitleVisible}
         transition={{ duration: 1, ease: "easeOut" }}
       >
         {kicker ? (
