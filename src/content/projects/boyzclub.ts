@@ -2,7 +2,7 @@ import type { SequencePanel } from "@/content/types";
 
 import heroCarPhoto from "../../../assets/projects/boyzclub/BZC 1.png";
 import statementPhoto from "../../../assets/projects/boyzclub/Seccond image.png";
-import identityChapterPhoto from "../../../assets/projects/boyzclub/The Identity.png";
+import identityChapterPhoto from "../../../assets/projects/boyzclub/The Identity 2.png";
 import identityCampaignPhoto from "../../../assets/projects/boyzclub/BoyzClub Image.png";
 import logoBlackWhite from "../../../assets/projects/boyzclub/Logo 1.png";
 import logoExplanation from "../../../assets/projects/boyzclub/Logo Explanation.png";
@@ -11,17 +11,24 @@ import mysteryBoxFlat from "../../../assets/projects/boyzclub/Mystery BOx.png";
 import polybagAtmosphere from "../../../assets/projects/boyzclub/Poly 2.png";
 import polybagFrontBack from "../../../assets/projects/boyzclub/Polybag Design.png";
 import uniformChapterPhoto from "../../../assets/projects/boyzclub/The Uniform.png";
-import shirtCollection from "../../../assets/projects/boyzclub/Multiple Products.jpg";
+import shirtHawaiian from "../../../assets/projects/boyzclub/Shirt.png";
+import shirtSynthTiger from "../../../assets/projects/boyzclub/sYNTH.png";
+import flannelStreet1 from "../../../assets/projects/boyzclub/Flannel 1.png";
+import flannelStreet2 from "../../../assets/projects/boyzclub/Flannel 2.png";
+import flannelStudio from "../../../assets/projects/boyzclub/Flannel 3.png";
+import capProduct from "../../../assets/projects/boyzclub/Hat.png";
+import jeansProduct from "../../../assets/projects/boyzclub/Jeans.png";
 import siteChapterPhoto from "../../../assets/projects/boyzclub/The Website.png";
-import siteMockup from "../../../assets/projects/boyzclub/WebSite Mockup.png";
+import siteMockup from "../../../assets/projects/boyzclub/WebSite 2.png";
 import closingPortrait from "../../../assets/projects/boyzclub/Last Image.png";
 
 /**
  * One panel per beat in boyzclub-layout-reference.webp, in the exact order
- * of that reference board. A flat sequence rather than a nested
- * hero/chapters/ecosystem shape — this case study is a literal image-led
- * reconstruction of the reference, not an authored content structure.
- * Panel shape is shared (@/content/types SequencePanel) with Damaged Goods.
+ * of that reference board — a flat, image-led reconstruction rather than an
+ * authored hero/chapters/ecosystem structure. Two full-bleed video breaks
+ * (break-film, drop-film) fill the black spacer "pages" from the reference
+ * mockup. Panel shape is shared (@/content/types SequencePanel) with
+ * Damaged Goods; the video variant is BoyzClub-only so far.
  */
 export const boyzClubPanels: SequencePanel[] = [
   {
@@ -107,16 +114,68 @@ export const boyzClubPanels: SequencePanel[] = [
     alt: "03 The Uniform",
   },
   {
-    id: "shirt-collection",
+    id: "uniform-film",
     enabled: true,
-    src: shirtCollection,
-    alt: "Complete BoyzClub shirt collection",
+    kind: "video",
+    src: "/boyzclub/drop-film.mp4",
+    alt: "BoyzClub drop film — the collection in motion",
+    fullViewport: true,
+  },
+  {
+    id: "shirt-hawaiian",
+    enabled: true,
+    src: shirtHawaiian,
+    alt: "BoyzClub Miami Brushstroke short-sleeve shirt, flat lay",
+  },
+  {
+    id: "shirt-synth-tiger",
+    enabled: true,
+    src: shirtSynthTiger,
+    alt: "BoyzClub Synth Tiger button-down shirt, flat lay",
+  },
+  {
+    id: "flannel-street-1",
+    enabled: true,
+    src: flannelStreet1,
+    alt: "BoyzClub plaid overshirt worn on the street",
+  },
+  {
+    id: "flannel-street-2",
+    enabled: true,
+    src: flannelStreet2,
+    alt: "BoyzClub blue plaid shirt and pinstripe trousers worn on the street",
+  },
+  {
+    id: "flannel-studio",
+    enabled: true,
+    src: flannelStudio,
+    alt: "BoyzClub purple plaid shirt, studio look",
   },
   {
     id: "night-campaign",
     enabled: false,
     note:
       "Night campaign image — model photographed from behind in a street/night setting. Not yet supplied.",
+  },
+  {
+    id: "cap-product",
+    enabled: true,
+    src: capProduct,
+    alt: "BoyzClub cap held against denim",
+  },
+  {
+    id: "jeans-product",
+    enabled: true,
+    src: jeansProduct,
+    alt: "BoyzClub washed denim jeans, back detail",
+  },
+  {
+    id: "pre-site-film",
+    enabled: true,
+    kind: "video",
+    src: "/boyzclub/break-film.mp4",
+    alt: "BoyzClub motion break — brand campaign footage",
+    fullViewport: true,
   },
   {
     id: "site-chapter",
@@ -128,7 +187,7 @@ export const boyzClubPanels: SequencePanel[] = [
     id: "website-mockup",
     enabled: true,
     src: siteMockup,
-    alt: "BoyzClub website design, Texas Drop campaign",
+    alt: "BoyzClub website — a limited drop shopping experience, Midnight Blossom campaign",
   },
   {
     id: "final-portrait",

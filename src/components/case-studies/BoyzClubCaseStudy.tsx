@@ -7,6 +7,7 @@ export function BoyzClubCaseStudy({ nextProject }: { nextProject?: Project }) {
   return (
     <PanelSequence
       panels={boyzClubPanels}
+      framed
       exitNav={nextProject ? <NextProjectNav project={nextProject} /> : null}
     />
   );

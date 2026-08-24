@@ -1,10 +1,59 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
-import type { SequenceImagePanel, SequencePanel } from "@/content/types";
+import type {
+  SequenceImagePanel,
+  SequencePanel,
+  SequenceVideoPanel,
+} from "@/content/types";
 
-function Panel({ panel }: { panel: SequenceImagePanel }) {
-  if (panel.fullViewport) {
+function VideoPanel({ panel, framed }: { panel: SequenceVideoPanel; framed: boolean }) {
+  // Framed mode shows every panel whole (natural aspect ratio, no crop) —
+  // the full-bleed cover treatment only applies to the edge-to-edge layout.
+  const fullBleed = (panel.fullViewport ?? true) && !framed;
+  const objectPosition =
+    panel.mobileObjectPosition ?? panel.desktopObjectPosition ?? "50% 50%";
+
+  // Autoplay requires muted; playsInline stops iOS from going fullscreen.
+  // No controls — this is a moving panel, not a player.
+  if (fullBleed) {
+    return (
+      <div className="relative h-[100svh] w-full lg:h-screen">
+        <video
+          src={panel.src}
+          poster={panel.poster}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label={panel.alt}
+          style={{ objectPosition }}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <video
+      src={panel.src}
+      poster={panel.poster}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      aria-label={panel.alt}
+      className="block h-auto w-full"
+    />
+  );
+}
+
+function Panel({ panel, framed }: { panel: SequenceImagePanel; framed: boolean }) {
+  // Framed mode shows the image whole; only the edge-to-edge layout crops
+  // full-viewport panels to fill the screen height.
+  if (panel.fullViewport && !framed) {
     const mobilePosition = panel.mobileObjectPosition ?? panel.desktopObjectPosition ?? "50% 50%";
     const desktopPosition = panel.desktopObjectPosition ?? "50% 50%";
     return (
@@ -58,20 +107,42 @@ function Panel({ panel }: { panel: SequenceImagePanel }) {
 export function PanelSequence({
   panels,
   exitNav,
+  framed = false,
 }: {
   panels: SequencePanel[];
   exitNav?: ReactNode;
+  /**
+   * Center the sequence in a fixed-max-width column so the black background
+   * shows as bars either side — the "mockup preview" framing. Bars only
+   * appear once the viewport is wider than the column, so mobile stays
+   * edge-to-edge. Off by default (Damaged Goods stays full-bleed).
+   */
+  framed?: boolean;
 }) {
   const enabledPanels = panels.filter(
-    (panel): panel is SequenceImagePanel => panel.enabled,
+    (panel): panel is SequenceImagePanel | SequenceVideoPanel => panel.enabled,
   );
 
   return (
-    <main className="flex flex-col bg-black text-off-white">
-      <div className="flex flex-col">
-        {enabledPanels.map((panel) => (
-          <Panel key={panel.id} panel={panel} />
-        ))}
+    // Framed mode paints true #000000 so the side bars read as pure black,
+    // not the theme's near-black `bg-black` (#080808).
+    <main
+      className={`flex flex-col text-off-white ${framed ? "bg-[#000000]" : "bg-black"}`}
+    >
+      <div
+        className={
+          framed
+            ? "mx-auto flex w-full max-w-5xl flex-col"
+            : "flex flex-col"
+        }
+      >
+        {enabledPanels.map((panel) =>
+          "kind" in panel && panel.kind === "video" ? (
+            <VideoPanel key={panel.id} panel={panel} framed={framed} />
+          ) : (
+            <Panel key={panel.id} panel={panel as SequenceImagePanel} framed={framed} />
+          ),
+        )}
       </div>
 
       {exitNav}

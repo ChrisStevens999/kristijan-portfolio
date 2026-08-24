@@ -75,6 +75,27 @@ export interface SequenceImagePanel {
   priority?: boolean;
 }
 
+/**
+ * A full-bleed autoplaying video break in the sequence. Muted + looping +
+ * playsInline so it behaves like a moving photographic panel, not a player
+ * with controls. `src` is always a public/ path (raw <video>), never a
+ * bundler import — mp4s aren't run through the image optimizer.
+ */
+export interface SequenceVideoPanel {
+  id: string;
+  enabled: true;
+  kind: "video";
+  src: string;
+  /** Accessible description of the footage (spoken by nothing, so keep it literal). */
+  alt: string;
+  /** Poster frame shown before the video paints — a public/ path. */
+  poster?: string;
+  /** Defaults to a full 100svh break; set false for a natural 16:9 inline block. */
+  fullViewport?: boolean;
+  desktopObjectPosition?: string;
+  mobileObjectPosition?: string;
+}
+
 export interface SequenceDisabledPanel {
   id: string;
   enabled: false;
@@ -82,7 +103,10 @@ export interface SequenceDisabledPanel {
   note: string;
 }
 
-export type SequencePanel = SequenceImagePanel | SequenceDisabledPanel;
+export type SequencePanel =
+  | SequenceImagePanel
+  | SequenceVideoPanel
+  | SequenceDisabledPanel;
 
 export interface SiteConfig {
   about: {
