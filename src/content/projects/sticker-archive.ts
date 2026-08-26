@@ -1,7 +1,5 @@
 import type { StaticImageData } from "next/image";
 
-import { APPLY_WINDOW, CONTACT_T } from "@/components/case-studies/sticker-archive/useStickerApply";
-
 import arcade from "../../../assets/projects/Sticker Illustrations/arcade_sticker.png";
 import babyBoomers from "../../../assets/projects/Sticker Illustrations/BabyBoomers-Sticker-Front.png";
 import blushingDuck from "../../../assets/projects/Sticker Illustrations/Blushing Duck-Sticker-Front.png";
@@ -29,58 +27,36 @@ import generic12 from "../../../assets/projects/Sticker Illustrations/Sticker-Fr
 import generic13 from "../../../assets/projects/Sticker Illustrations/Sticker-SB-Front.png";
 
 /**
- * The full sticker archive — one entry per die-cut graphic. Every sticker is
- * rendered as a segmented cylindrical surface (see StickerSurfaceItem); size
- * tier controls how many slices it gets (SIZE_TIERS below).
+ * The sticker archive, rebuilt around a REAL three.js cylinder (see
+ * StickerScene.tsx) instead of a DOM/CSS warp illusion. Every sticker here
+ * is a fixed placement on ONE continuous cylindrical surface — a (u, v)
+ * coordinate around the circumference and down a tall vertical texture atlas
+ * — not an independently timed/animated element. The whole surface rotates
+ * and travels vertically as one rigid object; stickers enter/leave frame
+ * purely because the physical surface is moving past a fixed camera.
  *
  * To add a sticker: drop the transparent PNG into
- * `assets/projects/Sticker Illustrations/`, import it, and add one
- * `{ src, alt }` line to `rawStickers`. Tier, vertical spot, reveal point and
- * entry direction are all filled in automatically by deterministic formulas.
- * `angle` is DERIVED from `appliedAt` (see appliedAtFor/baseAngleFor) so that
- * every sticker lands front-and-centre on the pole at the exact moment it
- * makes contact — that's what makes the flat→cylindrical handoff invisible.
- * Override any field to art-direct a specific sticker.
+ * `assets/projects/Sticker Illustrations/`, import it, and add one entry to
+ * `rawStickers`. Placement (tier/u/v/rotation) is filled in deterministically
+ * by `layoutStickers` below; override any field to art-direct a specific one.
  */
 export type SizeTier = "small" | "medium" | "large";
 
-export interface StickerDatum {
+export interface StickerPlacement {
   src: StaticImageData;
   alt: string;
-  /** Degrees around the cylinder AT PROGRESS 0. Derived so the sticker is front-and-centre at the exact moment it contacts the surface — not freely chosen. */
-  angle: number;
-  /** 0–1 position down the surface (0 = top, 1 = bottom). Fixed forever once applied. */
-  vertical: number;
+  /** 0–1 around the cylinder's circumference. Fixed forever — this is a point on the physical surface, not a moment in time. */
+  u: number;
+  /** 0–1 down the tall texture atlas (0 = top of the pole's printed surface). */
+  v: number;
+  /** Sticker's on-atlas width as a fraction of the full atlas width (== full circumference). Derived from sizeTier via WIDTH_FRAC_BY_TIER. */
+  widthFrac: number;
+  /** Small deterministic rotation jitter, degrees — reads as hand-applied rather than machine-perfect. */
+  rotationDeg: number;
   sizeTier: SizeTier;
-  /** Front-facing display width in px at the baseline radius; scales with the cylinder. */
-  size: number;
-  /** Slice count for the segmented renderer — from SIZE_TIERS, by sizeTier. */
-  segments: number;
-  /** Scroll progress (0–1, can be slightly negative) at which this sticker begins its approach. Deterministic — see REVEAL_CHECKPOINTS. */
-  appliedAt: number;
-  /** Deterministic screen-space entrance direction — see ENTRY_DIRECTIONS. Never randomized. */
-  entryDx: number;
-  entryDy: number;
-  /** Optional cluster label — related stickers sit near each other. */
-  group?: string;
 }
 
-type StickerInput = Partial<StickerDatum> & Pick<StickerDatum, "src" | "alt">;
-
-/** size (px) + slice count per tier — mostly medium, a few hero-scale larges, some small, per the art direction: readable density, not a sticker bomb. */
-const SIZE_TIERS: Record<SizeTier, { size: number; segments: number }> = {
-  large: { size: 460, segments: 14 },
-  medium: { size: 300, segments: 10 },
-  small: { size: 190, segments: 6 },
-};
-
-// 4 large / 14 medium / 7 small across 25 stickers — checked large first so
-// it wins ties with small's %3 rule.
-function tierFor(index: number): SizeTier {
-  if (index % 8 === 0) return "large";
-  if (index % 3 === 0) return "small";
-  return "medium";
-}
+type StickerInput = { src: StaticImageData; alt: string; sizeTier?: SizeTier; group?: string };
 
 const rawStickers: StickerInput[] = [
   { src: miamiViceTiger, alt: "Miami Vice tiger sticker", group: "tigers" },
@@ -110,113 +86,103 @@ const rawStickers: StickerInput[] = [
   { src: generic13, alt: "Graphic sticker" },
 ];
 
-/**
- * Net rotation across the whole scroll range. Bumped up from the previous
- * pass (1.15 turns) so an attached sticker actually completes enough of an
- * orbit to rotate out of the readable front arc and spend real time behind
- * the pole before the journey ends — otherwise every sticker ever applied
- * stays semi-visible forever and the far end of the scroll turns into a
- * pile-up instead of the ~4–7-readable-at-once density this page wants.
- */
-export const CYLINDER_TURNS = 1.6;
-
-/**
- * How many stickers are attached by each scroll-progress checkpoint — a
- * few already on the pole at rest, then a steady trickle across the WHOLE
- * scroll range (not front-loaded) so there's always room for older stickers
- * to rotate away before the next ones land. Last checkpoint stops at 0.95,
- * not 1.0 — progress can't exceed 1, so the final sticker's APPLY_WINDOW
- * needs headroom before the scroll range runs out or it would never finish
- * settling.
- * [checkpointProgress, cumulativeStickerCount]
- */
-const REVEAL_CHECKPOINTS: [progress: number, count: number][] = [
-  [-0.02, 5],
-  [0.15, 9],
-  [0.32, 13],
-  [0.5, 17],
-  [0.68, 20],
-  [0.82, 23],
-  [0.95, 25],
-];
-
-const ENTRY_DIRECTIONS: { x: number; y: number }[] = [
-  { x: -1, y: -0.35 }, // upper-left, mostly horizontal
-  { x: 1, y: -0.35 }, // upper-right
-  { x: -1, y: 0.05 }, // left, level
-  { x: 1, y: 0.05 }, // right, level
-  { x: 0, y: -1 }, // straight above
-  { x: -0.45, y: -0.95 }, // steep upper-left
-  { x: 0.45, y: -0.95 }, // steep upper-right
-];
-/** Entry travel distance as a multiple of the sticker's own baseline size. */
-const ENTRY_DISTANCE_FACTOR = 1.05;
-
-function appliedAtFor(index: number): number {
-  let prevProgress = -0.09;
-  let prevCount = 0;
-  for (const [checkpointProgress, count] of REVEAL_CHECKPOINTS) {
-    if (index < count) {
-      const batchSize = count - prevCount;
-      const posInBatch = index - prevCount;
-      const span = checkpointProgress - prevProgress;
-      return prevProgress + (span * (posInBatch + 1)) / batchSize;
-    }
-    prevProgress = checkpointProgress;
-    prevCount = count;
-  }
-  return prevProgress; // unreachable for 25 stickers, kept as a safe fallback
-}
-
-function normalizeDeg(a: number) {
-  return ((a % 360) + 360) % 360;
+// 4 large / 14 medium / 7 small across 25 stickers — checked large first so
+// it wins ties with small's %3 rule.
+function tierFor(index: number): SizeTier {
+  if (index % 8 === 0) return "large";
+  if (index % 3 === 0) return "small";
+  return "medium";
 }
 
 /**
- * The sticker's angle AT PROGRESS 0, chosen backwards from its own contact
- * moment so that `baseAngle + contactProgress·sweep` lands it dead front
- * (plus a small deliberate jitter so 25 stickers don't all land in exactly
- * the same spot). This is what makes "flies in flat" and "locks into the
- * cylindrical transform" line up geometrically instead of popping.
+ * Target on-screen width as a fraction of the VISIBLE pole width (the ~42%
+ * of the frame the cylinder occupies), for a sticker centred at dead-front.
+ * Converted to widthFrac (fraction of full circumference / atlas width)
+ * below via: a front-facing sticker of angular width θ spans ≈ R·θ on
+ * screen; visible pole width = 2R; so R·θ = target·2R  =>  θ = 2·target,
+ * and widthFrac = θ / 2π = target / π.
  */
-function baseAngleFor(index: number, appliedAt: number): number {
-  const sweepDeg = CYLINDER_TURNS * 360;
-  const contactProgress = appliedAt + CONTACT_T * APPLY_WINDOW;
-  const jitterDeg = ((index * 29) % 37) - 18; // roughly -18..+18, deterministic
-  return normalizeDeg(-contactProgress * sweepDeg + jitterDeg);
-}
+const TARGET_SCREEN_FRACTION: Record<SizeTier, number> = {
+  small: 0.2, // 15–25%
+  medium: 0.32, // 25–40%
+  large: 0.475, // 40–55%
+};
+
+const WIDTH_FRAC_BY_TIER: Record<SizeTier, number> = {
+  small: TARGET_SCREEN_FRACTION.small / Math.PI,
+  medium: TARGET_SCREEN_FRACTION.medium / Math.PI,
+  large: TARGET_SCREEN_FRACTION.large / Math.PI,
+};
 
 function frac(n: number) {
   return ((n % 1) + 1) % 1;
 }
 
-export const stickers: StickerDatum[] = rawStickers.map((s, i) => {
-  const tier = s.sizeTier ?? tierFor(i);
-  const { size, segments } = SIZE_TIERS[tier];
-  const appliedAt = s.appliedAt ?? appliedAtFor(i);
-  const angle = s.angle ?? baseAngleFor(i, appliedAt);
-  // Golden-ratio spread, decoupled from angle now that angle is derived from
-  // application timing rather than chosen for even coverage.
-  const vertical = s.vertical ?? frac(i * 0.618034);
-  const dir = ENTRY_DIRECTIONS[(i * 3 + 2) % ENTRY_DIRECTIONS.length];
-  const entryDistance = (s.size ?? size) * ENTRY_DISTANCE_FACTOR;
+/**
+ * Deterministic layout across the whole surface: 6 vertical bands (rows),
+ * ~4 stickers per row spread evenly around the full circumference (with a
+ * per-row phase offset so rows don't align into a grid — a brick-like
+ * stagger), a small golden-ratio jitter within each row's vertical span so
+ * nothing sits on a perfectly even line. Same formula every load — never
+ * randomized.
+ */
+const ROWS = 6;
 
-  return {
-    src: s.src,
-    alt: s.alt,
-    angle,
-    vertical,
-    sizeTier: tier,
-    size: s.size ?? size,
-    segments: s.segments ?? segments,
-    appliedAt,
-    entryDx: s.entryDx ?? dir.x * entryDistance,
-    entryDy: s.entryDy ?? dir.y * entryDistance,
-    group: s.group,
-  };
-});
+function layoutStickers(inputs: StickerInput[]): StickerPlacement[] {
+  const rowSize = (row: number) => inputs.reduce((n, _s, i) => (i % ROWS === row ? n + 1 : n), 0);
 
-export const STICKER_COUNT = stickers.length;
+  return inputs.map((s, i) => {
+    const tier = s.sizeTier ?? tierFor(i);
+    const row = i % ROWS;
+    const k = Math.floor(i / ROWS); // this sticker's position among its row's members
+    const size = rowSize(row);
+    const bandStart = row / ROWS;
+    const bandSpan = 1 / ROWS;
+    const margin = bandSpan * 0.18;
+    const vJitter = frac(i * 0.618034);
+    const v = bandStart + margin + vJitter * (bandSpan - 2 * margin);
+    const rowPhase = frac(row * 0.37);
+    const u = frac((k + 0.5) / size + rowPhase);
+    const rotationDeg = ((i * 47) % 13) - 6;
 
-/** Baseline cylinder radius (px) the `size` values are authored against. */
-export const STICKER_BASE_RADIUS = 300;
+    return {
+      src: s.src,
+      alt: s.alt,
+      u,
+      v,
+      widthFrac: WIDTH_FRAC_BY_TIER[tier],
+      rotationDeg,
+      sizeTier: tier,
+    };
+  });
+}
+
+export const stickerPlacements: StickerPlacement[] = layoutStickers(rawStickers);
+export const STICKER_COUNT = stickerPlacements.length;
+
+/** Sticker texture atlas resolution — wraps the FULL circumference horizontally, a tall multi-row surface vertically. */
+export const ATLAS_WIDTH = 2048;
+export const ATLAS_HEIGHT = 4096;
+
+/** Cylinder radius, world units (arbitrary scene scale). */
+export const CYLINDER_RADIUS = 1.6;
+const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
+
+/**
+ * Derived (not hand-picked) so the atlas maps onto the cylinder at a
+ * uniform, undistorted scale in both directions — same px-per-world-unit
+ * horizontally and vertically — otherwise sticker artwork would stretch.
+ */
+export const CYLINDER_WORLD_HEIGHT = (ATLAS_HEIGHT / ATLAS_WIDTH) * CIRCUMFERENCE;
+
+/** The pole should occupy ~40–45% of the visual frame width at rest. */
+export const POLE_FRAME_FRACTION = 0.42;
+
+/** 0.5–1.0 full rotations across the whole scroll section — subtle, revealing artwork rather than showing off spin. */
+export const ROTATION_TURNS = 0.75;
+
+/** Vertical travel across the whole scroll section, as a fraction of the tall surface's full height — "one full exploration sequence". */
+export const VERTICAL_TRAVEL_WORLD = CYLINDER_WORLD_HEIGHT * 0.55;
+
+/** Radial smoothness — within the requested 64–128 range. */
+export const RADIAL_SEGMENTS = 96;
