@@ -73,8 +73,6 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
     const group = groupRef.current;
     if (!group) return;
     group.rotation.y = p * ROTATION_TURNS * Math.PI * 2;
-    // INITIAL_Y_OFFSET puts cluster A at the camera at rest (p=0); scrolling
-    // down travels further down the printed surface toward cluster D.
     group.position.y = INITIAL_Y_OFFSET + p * VERTICAL_TRAVEL_WORLD;
   });
 
@@ -86,7 +84,7 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
         <cylinderGeometry
           args={[CYLINDER_RADIUS, CYLINDER_RADIUS, CYLINDER_WORLD_HEIGHT, RADIAL_SEGMENTS, 1, true]}
         />
-        <meshStandardMaterial map={metalTexture} roughness={0.68} metalness={0.38} />
+        <meshStandardMaterial map={metalTexture} roughness={0.58} metalness={0.42} />
       </mesh>
 
       <mesh>
@@ -102,20 +100,17 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
         />
       </mesh>
 
-      {/* Horizontal seam/joint — a shallow groove, not a graphic stripe: a
-          couple of px thin at this framing, only slightly darker than the
-          metal itself. Placed directly by local Y (not by `v`, to avoid the
-          flipY sign gotcha documented on VERTICAL_TRAVEL_WORLD) in the
-          plain-metal margin beyond cluster A/D at the two ends of the
-          printed span, clear of every cluster. */}
-      {[-5.4, 5.9].map((localY) => (
-        <mesh key={localY} position={[0, localY, 0]}>
-          <cylinderGeometry
-            args={[CYLINDER_RADIUS + 0.003, CYLINDER_RADIUS + 0.003, 0.012, RADIAL_SEGMENTS, 1, true]}
-          />
-          <meshStandardMaterial color="#7d828a" roughness={0.75} metalness={0.35} />
-        </mesh>
-      ))}
+      {/* ONE extremely subtle seam/joint — a shallow groove, not a graphic
+          stripe, and only one (was two): placed well outside the printed
+          band (MANUAL_LAYOUT's v≈0.34–0.66) so it never crosses artwork,
+          barely lighter than the surrounding metal so it reads as a joint,
+          not a line dividing the pole into sections. */}
+      <mesh position={[0, 6, 0]}>
+        <cylinderGeometry
+          args={[CYLINDER_RADIUS + 0.002, CYLINDER_RADIUS + 0.002, 0.01, RADIAL_SEGMENTS, 1, true]}
+        />
+        <meshStandardMaterial color="#9198a0" roughness={0.6} metalness={0.42} />
+      </mesh>
     </group>
   );
 }
@@ -130,9 +125,12 @@ export function StickerScene({ progress }: { progress: MotionValue<number> }) {
     >
       <color attach="background" args={["#000000"]} />
       <CameraFraming />
-      <ambientLight intensity={0.32} />
-      <directionalLight position={[0, 1.5, 8]} intensity={1.15} />
-      <directionalLight position={[-5, 2, -2]} intensity={0.22} />
+      {/* Lower ambient + a stronger, tighter key light than before — the
+          reference's bright-silver-centre/dark-edge read needs real
+          contrast; the previous setup was too flat/even. */}
+      <ambientLight intensity={0.2} />
+      <directionalLight position={[0, 1.5, 9]} intensity={2.0} />
+      <directionalLight position={[-5, 2, -2]} intensity={0.16} />
       <PoleGroup progress={progress} />
     </Canvas>
   );

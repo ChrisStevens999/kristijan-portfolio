@@ -1,13 +1,18 @@
 import * as THREE from "three";
 
 /**
- * Galvanized-steel material texture — a small tileable canvas (mottled
- * variation + fine grain + a few dirt streaks), repeated across the
- * cylinder via RepeatWrapping rather than stretched over the whole surface.
- * Deliberately near-neutral: the bright-centre/dark-side read comes from
- * REAL lighting hitting the curved geometry (see StickerScene's
- * directional lights), not a baked-in gradient — that's the whole point of
- * moving off the CSS version.
+ * Galvanized-steel material texture — a small tileable canvas, repeated
+ * across the cylinder via RepeatWrapping rather than stretched over the
+ * whole surface. Deliberately near-neutral: the bright-centre/dark-side
+ * read comes from REAL lighting hitting the curved geometry (see
+ * StickerScene's directional lights), not a baked-in gradient.
+ *
+ * Kept FINE-grained on purpose — an earlier version of this texture had
+ * large low-frequency blotches (70–200px on a 512px tile) that, once tiled
+ * up the whole pole, read as an obvious repeating tile/concrete pattern
+ * instead of a continuous metal surface. Variation here is all small-scale:
+ * fine noise grain + tiny irregular speckle, nothing bigger than a few
+ * pixels at this tile's resolution.
  *
  * Built once and cached at module scope (not per-mount) — it never changes.
  */
@@ -25,8 +30,9 @@ export function getMetalTexture(): THREE.CanvasTexture {
   canvas.height = TILE_PX;
   const ctx = canvas.getContext("2d")!;
 
-  // Base mid-silver.
-  ctx.fillStyle = "#9aa0a8";
+  // Bright galvanized silver base — brighter than the old mid-grey so the
+  // lit centre can read as genuinely bright, not just "less dark".
+  ctx.fillStyle = "#aeb4bc";
   ctx.fillRect(0, 0, TILE_PX, TILE_PX);
 
   let seed = 17;
@@ -35,50 +41,37 @@ export function getMetalTexture(): THREE.CanvasTexture {
     return (seed / 0x7fffffff) % 1;
   };
 
-  // Large, low-frequency cloudy patches first — the irregular light/dark
-  // galvanized variation you'd see standing back from real zinc coating.
-  for (let i = 0; i < 22; i++) {
+  // Tiny irregular speckle — small enough (2–9px) that repeating the tile
+  // never reads as a pattern, just texture.
+  for (let i = 0; i < 900; i++) {
     const x = rand() * TILE_PX;
     const y = rand() * TILE_PX;
-    const r = 70 + rand() * 130;
-    const dark = rand() < 0.5;
-    const shade = dark ? 0 : 255;
-    ctx.fillStyle = `rgba(${shade},${shade},${shade},${(0.025 + rand() * 0.035).toFixed(3)})`;
+    const r = 2 + rand() * 7;
+    const shade = 150 + rand() * 90;
+    ctx.fillStyle = `rgba(${shade | 0},${(shade + 3) | 0},${(shade + 7) | 0},${(0.05 + rand() * 0.09).toFixed(3)})`;
     ctx.beginPath();
-    ctx.ellipse(x, y, r, r * (0.55 + rand() * 0.35), rand() * Math.PI, 0, Math.PI * 2);
+    ctx.ellipse(x, y, r, r * (0.6 + rand() * 0.4), rand() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Smaller mottled blotches on top — soft, low-contrast, irregular.
-  for (let i = 0; i < 110; i++) {
-    const x = rand() * TILE_PX;
-    const y = rand() * TILE_PX;
-    const r = 14 + rand() * 46;
-    const shade = 150 + rand() * 70;
-    ctx.fillStyle = `rgba(${shade | 0},${(shade + 3) | 0},${(shade + 7) | 0},${(0.04 + rand() * 0.08).toFixed(3)})`;
-    ctx.beginPath();
-    ctx.ellipse(x, y, r, r * (0.5 + rand() * 0.4), rand() * Math.PI, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Fine grain noise.
+  // Fine grain noise over the top.
   const img = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let i = 0; i < img.data.length; i += 4) {
-    const n = (rand() - 0.5) * 19;
+    const n = (rand() - 0.5) * 16;
     img.data[i] = Math.min(255, Math.max(0, img.data[i] + n));
     img.data[i + 1] = Math.min(255, Math.max(0, img.data[i + 1] + n));
     img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n));
   }
   ctx.putImageData(img, 0, 0);
 
-  // Sparse dirt streaks.
-  for (let i = 0; i < 6; i++) {
-    ctx.strokeStyle = `rgba(0,0,0,${(0.06 + rand() * 0.08).toFixed(3)})`;
-    ctx.lineWidth = 1 + rand() * 2;
+  // Very sparse, very faint wear streaks — mild, not dramatic scratches.
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = `rgba(0,0,0,${(0.03 + rand() * 0.04).toFixed(3)})`;
+    ctx.lineWidth = 1;
     const y = rand() * TILE_PX;
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(TILE_PX, y + (rand() - 0.5) * 30);
+    ctx.lineTo(TILE_PX, y + (rand() - 0.5) * 20);
     ctx.stroke();
   }
 
