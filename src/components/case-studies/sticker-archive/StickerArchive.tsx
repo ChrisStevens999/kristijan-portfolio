@@ -46,11 +46,13 @@ export function StickerArchive({ category }: { category: Category }) {
     offset: ["start start", "end end"],
   });
 
-  // Weighted, slightly-lagged follow. High damping / no overshoot keeps it
-  // premium rather than springy.
+  // Tight, near-1:1 follow — heavy/mechanical rather than springy. Only
+  // enough smoothing to remove raw scroll-event jitter; no perceptible lag,
+  // no overshoot, so scrolling feels like scrubbing the pole directly
+  // rather than watching it catch up.
   const smoothed = useSpring(scrollYProgress, {
-    stiffness: 70,
-    damping: 26,
+    stiffness: 280,
+    damping: 38,
     mass: 1,
   });
 

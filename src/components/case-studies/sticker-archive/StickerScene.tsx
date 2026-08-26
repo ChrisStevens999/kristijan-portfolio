@@ -101,10 +101,10 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
       </mesh>
 
       {/* ONE extremely subtle seam/joint — a shallow groove, not a graphic
-          stripe, and only one (was two): placed well outside the printed
-          band (MANUAL_LAYOUT's v≈0.34–0.66) so it never crosses artwork,
-          barely lighter than the surrounding metal so it reads as a joint,
-          not a line dividing the pole into sections. */}
+          stripe: placed well outside the printed band (MANUAL_LAYOUT's
+          v≈0.31–0.72) so it never crosses artwork, barely lighter than the
+          surrounding metal so it reads as a construction joint, not a line
+          dividing the pole into sections. */}
       <mesh position={[0, 6, 0]}>
         <cylinderGeometry
           args={[CYLINDER_RADIUS + 0.002, CYLINDER_RADIUS + 0.002, 0.01, RADIAL_SEGMENTS, 1, true]}
