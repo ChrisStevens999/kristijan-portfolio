@@ -10,6 +10,7 @@ import {
   ATLAS_WIDTH,
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
+  INITIAL_Y_OFFSET,
   POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
   ROTATION_TURNS,
@@ -72,8 +73,9 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
     const group = groupRef.current;
     if (!group) return;
     group.rotation.y = p * ROTATION_TURNS * Math.PI * 2;
-    // Scrolling down travels further down the printed surface.
-    group.position.y = p * VERTICAL_TRAVEL_WORLD;
+    // INITIAL_Y_OFFSET puts cluster A at the camera at rest (p=0); scrolling
+    // down travels further down the printed surface toward cluster D.
+    group.position.y = INITIAL_Y_OFFSET + p * VERTICAL_TRAVEL_WORLD;
   });
 
   const stickerRadius = CYLINDER_RADIUS + 0.012;
@@ -100,13 +102,18 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
         />
       </mesh>
 
-      {/* Horizontal seam/joint bands — a couple of pipe-section joints down the tall pole, as distinct thin geometry rather than a baked texture line. */}
-      {[0.3, 0.72].map((frac) => (
-        <mesh key={frac} position={[0, CYLINDER_WORLD_HEIGHT * (0.5 - frac), 0]}>
+      {/* Horizontal seam/joint — a shallow groove, not a graphic stripe: a
+          couple of px thin at this framing, only slightly darker than the
+          metal itself. Placed directly by local Y (not by `v`, to avoid the
+          flipY sign gotcha documented on VERTICAL_TRAVEL_WORLD) in the
+          plain-metal margin beyond cluster A/D at the two ends of the
+          printed span, clear of every cluster. */}
+      {[-5.4, 5.9].map((localY) => (
+        <mesh key={localY} position={[0, localY, 0]}>
           <cylinderGeometry
-            args={[CYLINDER_RADIUS + 0.006, CYLINDER_RADIUS + 0.006, CYLINDER_WORLD_HEIGHT * 0.006, RADIAL_SEGMENTS, 1, true]}
+            args={[CYLINDER_RADIUS + 0.003, CYLINDER_RADIUS + 0.003, 0.012, RADIAL_SEGMENTS, 1, true]}
           />
-          <meshStandardMaterial color="#14161a" roughness={0.8} metalness={0.2} />
+          <meshStandardMaterial color="#7d828a" roughness={0.75} metalness={0.35} />
         </mesh>
       ))}
     </group>

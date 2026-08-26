@@ -29,13 +29,28 @@ export function getMetalTexture(): THREE.CanvasTexture {
   ctx.fillStyle = "#9aa0a8";
   ctx.fillRect(0, 0, TILE_PX, TILE_PX);
 
-  // Mottled galvanized blotches — soft, low-contrast, irregular.
   let seed = 17;
   const rand = () => {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return (seed / 0x7fffffff) % 1;
   };
-  for (let i = 0; i < 90; i++) {
+
+  // Large, low-frequency cloudy patches first — the irregular light/dark
+  // galvanized variation you'd see standing back from real zinc coating.
+  for (let i = 0; i < 22; i++) {
+    const x = rand() * TILE_PX;
+    const y = rand() * TILE_PX;
+    const r = 70 + rand() * 130;
+    const dark = rand() < 0.5;
+    const shade = dark ? 0 : 255;
+    ctx.fillStyle = `rgba(${shade},${shade},${shade},${(0.025 + rand() * 0.035).toFixed(3)})`;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r * (0.55 + rand() * 0.35), rand() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Smaller mottled blotches on top — soft, low-contrast, irregular.
+  for (let i = 0; i < 110; i++) {
     const x = rand() * TILE_PX;
     const y = rand() * TILE_PX;
     const r = 14 + rand() * 46;
@@ -49,7 +64,7 @@ export function getMetalTexture(): THREE.CanvasTexture {
   // Fine grain noise.
   const img = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let i = 0; i < img.data.length; i += 4) {
-    const n = (rand() - 0.5) * 16;
+    const n = (rand() - 0.5) * 19;
     img.data[i] = Math.min(255, Math.max(0, img.data[i] + n));
     img.data[i + 1] = Math.min(255, Math.max(0, img.data[i + 1] + n));
     img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n));

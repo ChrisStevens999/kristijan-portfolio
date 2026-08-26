@@ -31,6 +31,11 @@ export function useStickerAtlasTexture(
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
+    // Leave flipY at its default (true) — every sticker's artwork needs to
+    // stay upright. The consequence (mesh v=0 samples canvas row
+    // atlasHeight-1, i.e. the BOTTOM of what we draw, not the top) is
+    // accounted for in INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD's sign
+    // instead — see that constant's doc comment in the content file.
     return tex;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- atlasWidth/atlasHeight are stable module-level constants
   }, []);
@@ -40,7 +45,7 @@ export function useStickerAtlasTexture(
     const canvas = texture.image as HTMLCanvasElement;
     const ctx = canvas.getContext("2d")!;
 
-    Promise.all(
+    Promise.allSettled(
       placements.map(
         (p) =>
           new Promise<{ p: StickerPlacement; img: HTMLImageElement }>((resolve, reject) => {
@@ -51,8 +56,13 @@ export function useStickerAtlasTexture(
           }),
       ),
     )
-      .then((loaded) => {
+      .then((results) => {
         if (cancelled) return;
+        // allSettled (not all) — one bad/slow sticker image shouldn't blank
+        // the whole atlas; it just leaves that one spot empty.
+        const loaded = results
+          .filter((r): r is PromiseFulfilledResult<{ p: StickerPlacement; img: HTMLImageElement }> => r.status === "fulfilled")
+          .map((r) => r.value);
         for (const { p, img } of loaded) {
           const w = p.widthFrac * atlasWidth;
           const h = w * (p.src.height / p.src.width);
@@ -74,10 +84,6 @@ export function useStickerAtlasTexture(
           if (cx + w / 2 > atlasWidth) draw(-atlasWidth);
         }
         texture.needsUpdate = true;
-      })
-      .catch(() => {
-        // A failed sticker image just leaves that spot blank on the atlas —
-        // not worth tearing down the whole surface for.
       });
 
     return () => {
