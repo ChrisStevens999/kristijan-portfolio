@@ -6,6 +6,7 @@ import hardcoreCover from "../../../assets/featured projects/4 Fav.png";
 import boyzclubCover from "../../../assets/projects/boyzclub/BZC 1.png";
 import damagedGoodsCover from "../../../assets/projects/damaged goods/4 5.png";
 import tagDesignsCover from "../../../assets/projects/tag designs/hero/Venom.png";
+import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/Miami Vice Tiger C-Drip Sticker-Front.png";
 
 /**
  * One entry per project. Titles/categories below are placeholders pending
@@ -130,5 +131,22 @@ export const projects: Project[] = [
     // Illustration category listing and its own project page.
     featured: false,
     order: 7,
+  },
+  {
+    slug: "sticker-archive",
+    title: "Sticker Archive",
+    category: "illustration",
+    summary: "An interactive archive of die-cut sticker graphics.",
+    introduction:
+      "Selected graphic work presented as a rotating, sticker-covered street object.",
+    cover: { src: stickerArchiveCover, alt: "Miami Vice tiger sticker" },
+    gallery: [],
+    challenge: "",
+    process: "",
+    outcome: "",
+    // Phase 1 interactive prototype — reachable at /projects/sticker-archive
+    // and via the Illustration category listing.
+    featured: false,
+    order: 8,
   },
 ];

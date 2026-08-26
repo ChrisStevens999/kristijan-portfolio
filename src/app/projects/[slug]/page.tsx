@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
 import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCaseStudy";
+import { StickerArchive } from "@/components/case-studies/sticker-archive/StickerArchive";
 import { TagDesignsCaseStudy } from "@/components/case-studies/TagDesignsCaseStudy";
 import {
   getAllProjects,
@@ -29,6 +30,13 @@ export default async function ProjectPage({
 
   if (slug === "boyzclub") {
     return <BoyzClubCaseStudy nextProject={getNextProject(slug)} />;
+  }
+
+  if (slug === "sticker-archive") {
+    const category = getCategoryBySlug(project.category);
+    if (category) {
+      return <StickerArchive category={category} />;
+    }
   }
 
   if (slug === "damaged-goods") {

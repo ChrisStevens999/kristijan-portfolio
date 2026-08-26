@@ -68,7 +68,26 @@
       "Bash(npx vercel *)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://kristijan-portfolio-six.vercel.app)",
       "Bash(taskkill //PID 11744 //F)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebFetch(domain:kristijan-portfolio.vercel.app)",
+      "Bash(taskkill //PID 28740 //F)",
+      "Bash(node node_modules/next/dist/bin/next build)",
+      "Bash(cd \"C:\\\\Users\\\\krist\\\\Desktop\\\\Kristijan-Portfolio\" && echo \"=== project assets dirs ===\" && find assets -type d 2>/dev/null && echo \"=== any sticker-ish files in project ===\" && find assets public -iname '*sticker*' 2>/dev/null; echo \"=== E: drive reference folder ===\" && ls -la \"/e/GENERATIONAL LOCK IN/Flannels/\" 2>/dev/null | head -60 || echo \"cannot access E: path via /e/\")",
+      "Bash(cd \"C:\\\\Users\\\\krist\\\\Desktop\\\\Kristijan-Portfolio\" && mkdir -p public/_ref && cp \"/e/GENERATIONAL LOCK IN/Flannels/StickerAPP_StickerCollection_Anim_Post_V04_BS_620px.mp4\" \"public/_ref/sticker-ref.mp4\" && ls -la public/_ref/)",
+      "Bash(node -e \"try{require.resolve\\('sharp'\\);console.log\\('sharp OK'\\)}catch\\(e\\){console.log\\('no sharp'\\)}\")",
+      "Bash(cd \"C:\\\\Users\\\\krist\\\\Desktop\\\\Kristijan-Portfolio\" && rm -rf public/_stkprev && rm -f /tmp/resize_stickers.js /tmp/sticker_data_uris.json && echo \"cleaned\" && git status --short | grep -i stkprev || echo \"no stray preview files tracked\")",
+      "Bash(cp '__TRACKED_VAR__/Miami Vice Tiger C-Drip Sticker-Front.png' public/_stkprev/s1.png)",
+      "Bash(cp '__TRACKED_VAR__/Subzero Sticker.png' public/_stkprev/s2.png)",
+      "Bash(cp '__TRACKED_VAR__/LV Sticker.png' public/_stkprev/s3.png)",
+      "Bash(cp __TRACKED_VAR__/Sticker-5-Medusa-Front.png public/_stkprev/s4.png)",
+      "Bash(cp __TRACKED_VAR__/arcade_sticker.png public/_stkprev/s5.png)",
+      "Bash(rm -rf public/_stkprev)",
+      "Bash(rm -f /tmp/resize2.js /tmp/uris11.json)",
+      "Bash(rm -f /tmp/resize3.js /tmp/uris11.json)",
+      "Bash(cp __TRACKED_VAR__/RhodesianTiger-Sticker-Front.png public/_stkprev/s2.png)",
+      "Bash(cp __TRACKED_VAR__/Sticker-5-Medusa-Front.png public/_stkprev/s3.png)",
+      "Bash(cp __TRACKED_VAR__/StickerFront-CODRedTiger.png public/_stkprev/s4.png)",
+      "Bash(cp __TRACKED_VAR__/violet_sticker.png public/_stkprev/s5.png)"
     ]
   }
 }
