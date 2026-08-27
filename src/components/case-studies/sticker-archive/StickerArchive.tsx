@@ -22,11 +22,18 @@ const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.Sticke
  * rotates and travels vertically as ONE rigid object as the page scrolls;
  * stickers are fixed to its surface, not independently animated.
  *
- * A tall (~320vh) scroll section with a sticky 100vh stage. Scroll progress
- * drives the cylinder group's rotation/position directly (not autoplay); a
- * weighted spring adds inertia without bounce. The exit nav returns to the
- * category. Reduced motion freezes the composition and drops the tall
- * scroll region.
+ * A tall (~560vh) scroll section with a sticky 100vh stage. Bumped up from
+ * 320vh when rotation was increased to a near-full 340° revolution —
+ * without more scroll distance, the same physical scroll motion would spin
+ * the pole ~1.9x faster than before, reading as a quick spin rather than
+ * the slow/heavy/controlled turn the reference has. This isn't a literal
+ * degrees-per-pixel match to the old pace (that would need ~900vh, too
+ * long for a portfolio page) — it's a middle ground that still gives each
+ * hero sticker's moment enough scroll distance to actually look at it.
+ * Scroll progress drives the cylinder group's rotation/position directly
+ * (not autoplay); a tight spring removes raw scroll jitter without adding
+ * perceptible lag. The exit nav returns to the category. Reduced motion
+ * freezes the composition and drops the tall scroll region.
  *
  * The editorial HUD (StickerArchiveHUD — collection counter, "scroll to
  * explore", etc.) and the click-to-inspect StickerViewer are deliberately
@@ -65,7 +72,7 @@ export function StickerArchive({ category }: { category: Category }) {
       <section
         ref={sectionRef}
         className="relative"
-        style={{ height: reduce ? "100vh" : "320vh" }}
+        style={{ height: reduce ? "100vh" : "560vh" }}
       >
         <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-black">
           <StickerScene progress={progress} />

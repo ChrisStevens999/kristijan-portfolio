@@ -101,9 +101,9 @@ const rawStickers: StickerInput[] = [
  * => θ = 2·target, and widthFrac = θ / 2π = target / π.
  */
 const TARGET_SCREEN_FRACTION: Record<SizeTier, number> = {
-  small: 0.25, // 20–30%
-  medium: 0.4, // 35–45%
-  large: 0.55, // 50–60%
+  small: 0.225, // partial/edge: 15–30%
+  medium: 0.325, // supporting: 25–40%
+  large: 0.525, // hero: 45–60%
 };
 
 const WIDTH_FRAC_BY_TIER: Record<SizeTier, number> = {
@@ -124,61 +124,55 @@ function normalizeDeg(a: number) {
  * ·360°): a sticker placed at a positive angle only gets FURTHER from front
  * as scroll proceeds, it can never sweep into view.
  *
- * The reference reads as ~4–5 SUBSTANTIAL stickers at once, not 7–10 — with
- * 25 stickers and a ~60° "readably front-facing" arc, that means only a
- * fifth of them should be near-front at any moment. Spacing every sticker's
- * peak across exactly the rotation amount (120°) would pack far more than
- * that into the readable arc simultaneously, so — same trick as the
- * previous pass, tuned further — these angles spread across a WIDER virtual
- * range (380°, much bigger than the 120° actually rotated) via
- * `angleDeg ≈ -progress · 380° + jitter`, progress a deterministic
- * golden-ratio spread (not sequential, so temporally-close stickers aren't
- * adjacent in this list). Only the stickers whose progress falls inside
- * what 120° of rotation can actually reach (roughly the first third) ever
- * get fully front-on; the rest stay part-foreshortened for their whole
- * visible window, wrapping the curved edges throughout rather than
- * clustering at the front. Verified via pixel readback: readable count
- * lands at 4–5 (dipping to 3) across all 9 checkpoints, not 7+.
+ * With rotation now nearly a full turn (340°, up from 120° two passes ago),
+ * the virtual spread these angles are computed against is simply the SAME
+ * 340° (`angleDeg ≈ -progress · 340° + jitter`, progress a deterministic
+ * golden-ratio spread — not sequential, so temporally-close stickers aren't
+ * adjacent in this list). Unlike the last two passes, that means EVERY
+ * sticker eventually reaches true dead-front at its own designated moment —
+ * which is exactly what "a sequence of visual focal points, each sticker
+ * taking a turn as hero" needs: no sticker is permanently relegated to
+ * edge-only texture. Readable count still lands at 3–5 per checkpoint
+ * (verified via pixel readback) purely because with 25 stickers spread
+ * across a full 340°, each one's own ~60°-wide readable window only
+ * overlaps a handful of its neighbours' at a time.
  *
- * `v` is spread across a compressed band (roughly 0.31–0.72) rather than
- * the near-full height used two passes ago — vertical travel is the
- * secondary motion, so the printed content it travels through stays
- * compact (see INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD's comment for why
- * this band can't be any narrower without leaving the frustum's own edges
- * poking into bare metal at the start/end of scroll). `v` is deliberately
- * NOT correlated with reveal progress (checked by hand against the angle
- * spread above) — two temporally-close stickers almost always sit at
+ * `v` is spread across a compressed band (roughly 0.31–0.72) — vertical
+ * travel is now a distinctly secondary motion (see
+ * INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD's comment), so the printed content
+ * it travels through stays compact. `v` is deliberately NOT correlated with
+ * reveal progress — two temporally-close stickers almost always sit at
  * clearly different heights, which is what keeps this reading as
  * individually placed designs instead of a handful of touching clusters. A
  * few pairs are deliberately close in both (a little overlap, per the
  * reference) but most have visible metal around them.
  */
 const MANUAL_LAYOUT: { angleDeg: number; v: number; sizeTier: SizeTier; rotationDeg: number }[] = [
-  { angleDeg: -11.6, v: 0.5688, sizeTier: "large", rotationDeg: -6 }, // 0 miamiViceTiger — hero, visible at rest
-  { angleDeg: -235.1, v: 0.4587, sizeTier: "medium", rotationDeg: 8 }, // 1 rhodesianTiger — never fully centred, wraps in late
-  { angleDeg: -93.7, v: 0.665, sizeTier: "medium", rotationDeg: -4 }, // 2 medusa
-  { angleDeg: -317.2, v: 0.335, sizeTier: "medium", rotationDeg: 10 }, // 3 cyberSkull — edge texture only
-  { angleDeg: -175.8, v: 0.4175, sizeTier: "small", rotationDeg: -9 }, // 4 hornedSkull
-  { angleDeg: -43.5, v: 0.61, sizeTier: "medium", rotationDeg: 5 }, // 5 cookies
-  { angleDeg: -267, v: 0.5, sizeTier: "large", rotationDeg: -3 }, // 6 subzero — edge texture only
-  { angleDeg: -125.6, v: 0.6375, sizeTier: "small", rotationDeg: 7 }, // 7 lvGlock
-  { angleDeg: -349.1, v: 0.3075, sizeTier: "large", rotationDeg: -8 }, // 8 arcade — edge texture only
-  { angleDeg: -216.7, v: 0.6925, sizeTier: "medium", rotationDeg: 4 }, // 9 babyBoomers — never fully centred
-  { angleDeg: -75.4, v: 0.3625, sizeTier: "small", rotationDeg: -11 }, // 10 blushingDuck
-  { angleDeg: -298.8, v: 0.5, sizeTier: "medium", rotationDeg: 6 }, // 11 illunis — edge texture only
-  { angleDeg: -157.5, v: 0.5688, sizeTier: "medium", rotationDeg: -5 }, // 12 generic1
-  { angleDeg: -16.2, v: 0.3075, sizeTier: "medium", rotationDeg: -7 }, // 13 generic2 — also near-front at rest
-  { angleDeg: -248.6, v: 0.61, sizeTier: "large", rotationDeg: 9 }, // 14 generic3 — never fully centred
-  { angleDeg: -107.3, v: 0.3625, sizeTier: "small", rotationDeg: -4 }, // 15 generic4
-  { angleDeg: -330.7, v: 0.72, sizeTier: "medium", rotationDeg: 6 }, // 16 generic5 — edge texture only
-  { angleDeg: -189.4, v: 0.4725, sizeTier: "medium", rotationDeg: -10 }, // 17 generic6
-  { angleDeg: -57.1, v: 0.72, sizeTier: "medium", rotationDeg: 3 }, // 18 generic7
-  { angleDeg: -280.5, v: 0.39, sizeTier: "small", rotationDeg: -6 }, // 19 generic8 — edge texture only
-  { angleDeg: -139.2, v: 0.4175, sizeTier: "large", rotationDeg: 8 }, // 20 generic9
-  { angleDeg: -362.6, v: 0.3075, sizeTier: "medium", rotationDeg: -3 }, // 21 generic10 — edge texture only
-  { angleDeg: -221.3, v: 0.5275, sizeTier: "small", rotationDeg: 10 }, // 22 generic11 — never fully centred
-  { angleDeg: -89, v: 0.6925, sizeTier: "medium", rotationDeg: -8 }, // 23 generic12
-  { angleDeg: -312.4, v: 0.6375, sizeTier: "medium", rotationDeg: 5 }, // 24 generic13 — edge texture only
+  { angleDeg: -10.8, v: 0.5688, sizeTier: "large", rotationDeg: -6 }, // 0 miamiViceTiger — hero, visible at rest
+  { angleDeg: -210.5, v: 0.4587, sizeTier: "medium", rotationDeg: 8 }, // 1 rhodesianTiger
+  { angleDeg: -83.9, v: 0.665, sizeTier: "medium", rotationDeg: -4 }, // 2 medusa
+  { angleDeg: -283.6, v: 0.335, sizeTier: "medium", rotationDeg: 10 }, // 3 cyberSkull
+  { angleDeg: -156.9, v: 0.4175, sizeTier: "small", rotationDeg: -9 }, // 4 hornedSkull
+  { angleDeg: -39.2, v: 0.61, sizeTier: "medium", rotationDeg: 5 }, // 5 cookies
+  { angleDeg: -239, v: 0.5, sizeTier: "large", rotationDeg: -3 }, // 6 subzero
+  { angleDeg: -112.3, v: 0.6375, sizeTier: "small", rotationDeg: 7 }, // 7 lvGlock
+  { angleDeg: -312, v: 0.3075, sizeTier: "large", rotationDeg: -8 }, // 8 arcade
+  { angleDeg: -194.3, v: 0.6925, sizeTier: "medium", rotationDeg: 4 }, // 9 babyBoomers
+  { angleDeg: -67.7, v: 0.3625, sizeTier: "small", rotationDeg: -11 }, // 10 blushingDuck
+  { angleDeg: -267.4, v: 0.5, sizeTier: "medium", rotationDeg: 6 }, // 11 illunis
+  { angleDeg: -140.7, v: 0.5688, sizeTier: "medium", rotationDeg: -5 }, // 12 generic1
+  { angleDeg: -14, v: 0.3075, sizeTier: "medium", rotationDeg: -7 }, // 13 generic2 — also near-front at rest
+  { angleDeg: -222.8, v: 0.61, sizeTier: "large", rotationDeg: 9 }, // 14 generic3
+  { angleDeg: -96.1, v: 0.3625, sizeTier: "small", rotationDeg: -4 }, // 15 generic4
+  { angleDeg: -295.8, v: 0.72, sizeTier: "medium", rotationDeg: 6 }, // 16 generic5
+  { angleDeg: -169.1, v: 0.4725, sizeTier: "medium", rotationDeg: -10 }, // 17 generic6
+  { angleDeg: -51.5, v: 0.72, sizeTier: "medium", rotationDeg: 3 }, // 18 generic7
+  { angleDeg: -251.2, v: 0.39, sizeTier: "small", rotationDeg: -6 }, // 19 generic8
+  { angleDeg: -124.5, v: 0.4175, sizeTier: "large", rotationDeg: 8 }, // 20 generic9
+  { angleDeg: -324.3, v: 0.3075, sizeTier: "medium", rotationDeg: -3 }, // 21 generic10 — near-front by the end
+  { angleDeg: -197.6, v: 0.5275, sizeTier: "small", rotationDeg: 10 }, // 22 generic11
+  { angleDeg: -79.9, v: 0.6925, sizeTier: "medium", rotationDeg: -8 }, // 23 generic12
+  { angleDeg: -279.6, v: 0.6375, sizeTier: "medium", rotationDeg: 5 }, // 24 generic13
 ];
 
 function buildPlacements(inputs: StickerInput[]): StickerPlacement[] {
@@ -237,36 +231,27 @@ export const CYLINDER_WORLD_HEIGHT = (ATLAS_HEIGHT / ATLAS_WIDTH) * CIRCUMFERENC
 export const POLE_FRAME_FRACTION = 0.48;
 
 /**
- * 120° total rotation across the whole scroll section — within the
- * requested 100–140° range (down from 160° last pass, which read as more
- * spin than the reference wants). Slow and subtle, but enough that a
- * sticker visibly starts near one curved edge, becomes front-facing,
- * crosses the surface, and begins wrapping the opposite edge over the
- * course of the scroll. MANUAL_LAYOUT's angles are chosen against this
- * exact figure (see its doc comment).
+ * 340° total rotation across the whole scroll section — nearly a full
+ * revolution, per direct reference comparison (up from 120° two passes
+ * ago, which "barely changed which side of the pole we're seeing"). This
+ * is now the PRIMARY source of changing composition (~75%, vs ~25% from
+ * vertical travel — see VERTICAL_TRAVEL_WORLD below). MANUAL_LAYOUT's
+ * angles are chosen against this exact figure (see its doc comment). Kept
+ * slow/heavy despite the large angular distance by lengthening the scroll
+ * section itself (see StickerArchive.tsx) rather than spinning faster.
  */
-export const ROTATION_TURNS = 120 / 360;
+export const ROTATION_TURNS = 340 / 360;
 
 /**
- * Vertical travel + starting offset, in WORLD UNITS, chosen so the visible
- * v-window travels across MANUAL_LAYOUT's v≈0.31–0.72 band as scroll
- * progresses (v≈0.59 at p=0 down to v≈0.41 at p=1).
- *
- * This pair (and the v-band's width above) was tuned against a real
- * constraint, not just "smaller = better": the camera's own vertical
- * frustum span is a FIXED size in v-units, and if the printed content band
- * is narrower than (frustum span + travel excursion), the frustum's own
- * top/bottom edge pokes out past the printed content into bare margin at
- * the very start/end of the scroll — an empty-viewport bug, not a style
- * choice. A first attempt compressed the band to ~57% of the pass-before's
- * span (matching the requested 50–60%) with the pass-before's travel
- * (~4.8) and left ~40–50% of the frame bare at p=0/p=1. This band (~0.41,
- * about 78% of the pass-before's span — less compression than asked, but
- * required by the constraint above) combined with a SMALLER travel (3.0,
- * ~59% less than the pass-before's 7.32, well past the requested 30–40%
- * reduction) instead keeps that bare margin under ~10% of frame on
- * realistic desktop aspect ratios (checked at 1.4–1.78; only an unusually
- * square/tall viewport still shows a modest ~20%).
+ * Vertical travel + starting offset, in WORLD UNITS — cut roughly in half
+ * from the previous pass (was 1.5/-3.0) now that rotation carries most of
+ * the compositional change; vertical motion is a slow, supporting
+ * secondary read, not a co-equal one. The visible v-window still travels
+ * within MANUAL_LAYOUT's v≈0.31–0.72 band (v≈0.53 at p=0 to v≈0.41 at
+ * p=1) — a smaller excursion than before, which also means MORE frustum-
+ * fill margin than the previous pass had (re-verified: 0% empty margin at
+ * both scroll extremes on realistic 1.4–1.78 aspect ratios, vs the
+ * previous pass's ~0–16%), not less.
  *
  * SIGN NOTE: with the sticker texture's default flipY (kept true so artwork
  * stays upright — see useStickerAtlasTexture), CylinderGeometry's mesh v=0
@@ -274,8 +259,8 @@ export const ROTATION_TURNS = 120 / 360;
  * `v` is `groupY + (0.5 - v) * H`, not `groupY + (v - 0.5) * H` — these two
  * constants are the negation of what the naive (v - 0.5) formula would give.
  */
-export const INITIAL_Y_OFFSET = 1.5;
-export const VERTICAL_TRAVEL_WORLD = -3.0;
+export const INITIAL_Y_OFFSET = 0.9;
+export const VERTICAL_TRAVEL_WORLD = -1.8;
 
 /** Radial smoothness — within the requested 64–128 range. */
 export const RADIAL_SEGMENTS = 96;

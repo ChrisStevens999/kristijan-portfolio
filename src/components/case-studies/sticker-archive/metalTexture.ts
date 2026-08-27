@@ -15,15 +15,18 @@ import * as THREE from "three";
  * "CGI grey", too clean). This version draws an actual cell pattern (cheap
  * nearest-seed fill over a coarse block grid — a Voronoi approximation,
  * not per-pixel) sized small enough that it never reads as a repeating
- * tile, then layers fine grain + tiny speckle + sparse wear on top.
+ * tile, then layers fine grain + tiny speckle + faint vertical
+ * micro-streaking (a rolled/brushed-steel cue) + sparse wear on top. This
+ * third revision shrinks the cells further and sharpens their edges — the
+ * previous version still read as slightly too soft/cloudy.
  *
  * Built once and cached at module scope (not per-mount) — it never changes.
  */
 let cached: THREE.CanvasTexture | null = null;
 
 const TILE_PX = 768;
-/** World-unit size one tile covers — tuned so the spangle cells read as fine industrial texture, not blown-up tiles. */
-export const METAL_TILE_WORLD_SIZE = 1.35;
+/** World-unit size one tile covers — smaller than the previous pass (1.35) so the spangle cells read as finer, sharper industrial grain rather than soft cloudy variation. */
+export const METAL_TILE_WORLD_SIZE = 0.85;
 
 export function getMetalTexture(): THREE.CanvasTexture {
   if (cached) return cached;
@@ -44,18 +47,20 @@ export function getMetalTexture(): THREE.CanvasTexture {
   ctx.fillRect(0, 0, TILE_PX, TILE_PX);
 
   // --- Spangle: scatter seed points, each with its own slight brightness,
-  // fill a coarse block grid by nearest seed. Small block size (6px) keeps
-  // cell edges crisp without per-pixel cost.
-  const SEED_COUNT = 220;
+  // fill a coarse block grid by nearest seed. Small block size (5px) keeps
+  // cell edges crisp without per-pixel cost. More/smaller cells than the
+  // previous pass (350 vs 220, plus the smaller METAL_TILE_WORLD_SIZE
+  // above) for finer, sharper definition instead of soft cloudy variation.
+  const SEED_COUNT = 350;
   const seeds: { x: number; y: number; shade: number }[] = [];
   for (let i = 0; i < SEED_COUNT; i++) {
     seeds.push({
       x: rand() * TILE_PX,
       y: rand() * TILE_PX,
-      shade: (rand() - 0.5) * 26, // +/-13 brightness per cell
+      shade: (rand() - 0.5) * 30, // +/-15 brightness per cell
     });
   }
-  const BLOCK = 6;
+  const BLOCK = 5;
   const spangle = ctx.createImageData(TILE_PX, TILE_PX);
   for (let by = 0; by < TILE_PX; by += BLOCK) {
     for (let bx = 0; bx < TILE_PX; bx += BLOCK) {
@@ -83,10 +88,11 @@ export function getMetalTexture(): THREE.CanvasTexture {
     }
   }
   // Composite the spangle shading onto the base as a soft-light-ish overlay
-  // (additive at reduced strength) rather than a hard replace.
+  // (additive at reduced strength) rather than a hard replace. Stronger
+  // than the previous pass (0.75 vs 0.65) for sharper cell definition.
   const base = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let i = 0; i < base.data.length; i += 4) {
-    const add = spangle.data[i] * 0.65;
+    const add = spangle.data[i] * 0.75;
     base.data[i] = Math.min(255, Math.max(0, base.data[i] + add));
     base.data[i + 1] = Math.min(255, Math.max(0, base.data[i + 1] + add));
     base.data[i + 2] = Math.min(255, Math.max(0, base.data[i + 2] + add));
@@ -114,19 +120,38 @@ export function getMetalTexture(): THREE.CanvasTexture {
           second = d;
         }
       }
-      if (second - best < 900) {
+      if (second - best < 700) {
         for (let y = by; y < Math.min(by + BLOCK, TILE_PX); y++) {
           for (let x = bx; x < Math.min(bx + BLOCK, TILE_PX); x++) {
             const idx = (y * TILE_PX + x) * 4;
-            boundary.data[idx] *= 0.94;
-            boundary.data[idx + 1] *= 0.94;
-            boundary.data[idx + 2] *= 0.94;
+            boundary.data[idx] *= 0.91;
+            boundary.data[idx + 1] *= 0.91;
+            boundary.data[idx + 2] *= 0.91;
           }
         }
       }
     }
   }
   ctx.putImageData(boundary, 0, 0);
+
+  // Subtle vertical micro-streaking — a rolled/brushed-steel cue the
+  // reference has that pure spangle cells don't supply on their own. Very
+  // thin, very faint, irregular length/opacity so it doesn't read as a
+  // ruled pattern.
+  for (let i = 0; i < 90; i++) {
+    const x = rand() * TILE_PX;
+    const yStart = rand() * TILE_PX * 0.6;
+    const len = TILE_PX * (0.15 + rand() * 0.5);
+    const lighter = rand() < 0.5;
+    ctx.strokeStyle = lighter
+      ? `rgba(255,255,255,${(0.02 + rand() * 0.035).toFixed(3)})`
+      : `rgba(0,0,0,${(0.02 + rand() * 0.035).toFixed(3)})`;
+    ctx.lineWidth = 0.6 + rand() * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, yStart);
+    ctx.lineTo(x + (rand() - 0.5) * 3, yStart + len);
+    ctx.stroke();
+  }
 
   // Tiny irregular fleck speckle on top — small enough (1–5px) to read as
   // grain, not pattern.

@@ -84,20 +84,22 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
         <cylinderGeometry
           args={[CYLINDER_RADIUS, CYLINDER_RADIUS, CYLINDER_WORLD_HEIGHT, RADIAL_SEGMENTS, 1, true]}
         />
-        <meshStandardMaterial map={metalTexture} roughness={0.58} metalness={0.42} />
+        <meshStandardMaterial map={metalTexture} roughness={0.5} metalness={0.48} />
       </mesh>
 
+      {/* Sticker surface deliberately UNLIT (MeshBasicMaterial, not
+          MeshStandardMaterial) — the metal's dramatic directional lighting
+          is exactly what the reference wants for the pole itself, but that
+          same lighting was flattening/darkening the printed artwork's own
+          colours. Curvature still reads correctly (foreshortening + real
+          back-face culling are pure geometry, not lighting), it's only the
+          brightness/saturation of the art that's now independent of the
+          metal's light response. */}
       <mesh>
         <cylinderGeometry
           args={[stickerRadius, stickerRadius, CYLINDER_WORLD_HEIGHT, RADIAL_SEGMENTS, 1, true]}
         />
-        <meshStandardMaterial
-          map={stickerTexture}
-          transparent
-          alphaTest={0.05}
-          roughness={0.55}
-          metalness={0.04}
-        />
+        <meshBasicMaterial map={stickerTexture} transparent alphaTest={0.05} />
       </mesh>
 
       {/* ONE extremely subtle seam/joint — a shallow groove, not a graphic
@@ -125,12 +127,13 @@ export function StickerScene({ progress }: { progress: MotionValue<number> }) {
     >
       <color attach="background" args={["#000000"]} />
       <CameraFraming />
-      {/* Lower ambient + a stronger, tighter key light than before — the
-          reference's bright-silver-centre/dark-edge read needs real
-          contrast; the previous setup was too flat/even. */}
-      <ambientLight intensity={0.2} />
-      <directionalLight position={[0, 1.5, 9]} intensity={2.0} />
-      <directionalLight position={[-5, 2, -2]} intensity={0.16} />
+      {/* Low ambient + a strong, tight key light — the reference's
+          left-dark / centre-bright-silver / right-dark falloff needs real
+          contrast between the key light and everything else. Pushed
+          further than the previous pass, which was still too even. */}
+      <ambientLight intensity={0.12} />
+      <directionalLight position={[0, 1.5, 9]} intensity={2.6} />
+      <directionalLight position={[-5, 2, -2]} intensity={0.1} />
       <PoleGroup progress={progress} />
     </Canvas>
   );
