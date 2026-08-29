@@ -39,16 +39,17 @@ import generic13 from "../../../assets/projects/Sticker Illustrations/Sticker-SB
  * `assets/projects/Sticker Illustrations/`, import it, add it to
  * `rawStickers`, and give it a row in MANUAL_LAYOUT below.
  *
- * Placement is HAND-AUTHORED (MANUAL_LAYOUT), one INDIVIDUAL entry per
- * sticker — not grouped into clusters. An earlier pass grouped stickers into
- * a few dense clumps with big gaps between them; that read as obvious
- * "cluster A / cluster B" collage blocks, not a real sticker-covered pole.
- * Each row here gets its own angle and vertical position, spread across the
- * full circumference and a compressed vertical band, so the composition
- * reads as one continuous surface with individually placed designs.
+ * Placement is HAND-AUTHORED (MANUAL_LAYOUT). Sizing is a per-sticker
+ * `screenFraction` (not a 3-tier lookup) — after direct reference
+ * comparison, almost every sticker needed to sit in one fairly narrow "big"
+ * band (0.35–0.55 of pole width) with only small, organic per-item
+ * variation, rather than a wide small/medium/large spread where "small"
+ * read as a tiny icon. `widthFrac` (the actual atlas fraction used for
+ * drawing) is computed FROM the visible artwork's alpha bounding box, not
+ * the full PNG canvas — see useStickerAtlasTexture's bbox detection — so
+ * `screenFraction` really is "how big the recognizable artwork looks",
+ * independent of how much transparent padding a given PNG happens to have.
  */
-export type SizeTier = "small" | "medium" | "large";
-
 export interface StickerPlacement {
   src: StaticImageData;
   alt: string;
@@ -56,14 +57,13 @@ export interface StickerPlacement {
   u: number;
   /** 0–1 down the tall texture atlas (0 = top of the pole's printed surface). */
   v: number;
-  /** Sticker's on-atlas width as a fraction of the full atlas width (== full circumference). Derived from sizeTier via WIDTH_FRAC_BY_TIER. */
+  /** Sticker's on-atlas width as a fraction of the full atlas width (== full circumference), sized against the artwork's ALPHA BOUNDING BOX, not the padded PNG canvas. Derived from screenFraction. */
   widthFrac: number;
   /** Small deterministic rotation jitter, degrees — reads as hand-applied rather than machine-perfect. */
   rotationDeg: number;
-  sizeTier: SizeTier;
 }
 
-type StickerInput = { src: StaticImageData; alt: string; sizeTier?: SizeTier; group?: string };
+type StickerInput = { src: StaticImageData; alt: string; group?: string };
 
 const rawStickers: StickerInput[] = [
   { src: miamiViceTiger, alt: "Miami Vice tiger sticker", group: "tigers" },
@@ -94,99 +94,119 @@ const rawStickers: StickerInput[] = [
 ];
 
 /**
- * Target on-screen width as a fraction of the VISIBLE pole width, for a
- * sticker centred at dead-front. Converted to widthFrac (fraction of full
- * circumference / atlas width) below via: a front-facing sticker of angular
- * width θ spans ≈ R·θ on screen; visible pole width = 2R; so R·θ = target·2R
- * => θ = 2·target, and widthFrac = θ / 2π = target / π.
+ * Converts a target on-screen width (as a fraction of the VISIBLE pole
+ * width, for artwork centred at dead-front) to widthFrac (fraction of full
+ * circumference / atlas width): a front-facing sticker of angular width θ
+ * spans ≈ R·θ on screen; visible pole width = 2R; so R·θ = target·2R =>
+ * θ = 2·target, and widthFrac = θ / 2π = target / π.
  */
-const TARGET_SCREEN_FRACTION: Record<SizeTier, number> = {
-  small: 0.225, // partial/edge: 15–30%
-  medium: 0.325, // supporting: 25–40%
-  large: 0.525, // hero: 45–60%
-};
-
-const WIDTH_FRAC_BY_TIER: Record<SizeTier, number> = {
-  small: TARGET_SCREEN_FRACTION.small / Math.PI,
-  medium: TARGET_SCREEN_FRACTION.medium / Math.PI,
-  large: TARGET_SCREEN_FRACTION.large / Math.PI,
-};
+function widthFracFor(screenFraction: number): number {
+  return screenFraction / Math.PI;
+}
 
 function normalizeDeg(a: number) {
   return ((a % 360) + 360) % 360;
 }
 
 /**
- * Hand-authored placement, one row per rawStickers entry (same order/index).
+ * Hand-authored placement, one row per rawStickers entry (same order/index),
+ * organized into FOUR GROUPS of 6–7 — a deliberate change from the previous
+ * pass's fully-decorrelated individual scatter. That scatter, combined with
+ * every sticker now being "big" (see `screenFraction` below), meant too
+ * many large designs were simultaneously within the readable arc at once.
+ * Groups fix this: within a group, members share roughly the same reveal
+ * moment (so together they read as "the current 3–4"), and groups are
+ * spaced FAR ENOUGH APART that one group's members are rotating away/behind
+ * while the next group's are rotating into view — "sticker A rotates out,
+ * B/C/D take over" — rather than an even wash of everything at once.
  *
- * `angleDeg` is chosen BACKWARDS from each sticker's intended reveal moment
- * — necessary because rotation only ever runs forward (0° → +ROTATION_TURNS
- * ·360°): a sticker placed at a positive angle only gets FURTHER from front
- * as scroll proceeds, it can never sweep into view.
+ * Getting the spacing right took two corrections: a first attempt (six
+ * groups, ~54° apart) let adjacent groups overlap into 9–10 simultaneous
+ * designs; tightening each group's OWN internal angular spread (a second
+ * attempt) barely helped, because the overlap wasn't coming from a group's
+ * own spread — it's that a hero-sized sticker alone is ~60° wide, so even
+ * two *centres* 68° apart still have their edges overlapping once each
+ * sticker's own half-width is added on. The only real fix was fewer, more
+ * widely-spaced groups: four groups at 85° apart, which (checked against
+ * every sticker's actual angular half-width, not just its centre) leaves a
+ * genuine — if narrow, ~2° — gap between each group's full visible extent
+ * and the next's. `v` differentiates roles WITHIN a group; because vertical
+ * travel is intentionally small this pass (untouched, per the brief), the
+ * vertical window barely moves across the whole scroll, so `v` does NOT
+ * provide additional separation BETWEEN groups the way rotation does — only
+ * angular spacing does that.
  *
- * With rotation now nearly a full turn (340°, up from 120° two passes ago),
- * the virtual spread these angles are computed against is simply the SAME
- * 340° (`angleDeg ≈ -progress · 340° + jitter`, progress a deterministic
- * golden-ratio spread — not sequential, so temporally-close stickers aren't
- * adjacent in this list). Unlike the last two passes, that means EVERY
- * sticker eventually reaches true dead-front at its own designated moment —
- * which is exactly what "a sequence of visual focal points, each sticker
- * taking a turn as hero" needs: no sticker is permanently relegated to
- * edge-only texture. Readable count still lands at 3–5 per checkpoint
- * (verified via pixel readback) purely because with 25 stickers spread
- * across a full 340°, each one's own ~60°-wide readable window only
- * overlaps a handful of its neighbours' at a time.
+ * Five roles per group, all sharing one base angle with a small per-role
+ * offset and a clearly different `v`:
+ *   hero  (v≈0.50, offset  0°) — the biggest design in the group, 50–55%.
+ *   upper (v≈0.33, offset -9°) — supporting, 42–50% "family".
+ *   lower (v≈0.67, offset +7°) — supporting, 42–50% "family".
+ *   edge2 (v≈0.58, offset+16°) — also 42–50%, offset enough to feel like
+ *         it's arriving/leaving rather than dead-centre.
+ *   edge1 (v≈0.44, offset-20°) — the one deliberately SMALLER (35–40%)
+ *         role per group — reads as the partial/entering-edge piece.
+ * Two groups get a sixth/seventh "extra" member (v≈0.40 or 0.60, offset
+ * within ±5° of centre — inside the envelope hero/edge1/edge2 already
+ * claim, so it adds density without widening the group's angular footprint)
+ * to cover all 25 stickers.
  *
- * `v` is spread across a compressed band (roughly 0.31–0.72) — vertical
- * travel is now a distinctly secondary motion (see
- * INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD's comment), so the printed content
- * it travels through stays compact. `v` is deliberately NOT correlated with
- * reveal progress — two temporally-close stickers almost always sit at
- * clearly different heights, which is what keeps this reading as
- * individually placed designs instead of a handful of touching clusters. A
- * few pairs are deliberately close in both (a little overlap, per the
- * reference) but most have visible metal around them.
+ * `angleDeg` is still chosen BACKWARDS from each group's intended reveal
+ * moment — rotation only ever runs forward (0° → +ROTATION_TURNS·360°), so
+ * a sticker placed at a positive angle only gets FURTHER from front as
+ * scroll proceeds. Four group centres sit at reveal progress 0.04/0.29/
+ * 0.54/0.79 (`angleDeg = -progress · 340°`, matching ROTATION_TURNS exactly
+ * so every sticker still reaches a genuine dead-front moment, never just
+ * edge/partial-only), with each role's offset added on top.
+ *
+ * Sizes: 4 hero (50–55%), 17 supporting (42–50%), 4 edge1 (35–40%) = 21/25
+ * (84%) in the 42–55% "one consistent scale family", per the requested
+ * 80–90% target.
  */
-const MANUAL_LAYOUT: { angleDeg: number; v: number; sizeTier: SizeTier; rotationDeg: number }[] = [
-  { angleDeg: -10.8, v: 0.5688, sizeTier: "large", rotationDeg: -6 }, // 0 miamiViceTiger — hero, visible at rest
-  { angleDeg: -210.5, v: 0.4587, sizeTier: "medium", rotationDeg: 8 }, // 1 rhodesianTiger
-  { angleDeg: -83.9, v: 0.665, sizeTier: "medium", rotationDeg: -4 }, // 2 medusa
-  { angleDeg: -283.6, v: 0.335, sizeTier: "medium", rotationDeg: 10 }, // 3 cyberSkull
-  { angleDeg: -156.9, v: 0.4175, sizeTier: "small", rotationDeg: -9 }, // 4 hornedSkull
-  { angleDeg: -39.2, v: 0.61, sizeTier: "medium", rotationDeg: 5 }, // 5 cookies
-  { angleDeg: -239, v: 0.5, sizeTier: "large", rotationDeg: -3 }, // 6 subzero
-  { angleDeg: -112.3, v: 0.6375, sizeTier: "small", rotationDeg: 7 }, // 7 lvGlock
-  { angleDeg: -312, v: 0.3075, sizeTier: "large", rotationDeg: -8 }, // 8 arcade
-  { angleDeg: -194.3, v: 0.6925, sizeTier: "medium", rotationDeg: 4 }, // 9 babyBoomers
-  { angleDeg: -67.7, v: 0.3625, sizeTier: "small", rotationDeg: -11 }, // 10 blushingDuck
-  { angleDeg: -267.4, v: 0.5, sizeTier: "medium", rotationDeg: 6 }, // 11 illunis
-  { angleDeg: -140.7, v: 0.5688, sizeTier: "medium", rotationDeg: -5 }, // 12 generic1
-  { angleDeg: -14, v: 0.3075, sizeTier: "medium", rotationDeg: -7 }, // 13 generic2 — also near-front at rest
-  { angleDeg: -222.8, v: 0.61, sizeTier: "large", rotationDeg: 9 }, // 14 generic3
-  { angleDeg: -96.1, v: 0.3625, sizeTier: "small", rotationDeg: -4 }, // 15 generic4
-  { angleDeg: -295.8, v: 0.72, sizeTier: "medium", rotationDeg: 6 }, // 16 generic5
-  { angleDeg: -169.1, v: 0.4725, sizeTier: "medium", rotationDeg: -10 }, // 17 generic6
-  { angleDeg: -51.5, v: 0.72, sizeTier: "medium", rotationDeg: 3 }, // 18 generic7
-  { angleDeg: -251.2, v: 0.39, sizeTier: "small", rotationDeg: -6 }, // 19 generic8
-  { angleDeg: -124.5, v: 0.4175, sizeTier: "large", rotationDeg: 8 }, // 20 generic9
-  { angleDeg: -324.3, v: 0.3075, sizeTier: "medium", rotationDeg: -3 }, // 21 generic10 — near-front by the end
-  { angleDeg: -197.6, v: 0.5275, sizeTier: "small", rotationDeg: 10 }, // 22 generic11
-  { angleDeg: -79.9, v: 0.6925, sizeTier: "medium", rotationDeg: -8 }, // 23 generic12
-  { angleDeg: -279.6, v: 0.6375, sizeTier: "medium", rotationDeg: 5 }, // 24 generic13
+const MANUAL_LAYOUT: { angleDeg: number; v: number; screenFraction: number; rotationDeg: number }[] = [
+  // Group 1 (reveal ≈ p0.04 — visible at rest). 7 members.
+  { angleDeg: -13.6, v: 0.5, screenFraction: 0.53, rotationDeg: -6 }, // 0 miamiViceTiger — hero
+  { angleDeg: -22.6, v: 0.33, screenFraction: 0.44, rotationDeg: 8 }, // 1 rhodesianTiger — upper
+  { angleDeg: -6.6, v: 0.67, screenFraction: 0.47, rotationDeg: -4 }, // 2 medusa — lower
+  { angleDeg: 2.4, v: 0.58, screenFraction: 0.46, rotationDeg: 3 }, // 3 cyberSkull — edge2
+  { angleDeg: -33.6, v: 0.44, screenFraction: 0.37, rotationDeg: 10 }, // 4 hornedSkull — edge1 (partial)
+  { angleDeg: -18.6, v: 0.4, screenFraction: 0.45, rotationDeg: -8 }, // 5 cookies — extra
+  { angleDeg: -8.6, v: 0.6, screenFraction: 0.44, rotationDeg: 5 }, // 6 subzero — extra
+
+  // Group 2 (reveal ≈ p0.29). 6 members.
+  { angleDeg: -98.6, v: 0.5, screenFraction: 0.51, rotationDeg: -9 }, // 7 lvGlock — hero
+  { angleDeg: -107.6, v: 0.33, screenFraction: 0.49, rotationDeg: 5 }, // 8 arcade — upper
+  { angleDeg: -91.6, v: 0.67, screenFraction: 0.43, rotationDeg: -3 }, // 9 babyBoomers — lower
+  { angleDeg: -82.6, v: 0.58, screenFraction: 0.44, rotationDeg: 6 }, // 10 blushingDuck — edge2
+  { angleDeg: -118.6, v: 0.44, screenFraction: 0.39, rotationDeg: 7 }, // 11 illunis — edge1 (partial)
+  { angleDeg: -93.6, v: 0.6, screenFraction: 0.46, rotationDeg: -5 }, // 12 generic1 — extra
+
+  // Group 3 (reveal ≈ p0.54). 6 members.
+  { angleDeg: -183.6, v: 0.5, screenFraction: 0.55, rotationDeg: -8 }, // 13 generic2 — hero
+  { angleDeg: -192.6, v: 0.33, screenFraction: 0.46, rotationDeg: 4 }, // 14 generic3 — upper
+  { angleDeg: -176.6, v: 0.67, screenFraction: 0.49, rotationDeg: -11 }, // 15 generic4 — lower
+  { angleDeg: -167.6, v: 0.58, screenFraction: 0.48, rotationDeg: 9 }, // 16 generic5 — edge2
+  { angleDeg: -203.6, v: 0.44, screenFraction: 0.36, rotationDeg: 6 }, // 17 generic6 — edge1 (partial)
+  { angleDeg: -188.6, v: 0.4, screenFraction: 0.47, rotationDeg: -3 }, // 18 generic7 — extra
+
+  // Group 4 (reveal ≈ p0.79 — nearest the end). 6 members.
+  { angleDeg: -268.6, v: 0.5, screenFraction: 0.52, rotationDeg: -5 }, // 19 generic8 — hero
+  { angleDeg: -277.6, v: 0.33, screenFraction: 0.43, rotationDeg: -7 }, // 20 generic9 — upper
+  { angleDeg: -261.6, v: 0.67, screenFraction: 0.45, rotationDeg: 9 }, // 21 generic10 — lower
+  { angleDeg: -252.6, v: 0.58, screenFraction: 0.42, rotationDeg: -4 }, // 22 generic11 — edge2
+  { angleDeg: -288.6, v: 0.44, screenFraction: 0.38, rotationDeg: 3 }, // 23 generic12 — edge1 (partial)
+  { angleDeg: -263.6, v: 0.6, screenFraction: 0.45, rotationDeg: 6 }, // 24 generic13 — extra
 ];
 
 function buildPlacements(inputs: StickerInput[]): StickerPlacement[] {
   return inputs.map((s, i) => {
     const layout = MANUAL_LAYOUT[i];
-    const tier = s.sizeTier ?? layout.sizeTier;
     return {
       src: s.src,
       alt: s.alt,
       u: normalizeDeg(layout.angleDeg) / 360,
       v: layout.v,
-      widthFrac: WIDTH_FRAC_BY_TIER[tier],
+      widthFrac: widthFracFor(layout.screenFraction),
       rotationDeg: layout.rotationDeg,
-      sizeTier: tier,
     };
   });
 }
@@ -197,22 +217,21 @@ export const STICKER_COUNT = stickerPlacements.length;
 /**
  * Sticker texture atlas resolution — wraps the FULL circumference
  * horizontally. Height (and the resulting CYLINDER_WORLD_HEIGHT below) is
- * sized for two things at once, not just cluster spacing: the pole must
- * ALSO stay taller than the camera frustum at every scroll position — with
- * MANUAL_LAYOUT's clusters packed for good density, the printed surface
- * genuinely needs this much plain-metal margin above/below the clusters so
+ * sized for two things at once, not just group spacing: the pole must ALSO
+ * stay taller than the camera frustum at every scroll position — with
+ * MANUAL_LAYOUT's groups packed for good density, the printed surface
+ * genuinely needs this much plain-metal margin above/below the groups so
  * the open cylinder's top/bottom edge never scrolls into frame.
  */
 export const ATLAS_WIDTH = 2048;
 /**
  * NOTE: this is the PHYSICAL cylinder's height, not the height the sticker
- * content actually occupies — it's kept tall (unchanged from the previous
- * pass) purely so the open-ended cylinder's own top/bottom edge always
- * stays outside the camera frustum (verified via pixel readback last pass;
- * shrinking this reopens that bug). The sticker content itself is what got
- * compressed this pass — MANUAL_LAYOUT's v values now span only ~0.34–0.66
- * (was ~0.24–0.76), about 57% of the previous span, via
- * INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD below, not by shrinking this atlas.
+ * content actually occupies — it's kept tall purely so the open-ended
+ * cylinder's own top/bottom edge always stays outside the camera frustum
+ * (verified via pixel readback; shrinking this reopens that bug — this
+ * value, along with INITIAL_Y_OFFSET/VERTICAL_TRAVEL_WORLD below, is
+ * explicitly NOT touched this pass, per "do not change vertical travel").
+ * MANUAL_LAYOUT's v values span ~0.31–0.72 within it.
  */
 export const ATLAS_HEIGHT = 3260;
 

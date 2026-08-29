@@ -7,26 +7,35 @@ import * as THREE from "three";
  * dark-side read comes from REAL lighting hitting the curved geometry (see
  * StickerScene's directional lights), not a baked-in gradient.
  *
- * Two earlier versions of this texture missed the actual visual signature
- * of galvanized steel: hot-dip galvanizing solidifies into a "spangle" —
- * small, irregular, fairly SHARP-edged crystalline cells of slightly
- * different brightness, not a soft cloudy gradient (that read as concrete/
- * large tiles) and not pure fine grain alone (that read as flat/smooth
- * "CGI grey", too clean). This version draws an actual cell pattern (cheap
- * nearest-seed fill over a coarse block grid — a Voronoi approximation,
- * not per-pixel) sized small enough that it never reads as a repeating
- * tile, then layers fine grain + tiny speckle + faint vertical
- * micro-streaking (a rolled/brushed-steel cue) + sparse wear on top. This
- * third revision shrinks the cells further and sharpens their edges — the
- * previous version still read as slightly too soft/cloudy.
+ * Earlier versions of this texture missed two things: the actual visual
+ * signature of galvanized steel (hot-dip galvanizing solidifies into a
+ * "spangle" — small, irregular, fairly SHARP-edged crystalline cells of
+ * slightly different brightness, not a soft cloudy gradient and not pure
+ * fine grain alone), and genuine seamlessness — the spangle cells were
+ * generated as an ordinary (non-wrapping) nearest-seed fill, so every tile
+ * repeat showed a visible boundary as the cylinder rotated, and a prior
+ * pass's added vertical micro-streaking made the whole surface read as
+ * brushed stainless rather than irregular galvanized steel.
+ *
+ * This version fixes both: the nearest-seed search wraps distances toroidally
+ * (see `wrapDelta`) so the cell pattern tiles with NO seam in either
+ * direction, and the vertical streak layer is removed entirely in favour of
+ * non-directional fine grain + speckle.
  *
  * Built once and cached at module scope (not per-mount) — it never changes.
  */
 let cached: THREE.CanvasTexture | null = null;
 
 const TILE_PX = 768;
-/** World-unit size one tile covers — smaller than the previous pass (1.35) so the spangle cells read as finer, sharper industrial grain rather than soft cloudy variation. */
+/** World-unit size one tile covers — small enough that the spangle cells read as fine industrial grain, not blown-up tiles. */
 export const METAL_TILE_WORLD_SIZE = 0.85;
+
+/** Shortest signed distance from a to b on a size-periodic line — makes the nearest-seed search below toroidal (seamless on tile repeat) instead of flat. */
+function wrapDelta(d: number, size: number): number {
+  if (d > size / 2) return d - size;
+  if (d < -size / 2) return d + size;
+  return d;
+}
 
 export function getMetalTexture(): THREE.CanvasTexture {
   if (cached) return cached;
@@ -47,10 +56,9 @@ export function getMetalTexture(): THREE.CanvasTexture {
   ctx.fillRect(0, 0, TILE_PX, TILE_PX);
 
   // --- Spangle: scatter seed points, each with its own slight brightness,
-  // fill a coarse block grid by nearest seed. Small block size (5px) keeps
-  // cell edges crisp without per-pixel cost. More/smaller cells than the
-  // previous pass (350 vs 220, plus the smaller METAL_TILE_WORLD_SIZE
-  // above) for finer, sharper definition instead of soft cloudy variation.
+  // fill a coarse block grid by nearest seed (toroidal distance, so the
+  // cell pattern wraps with no seam). Small block size (5px) keeps cell
+  // edges crisp without per-pixel cost.
   const SEED_COUNT = 350;
   const seeds: { x: number; y: number; shade: number }[] = [];
   for (let i = 0; i < SEED_COUNT; i++) {
@@ -64,11 +72,13 @@ export function getMetalTexture(): THREE.CanvasTexture {
   const spangle = ctx.createImageData(TILE_PX, TILE_PX);
   for (let by = 0; by < TILE_PX; by += BLOCK) {
     for (let bx = 0; bx < TILE_PX; bx += BLOCK) {
+      const qx = bx + BLOCK / 2;
+      const qy = by + BLOCK / 2;
       let best = -1;
       let bestDist = Infinity;
       for (let s = 0; s < seeds.length; s++) {
-        const dx = seeds[s].x - (bx + BLOCK / 2);
-        const dy = seeds[s].y - (by + BLOCK / 2);
+        const dx = wrapDelta(seeds[s].x - qx, TILE_PX);
+        const dy = wrapDelta(seeds[s].y - qy, TILE_PX);
         const d = dx * dx + dy * dy;
         if (d < bestDist) {
           bestDist = d;
@@ -88,8 +98,7 @@ export function getMetalTexture(): THREE.CanvasTexture {
     }
   }
   // Composite the spangle shading onto the base as a soft-light-ish overlay
-  // (additive at reduced strength) rather than a hard replace. Stronger
-  // than the previous pass (0.75 vs 0.65) for sharper cell definition.
+  // (additive at reduced strength) rather than a hard replace.
   const base = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let i = 0; i < base.data.length; i += 4) {
     const add = spangle.data[i] * 0.75;
@@ -100,18 +109,19 @@ export function getMetalTexture(): THREE.CanvasTexture {
   ctx.putImageData(base, 0, 0);
 
   // Faint cell-boundary definition — real spangle has a barely-visible seam
-  // between crystals. Cheap approximation: redraw the same nearest-seed
-  // pass but only where the second-nearest seed is nearly as close (i.e.
-  // near a cell boundary), darkening slightly.
-  ctx.globalAlpha = 1;
+  // between crystals. Cheap approximation: redraw the same toroidal
+  // nearest-seed pass but only where the second-nearest seed is nearly as
+  // close (i.e. near a cell boundary), darkening slightly.
   const boundary = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let by = 0; by < TILE_PX; by += BLOCK) {
     for (let bx = 0; bx < TILE_PX; bx += BLOCK) {
+      const qx = bx + BLOCK / 2;
+      const qy = by + BLOCK / 2;
       let best = Infinity;
       let second = Infinity;
       for (let s = 0; s < seeds.length; s++) {
-        const dx = seeds[s].x - (bx + BLOCK / 2);
-        const dy = seeds[s].y - (by + BLOCK / 2);
+        const dx = wrapDelta(seeds[s].x - qx, TILE_PX);
+        const dy = wrapDelta(seeds[s].y - qy, TILE_PX);
         const d = dx * dx + dy * dy;
         if (d < best) {
           second = best;
@@ -134,27 +144,9 @@ export function getMetalTexture(): THREE.CanvasTexture {
   }
   ctx.putImageData(boundary, 0, 0);
 
-  // Subtle vertical micro-streaking — a rolled/brushed-steel cue the
-  // reference has that pure spangle cells don't supply on their own. Very
-  // thin, very faint, irregular length/opacity so it doesn't read as a
-  // ruled pattern.
-  for (let i = 0; i < 90; i++) {
-    const x = rand() * TILE_PX;
-    const yStart = rand() * TILE_PX * 0.6;
-    const len = TILE_PX * (0.15 + rand() * 0.5);
-    const lighter = rand() < 0.5;
-    ctx.strokeStyle = lighter
-      ? `rgba(255,255,255,${(0.02 + rand() * 0.035).toFixed(3)})`
-      : `rgba(0,0,0,${(0.02 + rand() * 0.035).toFixed(3)})`;
-    ctx.lineWidth = 0.6 + rand() * 0.5;
-    ctx.beginPath();
-    ctx.moveTo(x, yStart);
-    ctx.lineTo(x + (rand() - 0.5) * 3, yStart + len);
-    ctx.stroke();
-  }
-
   // Tiny irregular fleck speckle on top — small enough (1–5px) to read as
-  // grain, not pattern.
+  // grain, not pattern. Per-pixel/local scale, so already seamless on
+  // tile repeat without any special wrapping treatment.
   for (let i = 0; i < 1400; i++) {
     const x = rand() * TILE_PX;
     const y = rand() * TILE_PX;
@@ -167,7 +159,8 @@ export function getMetalTexture(): THREE.CanvasTexture {
     ctx.fill();
   }
 
-  // Fine grain noise over everything.
+  // Fine grain noise over everything — independent per-pixel, so it reads
+  // as texture rather than a directional pattern and is inherently seamless.
   const img = ctx.getImageData(0, 0, TILE_PX, TILE_PX);
   for (let i = 0; i < img.data.length; i += 4) {
     const n = (rand() - 0.5) * 14;
@@ -176,17 +169,6 @@ export function getMetalTexture(): THREE.CanvasTexture {
     img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n));
   }
   ctx.putImageData(img, 0, 0);
-
-  // Sparse, faint dirt/wear streaks — mild, not dramatic scratches.
-  for (let i = 0; i < 4; i++) {
-    ctx.strokeStyle = `rgba(0,0,0,${(0.03 + rand() * 0.05).toFixed(3)})`;
-    ctx.lineWidth = 1 + rand();
-    const y = rand() * TILE_PX;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(TILE_PX, y + (rand() - 0.5) * 24);
-    ctx.stroke();
-  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;

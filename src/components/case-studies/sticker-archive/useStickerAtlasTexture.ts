@@ -64,8 +64,26 @@ export function useStickerAtlasTexture(
           .filter((r): r is PromiseFulfilledResult<{ p: StickerPlacement; img: HTMLImageElement }> => r.status === "fulfilled")
           .map((r) => r.value);
         for (const { p, img } of loaded) {
-          const w = p.widthFrac * atlasWidth;
-          const h = w * (p.src.height / p.src.width);
+          // Size/centre against the artwork's ALPHA BOUNDING BOX, not the
+          // padded PNG canvas — some source PNGs have far more transparent
+          // margin than others, which used to make otherwise-equal-sized
+          // stickers read as noticeably different scales. widthFrac is
+          // "how wide the visible artwork should be"; here we find how big
+          // the visible artwork actually is inside this specific PNG, then
+          // scale/offset the WHOLE image so that bbox — not the canvas —
+          // lands at the target size and position. The image itself is
+          // still drawn in full (so nothing outside the bbox is clipped);
+          // only the centring math changes.
+          const bbox = getAlphaBBox(img);
+          const targetBboxWidthPx = p.widthFrac * atlasWidth;
+          const scale = targetBboxWidthPx / bbox.w;
+          const drawnW = img.naturalWidth * scale;
+          const drawnH = img.naturalHeight * scale;
+          const bboxCenterX = bbox.x + bbox.w / 2;
+          const bboxCenterY = bbox.y + bbox.h / 2;
+          const bboxOffsetX = (bboxCenterX - img.naturalWidth / 2) * scale;
+          const bboxOffsetY = (bboxCenterY - img.naturalHeight / 2) * scale;
+
           const cx = p.u * atlasWidth;
           const cy = p.v * atlasHeight;
 
@@ -73,15 +91,18 @@ export function useStickerAtlasTexture(
             ctx.save();
             ctx.translate(cx + offsetX, cy);
             ctx.rotate((p.rotationDeg * Math.PI) / 180);
-            ctx.drawImage(img, -w / 2, -h / 2, w, h);
+            ctx.translate(-bboxOffsetX, -bboxOffsetY);
+            ctx.drawImage(img, -drawnW / 2, -drawnH / 2, drawnW, drawnH);
             ctx.restore();
           };
 
           draw(0);
-          // Safety net for stickers whose bounding box crosses the u=0/1
+          // Safety net for stickers whose visible bbox crosses the u=0/1
           // circumference seam — draw the wrapped copy too so nothing clips.
-          if (cx - w / 2 < 0) draw(atlasWidth);
-          if (cx + w / 2 > atlasWidth) draw(-atlasWidth);
+          const bboxLeft = cx - targetBboxWidthPx / 2;
+          const bboxRight = cx + targetBboxWidthPx / 2;
+          if (bboxLeft < 0) draw(atlasWidth);
+          if (bboxRight > atlasWidth) draw(-atlasWidth);
         }
         texture.needsUpdate = true;
       });
@@ -92,4 +113,46 @@ export function useStickerAtlasTexture(
   }, [texture, placements, atlasWidth, atlasHeight]);
 
   return texture;
+}
+
+/**
+ * Tight bounding box of an image's non-transparent pixels, in the image's
+ * own natural pixel coordinates. One-time per-sticker cost (atlas build
+ * only, not per-frame) — drawing to an offscreen canvas and scanning alpha
+ * is the only way to know this; it isn't in the PNG's own metadata.
+ */
+function getAlphaBBox(img: HTMLImageElement): { x: number; y: number; w: number; h: number } {
+  const w = img.naturalWidth;
+  const h = img.naturalHeight;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, w, h).data;
+
+  const ALPHA_THRESHOLD = 10;
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < h; y++) {
+    const rowBase = y * w;
+    for (let x = 0; x < w; x++) {
+      const a = data[(rowBase + x) * 4 + 3];
+      if (a > ALPHA_THRESHOLD) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // Fully-transparent image (shouldn't happen for real sticker art) — fall
+  // back to the full canvas rather than a degenerate zero-size box.
+  if (maxX < minX || maxY < minY) {
+    return { x: 0, y: 0, w, h };
+  }
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
