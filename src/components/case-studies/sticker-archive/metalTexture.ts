@@ -20,15 +20,19 @@ import * as THREE from "three";
  * This version fixes both: the nearest-seed search wraps distances toroidally
  * (see `wrapDelta`) so the cell pattern tiles with NO seam in either
  * direction, and the vertical streak layer is removed entirely in favour of
- * non-directional fine grain + speckle.
+ * non-directional fine grain + speckle. A later revision shrank the cells
+ * further (more seeds, smaller world tile size) and softened the
+ * cell-boundary contrast — at the previous scale the pattern was still
+ * fine enough to be non-repeating but coarse enough for the eye to track
+ * as the cylinder turned, which read as a faint directional "streak".
  *
  * Built once and cached at module scope (not per-mount) — it never changes.
  */
 let cached: THREE.CanvasTexture | null = null;
 
 const TILE_PX = 768;
-/** World-unit size one tile covers — small enough that the spangle cells read as fine industrial grain, not blown-up tiles. */
-export const METAL_TILE_WORLD_SIZE = 0.85;
+/** World-unit size one tile covers — shrunk again this pass (was 0.85) so the spangle cells read as genuinely fine mottling rather than a pattern the eye can track as the cylinder turns. */
+export const METAL_TILE_WORLD_SIZE = 0.6;
 
 /** Shortest signed distance from a to b on a size-periodic line — makes the nearest-seed search below toroidal (seamless on tile repeat) instead of flat. */
 function wrapDelta(d: number, size: number): number {
@@ -59,13 +63,13 @@ export function getMetalTexture(): THREE.CanvasTexture {
   // fill a coarse block grid by nearest seed (toroidal distance, so the
   // cell pattern wraps with no seam). Small block size (5px) keeps cell
   // edges crisp without per-pixel cost.
-  const SEED_COUNT = 350;
+  const SEED_COUNT = 480;
   const seeds: { x: number; y: number; shade: number }[] = [];
   for (let i = 0; i < SEED_COUNT; i++) {
     seeds.push({
       x: rand() * TILE_PX,
       y: rand() * TILE_PX,
-      shade: (rand() - 0.5) * 30, // +/-15 brightness per cell
+      shade: (rand() - 0.5) * 26, // +/-13 brightness per cell — slightly gentler than before
     });
   }
   const BLOCK = 5;
@@ -130,13 +134,13 @@ export function getMetalTexture(): THREE.CanvasTexture {
           second = d;
         }
       }
-      if (second - best < 700) {
+      if (second - best < 500) {
         for (let y = by; y < Math.min(by + BLOCK, TILE_PX); y++) {
           for (let x = bx; x < Math.min(bx + BLOCK, TILE_PX); x++) {
             const idx = (y * TILE_PX + x) * 4;
-            boundary.data[idx] *= 0.91;
-            boundary.data[idx + 1] *= 0.91;
-            boundary.data[idx + 2] *= 0.91;
+            boundary.data[idx] *= 0.94;
+            boundary.data[idx + 1] *= 0.94;
+            boundary.data[idx + 2] *= 0.94;
           }
         }
       }

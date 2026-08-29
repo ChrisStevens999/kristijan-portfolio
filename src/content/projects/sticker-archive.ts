@@ -110,91 +110,79 @@ function normalizeDeg(a: number) {
 
 /**
  * Hand-authored placement, one row per rawStickers entry (same order/index),
- * organized into FOUR GROUPS of 6–7 — a deliberate change from the previous
- * pass's fully-decorrelated individual scatter. That scatter, combined with
- * every sticker now being "big" (see `screenFraction` below), meant too
- * many large designs were simultaneously within the readable arc at once.
- * Groups fix this: within a group, members share roughly the same reveal
- * moment (so together they read as "the current 3–4"), and groups are
- * spaced FAR ENOUGH APART that one group's members are rotating away/behind
- * while the next group's are rotating into view — "sticker A rotates out,
- * B/C/D take over" — rather than an even wash of everything at once.
+ * organized into FIVE GROUPS of 5 — a further correction from a six-group
+ * attempt that still read as 5–7+ substantial designs per moment in
+ * screenshots, despite Node math predicting closer to 4. The six-group
+ * spacing (56.7°) was BELOW the true zero-overlap threshold for two
+ * adjacent hero-sized cores (~70.7°, from 2×hero-half-width + margin) —
+ * five groups at 68° apart is much closer to that real ceiling, leaving
+ * only a small (~2.7°) unavoidable overlap between adjacent cores instead
+ * of a much larger one.
  *
- * Getting the spacing right took two corrections: a first attempt (six
- * groups, ~54° apart) let adjacent groups overlap into 9–10 simultaneous
- * designs; tightening each group's OWN internal angular spread (a second
- * attempt) barely helped, because the overlap wasn't coming from a group's
- * own spread — it's that a hero-sized sticker alone is ~60° wide, so even
- * two *centres* 68° apart still have their edges overlapping once each
- * sticker's own half-width is added on. The only real fix was fewer, more
- * widely-spaced groups: four groups at 85° apart, which (checked against
- * every sticker's actual angular half-width, not just its centre) leaves a
- * genuine — if narrow, ~2° — gap between each group's full visible extent
- * and the next's. `v` differentiates roles WITHIN a group; because vertical
- * travel is intentionally small this pass (untouched, per the brief), the
- * vertical window barely moves across the whole scroll, so `v` does NOT
- * provide additional separation BETWEEN groups the way rotation does — only
- * angular spacing does that.
- *
- * Five roles per group, all sharing one base angle with a small per-role
- * offset and a clearly different `v`:
- *   hero  (v≈0.50, offset  0°) — the biggest design in the group, 50–55%.
- *   upper (v≈0.33, offset -9°) — supporting, 42–50% "family".
- *   lower (v≈0.67, offset +7°) — supporting, 42–50% "family".
- *   edge2 (v≈0.58, offset+16°) — also 42–50%, offset enough to feel like
- *         it's arriving/leaving rather than dead-centre.
- *   edge1 (v≈0.44, offset-20°) — the one deliberately SMALLER (35–40%)
- *         role per group — reads as the partial/entering-edge piece.
- * Two groups get a sixth/seventh "extra" member (v≈0.40 or 0.60, offset
- * within ±5° of centre — inside the envelope hero/edge1/edge2 already
- * claim, so it adds density without widening the group's angular footprint)
- * to cover all 25 stickers.
+ * Five roles per group, differentiated by `v` (real gaps, checked against
+ * each size's actual vertical extent) so upper/hero/lower read as three
+ * separate physical stickers, not a touching vertical collage. THREE of the
+ * five share one angle (offset 0°) — since `v` already separates them,
+ * sharing an angle costs the group NOTHING in angular footprint:
+ *   hero  (v≈0.515, offset  0°, ~50–55%) — the biggest design, dead centre.
+ *   upper (v≈0.36,  offset  0°, ~40–44%) — a clear gap above the hero.
+ *   lower (v≈0.67,  offset  0°, ~42–46%) — a clear gap below the hero.
+ * The other two are small (32–35%, at the requested floor) and DO carry a
+ * real offset, but small enough that their contribution to the group's
+ * angular footprint is minor:
+ *   edge1 (v≈0.44, offset -40°) — reads as entering/leaving the left curve.
+ *   edge2 (v≈0.58, offset +15°) — offset just enough to feel separate from
+ *         the hero without meaningfully widening the group's footprint
+ *         (it mostly sits INSIDE the hero's own angular claim).
+ * edge1/edge2 overlapping the NEXT group's core envelope is intentional,
+ * not a bug — that's what supplies "a partial sticker wrapping a curved
+ * edge" without adding a full-weight fourth competitor to the current 3.
  *
  * `angleDeg` is still chosen BACKWARDS from each group's intended reveal
  * moment — rotation only ever runs forward (0° → +ROTATION_TURNS·360°), so
  * a sticker placed at a positive angle only gets FURTHER from front as
- * scroll proceeds. Four group centres sit at reveal progress 0.04/0.29/
- * 0.54/0.79 (`angleDeg = -progress · 340°`, matching ROTATION_TURNS exactly
- * so every sticker still reaches a genuine dead-front moment, never just
- * edge/partial-only), with each role's offset added on top.
+ * scroll proceeds. Five group centres sit evenly across reveal progress
+ * (`angleDeg = -progress · 340°`, matching ROTATION_TURNS exactly so every
+ * sticker still reaches a genuine dead-front moment).
  *
- * Sizes: 4 hero (50–55%), 17 supporting (42–50%), 4 edge1 (35–40%) = 21/25
- * (84%) in the 42–55% "one consistent scale family", per the requested
- * 80–90% target.
+ * Sizes: 5 hero (50–55%), 10 upper/lower (40–46%), 10 edge1/edge2 (32–35%,
+ * at/near the requested floor) — nothing outside 32–55%, no "small icons".
  */
 const MANUAL_LAYOUT: { angleDeg: number; v: number; screenFraction: number; rotationDeg: number }[] = [
-  // Group 1 (reveal ≈ p0.04 — visible at rest). 7 members.
-  { angleDeg: -13.6, v: 0.5, screenFraction: 0.53, rotationDeg: -6 }, // 0 miamiViceTiger — hero
-  { angleDeg: -22.6, v: 0.33, screenFraction: 0.44, rotationDeg: 8 }, // 1 rhodesianTiger — upper
-  { angleDeg: -6.6, v: 0.67, screenFraction: 0.47, rotationDeg: -4 }, // 2 medusa — lower
-  { angleDeg: 2.4, v: 0.58, screenFraction: 0.46, rotationDeg: 3 }, // 3 cyberSkull — edge2
-  { angleDeg: -33.6, v: 0.44, screenFraction: 0.37, rotationDeg: 10 }, // 4 hornedSkull — edge1 (partial)
-  { angleDeg: -18.6, v: 0.4, screenFraction: 0.45, rotationDeg: -8 }, // 5 cookies — extra
-  { angleDeg: -8.6, v: 0.6, screenFraction: 0.44, rotationDeg: 5 }, // 6 subzero — extra
+  // Group 1 (base ≈ -34°, reveal ≈ p0.10 — near-front at rest). 5 members.
+  { angleDeg: -34, v: 0.515, screenFraction: 0.53, rotationDeg: -6 }, // 0 miamiViceTiger — hero
+  { angleDeg: -34, v: 0.36, screenFraction: 0.42, rotationDeg: 8 }, // 1 rhodesianTiger — upper
+  { angleDeg: -34, v: 0.67, screenFraction: 0.44, rotationDeg: -4 }, // 2 medusa — lower
+  { angleDeg: -74, v: 0.44, screenFraction: 0.34, rotationDeg: 10 }, // 3 cyberSkull — edge1 (partial)
+  { angleDeg: -19, v: 0.58, screenFraction: 0.32, rotationDeg: 3 }, // 4 hornedSkull — edge2 (partial)
 
-  // Group 2 (reveal ≈ p0.29). 6 members.
-  { angleDeg: -98.6, v: 0.5, screenFraction: 0.51, rotationDeg: -9 }, // 7 lvGlock — hero
-  { angleDeg: -107.6, v: 0.33, screenFraction: 0.49, rotationDeg: 5 }, // 8 arcade — upper
-  { angleDeg: -91.6, v: 0.67, screenFraction: 0.43, rotationDeg: -3 }, // 9 babyBoomers — lower
-  { angleDeg: -82.6, v: 0.58, screenFraction: 0.44, rotationDeg: 6 }, // 10 blushingDuck — edge2
-  { angleDeg: -118.6, v: 0.44, screenFraction: 0.39, rotationDeg: 7 }, // 11 illunis — edge1 (partial)
-  { angleDeg: -93.6, v: 0.6, screenFraction: 0.46, rotationDeg: -5 }, // 12 generic1 — extra
+  // Group 2 (base ≈ -102°, reveal ≈ p0.30). 5 members.
+  { angleDeg: -102, v: 0.515, screenFraction: 0.51, rotationDeg: -9 }, // 5 cookies — hero
+  { angleDeg: -102, v: 0.36, screenFraction: 0.44, rotationDeg: 5 }, // 6 subzero — upper
+  { angleDeg: -102, v: 0.67, screenFraction: 0.46, rotationDeg: -3 }, // 7 lvGlock — lower
+  { angleDeg: -142, v: 0.44, screenFraction: 0.35, rotationDeg: 7 }, // 8 arcade — edge1 (partial)
+  { angleDeg: -87, v: 0.58, screenFraction: 0.33, rotationDeg: -5 }, // 9 babyBoomers — edge2 (partial)
 
-  // Group 3 (reveal ≈ p0.54). 6 members.
-  { angleDeg: -183.6, v: 0.5, screenFraction: 0.55, rotationDeg: -8 }, // 13 generic2 — hero
-  { angleDeg: -192.6, v: 0.33, screenFraction: 0.46, rotationDeg: 4 }, // 14 generic3 — upper
-  { angleDeg: -176.6, v: 0.67, screenFraction: 0.49, rotationDeg: -11 }, // 15 generic4 — lower
-  { angleDeg: -167.6, v: 0.58, screenFraction: 0.48, rotationDeg: 9 }, // 16 generic5 — edge2
-  { angleDeg: -203.6, v: 0.44, screenFraction: 0.36, rotationDeg: 6 }, // 17 generic6 — edge1 (partial)
-  { angleDeg: -188.6, v: 0.4, screenFraction: 0.47, rotationDeg: -3 }, // 18 generic7 — extra
+  // Group 3 (base ≈ -170°, reveal ≈ p0.50). 5 members.
+  { angleDeg: -170, v: 0.515, screenFraction: 0.55, rotationDeg: -8 }, // 10 blushingDuck — hero
+  { angleDeg: -170, v: 0.36, screenFraction: 0.41, rotationDeg: 4 }, // 11 illunis — upper
+  { angleDeg: -170, v: 0.67, screenFraction: 0.43, rotationDeg: -11 }, // 12 generic1 — lower
+  { angleDeg: -210, v: 0.44, screenFraction: 0.33, rotationDeg: 6 }, // 13 generic2 — edge1 (partial)
+  { angleDeg: -155, v: 0.58, screenFraction: 0.32, rotationDeg: -3 }, // 14 generic3 — edge2 (partial)
 
-  // Group 4 (reveal ≈ p0.79 — nearest the end). 6 members.
-  { angleDeg: -268.6, v: 0.5, screenFraction: 0.52, rotationDeg: -5 }, // 19 generic8 — hero
-  { angleDeg: -277.6, v: 0.33, screenFraction: 0.43, rotationDeg: -7 }, // 20 generic9 — upper
-  { angleDeg: -261.6, v: 0.67, screenFraction: 0.45, rotationDeg: 9 }, // 21 generic10 — lower
-  { angleDeg: -252.6, v: 0.58, screenFraction: 0.42, rotationDeg: -4 }, // 22 generic11 — edge2
-  { angleDeg: -288.6, v: 0.44, screenFraction: 0.38, rotationDeg: 3 }, // 23 generic12 — edge1 (partial)
-  { angleDeg: -263.6, v: 0.6, screenFraction: 0.45, rotationDeg: 6 }, // 24 generic13 — extra
+  // Group 4 (base ≈ -238°, reveal ≈ p0.70). 5 members.
+  { angleDeg: -238, v: 0.515, screenFraction: 0.52, rotationDeg: -5 }, // 15 generic4 — hero
+  { angleDeg: -238, v: 0.36, screenFraction: 0.43, rotationDeg: -7 }, // 16 generic5 — upper
+  { angleDeg: -238, v: 0.67, screenFraction: 0.45, rotationDeg: 9 }, // 17 generic6 — lower
+  { angleDeg: -278, v: 0.44, screenFraction: 0.34, rotationDeg: -4 }, // 18 generic7 — edge1 (partial)
+  { angleDeg: -223, v: 0.58, screenFraction: 0.33, rotationDeg: 3 }, // 19 generic8 — edge2 (partial)
+
+  // Group 5 (base ≈ -306°, reveal ≈ p0.90 — nearest the end). 5 members.
+  { angleDeg: -306, v: 0.515, screenFraction: 0.54, rotationDeg: 6 }, // 20 generic9 — hero
+  { angleDeg: -306, v: 0.36, screenFraction: 0.4, rotationDeg: -10 }, // 21 generic10 — upper
+  { angleDeg: -306, v: 0.67, screenFraction: 0.42, rotationDeg: 3 }, // 22 generic11 — lower
+  { angleDeg: -346, v: 0.44, screenFraction: 0.35, rotationDeg: -6 }, // 23 generic12 — edge1 (partial)
+  { angleDeg: -291, v: 0.58, screenFraction: 0.32, rotationDeg: 8 }, // 24 generic13 — edge2 (partial)
 ];
 
 function buildPlacements(inputs: StickerInput[]): StickerPlacement[] {
