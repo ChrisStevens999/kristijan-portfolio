@@ -204,44 +204,45 @@ export const STICKER_COUNT = stickerPlacements.length;
 
 /**
  * "Slap-on" application animation — see SlapSticker.tsx for the actual
- * motion. A deliberately small first pass (8–12, per the brief): these
- * indices are pulled OUT of the shared atlas (see `atlasStickerPlacements`
- * below) and rendered as their own individually-animated meshes instead,
- * while every other sticker stays exactly as before — already attached,
- * baked into the one shared atlas texture, present from progress 0. That
- * split is what makes this additive rather than a rebuild: the 15
- * non-slapped stickers are pixel-identical to the previous pass.
+ * motion. A deliberately small test pass (6–8, per the brief, down from a
+ * first attempt at 10 that still read as "appearing" rather than hitting):
+ * these indices are pulled OUT of the shared atlas (see
+ * `atlasStickerPlacements` below) and rendered as their own
+ * individually-animated meshes instead, while every other sticker stays
+ * exactly as before — already attached, baked into the one shared atlas
+ * texture, present from progress 0. That split is what makes this additive
+ * rather than a rebuild: the 18 non-slapped stickers are pixel-identical to
+ * the previous pass, and there are comfortably more than the requested
+ * "3–4 already attached" from the very first frame.
  *
- * `window` is the scroll-progress range the slap plays across — deliberately
- * short (≈0.03–0.04) so it reads as quick/sharp against the pole's slow
- * rotation. Chosen to land AT or just before each sticker's own natural
- * front-facing moment (`angleDeg`'s reveal progress, `-angleDeg/340` — see
- * MANUAL_LAYOUT's doc comment) so the slap coincides with the sticker
- * arriving into view for the first time, rather than happening off to the
- * side and just sitting there attached-but-unseen for a while first.
- * Windows are spread from ~0.03 to ~0.90 — gradual addition across most of
- * the scroll — but deliberately leave the last ~10% (and the very start)
- * free of new slaps, so nothing new is arriving right as the section ends
- * into the next one, and the pole doesn't open completely bare.
+ * `window` is the scroll-progress range the slap plays across — after
+ * direct comparison against a reference clip (a sticker visibly starts off
+ * the surface, closes the gap in a handful of frames, and hits — the whole
+ * thing reads as maybe a third of a second), the previous ≈0.03–0.04 windows
+ * were roughly 2–3× too wide and read as "drifting into place" rather than
+ * a hit. Shrunk to ≈0.012 here, with real gaps (≈0.015–0.02) between
+ * consecutive ones so a viewer can perceive "sticker A lands → pause →
+ * sticker B lands" rather than a cluster of simultaneous motion — group 1's
+ * three core members (which all share one angle — see MANUAL_LAYOUT) are
+ * explicitly SEQUENCED here rather than landing together.
  *
  * `entryDirection` is hand-picked per sticker (not randomized), loosely
- * matched to the sticker's own role — an "upper" sticker tends to enter
- * from above, a "lower" one from below — and cycled across the full
- * direction set so no two adjacent slaps read identically.
+ * matched to the sticker's own role, cycled across the direction set so no
+ * two adjacent slaps read identically. Deliberately only screen-relative
+ * lateral/upward directions (no "from below") — per direct reference
+ * comparison, that's what actually reads as unambiguously "outside the
+ * pole, about to hit it".
  */
-export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right" | "diagonal-left" | "diagonal-right";
+export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right";
 
 const SLAP_CONFIG: Record<number, { entryDirection: EntryDirection; window: [number, number] }> = {
-  0: { entryDirection: "left", window: [0.065, 0.1] }, // miamiViceTiger — hero, group1
-  1: { entryDirection: "top", window: [0.035, 0.07] }, // rhodesianTiger — upper, group1
-  2: { entryDirection: "diagonal-left", window: [0.095, 0.13] }, // medusa — lower, group1
-  5: { entryDirection: "right", window: [0.265, 0.3] }, // cookies — hero, group2
-  6: { entryDirection: "upper-right", window: [0.235, 0.27] }, // subzero — upper, group2
-  7: { entryDirection: "diagonal-right", window: [0.295, 0.33] }, // lvGlock — lower, group2
-  10: { entryDirection: "upper-left", window: [0.465, 0.5] }, // blushingDuck — hero, group3
-  11: { entryDirection: "top", window: [0.435, 0.47] }, // illunis — upper, group3
-  15: { entryDirection: "left", window: [0.665, 0.7] }, // generic4 — hero, group4
-  20: { entryDirection: "right", window: [0.865, 0.9] }, // generic9 — hero, group5
+  0: { entryDirection: "left", window: [0.04, 0.052] }, // miamiViceTiger — hero, group1
+  1: { entryDirection: "top", window: [0.07, 0.082] }, // rhodesianTiger — upper, group1
+  2: { entryDirection: "upper-left", window: [0.1, 0.112] }, // medusa — lower, group1
+  5: { entryDirection: "right", window: [0.26, 0.272] }, // cookies — hero, group2
+  6: { entryDirection: "upper-right", window: [0.29, 0.302] }, // subzero — upper, group2
+  10: { entryDirection: "upper-left", window: [0.46, 0.472] }, // blushingDuck — hero, group3
+  15: { entryDirection: "left", window: [0.66, 0.672] }, // generic4 — hero, group4
 };
 
 export interface SlapPlacement extends StickerPlacement {
@@ -249,7 +250,7 @@ export interface SlapPlacement extends StickerPlacement {
   applicationWindow: [number, number];
 }
 
-/** The 10 stickers that play the slap-on animation. */
+/** The 7 stickers that play the slap-on animation in this test pass. */
 export const slapStickers: SlapPlacement[] = Object.entries(SLAP_CONFIG).map(([indexStr, cfg]) => {
   const index = Number(indexStr);
   return {

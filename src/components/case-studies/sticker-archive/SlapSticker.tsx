@@ -8,6 +8,7 @@ import * as THREE from "three";
 import {
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
+  POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
   ROTATION_TURNS,
   STICKER_SURFACE_RADIUS_OFFSET,
@@ -19,25 +20,31 @@ const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 /**
- * World-space (camera-relative) unit directions an incoming sticker can fly
- * in from. +Z leans toward the camera (it sits at world z=10 looking at the
- * origin) — that shared +Z bias is what gives every direction "starts
- * slightly closer to camera", per the brief, without needing a separate
- * depth parameter.
+ * Horizontal span of the camera frustum, in world units — CONSTANT
+ * regardless of viewport aspect (CameraFraming derives frustum halfWidth
+ * from CYLINDER_RADIUS/POLE_FRAME_FRACTION only; halfHeight is what varies
+ * with aspect). Used to size entry distance as "N% of viewport width", per
+ * direct reference-video comparison — see entryDistance below.
+ */
+const VIEWPORT_WORLD_WIDTH = (2 * CYLINDER_RADIUS) / POLE_FRAME_FRACTION;
+
+/**
+ * Pure screen-relative directions (no depth/Z component this pass — direct
+ * comparison against a reference clip showed plain lateral/vertical travel
+ * reads more clearly as "outside the pole, about to hit it" than adding a
+ * toward-camera drift on top).
  */
 const ENTRY_VECTORS: Record<SlapPlacement["entryDirection"], THREE.Vector3> = {
-  left: new THREE.Vector3(-1, 0, 0.35).normalize(),
-  right: new THREE.Vector3(1, 0, 0.35).normalize(),
-  top: new THREE.Vector3(0, 1, 0.35).normalize(),
-  "upper-left": new THREE.Vector3(-0.75, 0.75, 0.35).normalize(),
-  "upper-right": new THREE.Vector3(0.75, 0.75, 0.35).normalize(),
-  "diagonal-left": new THREE.Vector3(-0.7, -0.7, 0.35).normalize(),
-  "diagonal-right": new THREE.Vector3(0.7, -0.7, 0.35).normalize(),
+  left: new THREE.Vector3(-1, 0, 0),
+  right: new THREE.Vector3(1, 0, 0),
+  top: new THREE.Vector3(0, 1, 0),
+  "upper-left": new THREE.Vector3(-0.75, 0.75, 0).normalize(),
+  "upper-right": new THREE.Vector3(0.75, 0.75, 0).normalize(),
 };
 
-/** Quick fade-in right as the sticker first appears (t within its own window), so it doesn't hard-pop into existence. Motion itself stays fast — only the alpha ramps. */
+/** Very brief anti-pop fade right as the sticker first appears — a few percent of the window, NOT the main reveal mechanism. Positional travel (see slapCurve/entryDistance) is what has to carry the "hit", per direct reference comparison. */
 function opacityFor(t: number) {
-  const FADE_END = 0.12;
+  const FADE_END = 0.06;
   if (t >= FADE_END) return 1;
   const local = t / FADE_END;
   return local * local * (3 - 2 * local);
@@ -51,41 +58,51 @@ function opacityFor(t: number) {
  * glitch-free backward scrolling / re-scrolling.
  *
  * `t` is progress WITHIN this sticker's own applicationWindow (0–1), not
- * the page's scroll progress. Four keyframes:
- *   t=0.00  posBlend 0.00  scale 1.18  tilt  entryTilt      — still "incoming"
- *   t=0.55  posBlend 1.00  scale 1.03  tilt  entryTilt·0.2  — CONTACT, position locked
- *   t=0.80  posBlend 1.00  scale 0.99  tilt -1.5°           — tiny settle undershoot
- *   t=1.00  posBlend 1.00  scale 1.00  tilt  0              — LOCK
- * Matches the brief's own example almost exactly (scale 1.03 → 0.99 → 1.00,
- * 1–3° of rotational correction). posBlend within phase 1 eases with
- * easeOutCubic (fast, decisive arrival, no bounce); the post-contact settle
- * eases with easeOutQuad (short, no elastic overshoot).
+ * the page's scroll progress. Proportions match a reference clip's own
+ * pacing (a sticker closes the gap and hits within a handful of frames):
+ * APPROACH takes the first 75% of the window, CONTACT the next 12.5%,
+ * SETTLE the last 12.5%.
+ *
+ *   t=0.000  posBlend 0.00  scale 1.00  tilt  entryTilt        — OFF POLE
+ *   t=0.750  posBlend 1.00  scale 1.04  tilt  entryTilt·0.15   — HIT (position locked, compression peak)
+ *   t=0.875  posBlend 1.00  scale 0.985 tilt -2°               — undershoot
+ *   t=1.000  posBlend 1.00  scale 1.00  tilt  0                — LOCKED
+ *
+ * APPROACH is near-linear (mild power-1.3 ease, not the soft easeOutCubic
+ * used previously) — the deceleration a viewer perceives should come from
+ * the impact itself (the scale/tilt snap at 0.75), not from the travel
+ * quietly slowing to a stop beforehand, which is what read as "floating"
+ * before. The 1.00→1.04 jump exactly at t=0.75 is a deliberate hard cut,
+ * not eased into — that's the "hit" instant.
  */
 function slapCurve(t: number, entryTiltDeg: number) {
-  if (t <= 0.55) {
-    const local = t / 0.55;
-    const eased = 1 - (1 - local) ** 3;
+  const APPROACH_END = 0.75;
+  const CONTACT_END = 0.875;
+
+  if (t <= APPROACH_END) {
+    const local = t / APPROACH_END;
+    const eased = 1 - (1 - local) ** 1.3;
     return {
       posBlend: eased,
-      scale: 1.18 + (1.03 - 1.18) * eased,
-      tiltDeg: entryTiltDeg + (entryTiltDeg * 0.2 - entryTiltDeg) * eased,
+      scale: 1.0,
+      tiltDeg: entryTiltDeg * (1 - 0.85 * eased),
     };
   }
-  if (t <= 0.8) {
-    const local = (t - 0.55) / 0.25;
+  if (t <= CONTACT_END) {
+    const local = (t - APPROACH_END) / (CONTACT_END - APPROACH_END);
     const eased = 1 - (1 - local) ** 2;
     return {
       posBlend: 1,
-      scale: 1.03 + (0.99 - 1.03) * eased,
-      tiltDeg: entryTiltDeg * 0.2 + (-1.5 - entryTiltDeg * 0.2) * eased,
+      scale: 1.04 + (0.985 - 1.04) * eased,
+      tiltDeg: entryTiltDeg * 0.15 + (-2 - entryTiltDeg * 0.15) * eased,
     };
   }
-  const local = (t - 0.8) / 0.2;
+  const local = (t - CONTACT_END) / (1 - CONTACT_END);
   const eased = 1 - (1 - local) ** 2;
   return {
     posBlend: 1,
-    scale: 0.99 + (1.0 - 0.99) * eased,
-    tiltDeg: -1.5 + (0 - -1.5) * eased,
+    scale: 0.985 + (1.0 - 0.985) * eased,
+    tiltDeg: -2 + (0 - -2) * eased,
   };
 }
 
@@ -139,15 +156,21 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     return { geometry, restPosition };
   }, [loaded, placement.widthFrac, placement.u, placement.v]);
 
-  // Deterministic, hand-varied per sticker (not randomized): bigger
-  // stickers travel a little further, and the entry tilt leans with the
-  // entry direction (arriving from the left tilts as if spun on from that
-  // side) so the flight itself reads as physical rather than a straight
-  // linear slide.
-  const entryDistance = useMemo(() => 0.85 + placement.widthFrac * CIRCUMFERENCE * 0.5, [placement.widthFrac]);
+  // Entry distance as a fraction of the camera's own viewport width —
+  // 24–38% depending on sticker size — per direct request: the previous
+  // pass's offsets were "too subtle" to read as arriving from clearly
+  // outside the pole. Bigger (hero) stickers travel proportionally further.
+  const entryDistance = useMemo(() => {
+    const sizeFrac = Math.min(1, Math.max(0, placement.widthFrac / 0.18));
+    return VIEWPORT_WORLD_WIDTH * (0.24 + sizeFrac * 0.14);
+  }, [placement.widthFrac]);
+  // Deterministic, hand-varied per sticker (not randomized): the entry tilt
+  // leans with the entry direction (arriving from the left tilts as if
+  // spun on from that side) so the flight itself reads as physical rather
+  // than a straight linear slide.
   const entryTiltDeg = useMemo(() => {
     const dir = ENTRY_VECTORS[placement.entryDirection];
-    return -dir.x * 9 + (dir.y > 0 ? 2 : -2);
+    return -dir.x * 12 + (dir.y > 0 ? 3 : -3);
   }, [placement.entryDirection]);
 
   useFrame(() => {
