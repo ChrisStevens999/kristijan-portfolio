@@ -24,125 +24,109 @@ const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
  * with aspect). NOT read from R3F's `state.viewport` — that's computed from
  * the camera's own props, but CameraFraming sets left/right/top/bottom
  * imperatively outside Fiber's normal reactive flow, so `state.viewport`
- * doesn't reflect it (confirmed via direct logging: it was returning the
- * canvas's PIXEL size, ~1330, instead of the ~6.67 world units expected —
- * a 200x error that sent the entry offset thousands of degrees around the
- * cylinder). `state.size` (the canvas's real pixel dimensions) is reliable
+ * doesn't reflect it (confirmed via direct logging in a previous pass: it
+ * returned the canvas's PIXEL size, ~1330, instead of the ~6.67 world units
+ * expected). `state.size` (the canvas's real pixel dimensions) is reliable
  * for deriving live aspect, so that's used for the vertical extent instead.
  */
 const VIEWPORT_WORLD_WIDTH = (2 * CYLINDER_RADIUS) / POLE_FRAME_FRACTION;
 
-/**
- * Where the approach ends and the tiny settle begins, as a fraction of the
- * sticker's own applicationWindow — matches the requested "~85% approach /
- * ~15% settle" (roughly 180–220ms / 40–60ms at typical scroll speed).
- */
-const APPROACH_END = 0.85;
-/** How far outside the surface (in cylinder radii) the incoming sticker starts, along its own outward normal — "0.5–0.8 radii closer to camera" from the brief; interpolated to exactly 0 (the true surface) by contact. */
-const RADIAL_PUSH_RADII = 0.65;
+/** Where CONTACT happens, as a fraction of the sticker's own applicationWindow — the approach (off-surface → surface) runs 0..CONTACT_T, the tiny settle runs CONTACT_T..1. */
+const CONTACT_T = 0.85;
+/** Width of the incoming→attached crossfade band, centred on CONTACT_T — "no more than approximately 2–3 rendered frames" translated into scroll-progress terms as a narrow symmetric band around the hit. */
+const CROSSFADE_HALF = 0.02;
+/** "Approximately 0.5 cylinder radii closer to camera than its final surface position" — interpolated to exactly 0 (the true surface) by CONTACT_T. */
+const RADIAL_PUSH_RADII = 0.5;
 
 /**
- * Deterministic "slap" curve — NOT a physics spring (no velocity/state to
- * integrate, which would make it timer- rather than scroll-driven). Every
- * output is a pure function of t, so scrubbing scroll forward or backward
+ * TEMPORARY DEV-ONLY VERIFICATION AID — must be `false` before this pass is
+ * considered done. Widens every slap sticker's effective applicationWindow
+ * (without touching the actual values in sticker-archive.ts — PASS 2 owns
+ * timing) so the same motion plays out over more scroll distance, easier to
+ * scrub through frame-by-frame while checking the 5-point debug list from
+ * the brief (incoming starts detached / travels correctly / depth is
+ * visible / contact matches / attached takes over with no jump).
+ */
+const DEBUG_SLOW_MOTION = false;
+const DEBUG_SLOW_MOTION_FACTOR = 4;
+
+/**
+ * Approach curve for the INCOMING mesh only — a pure function of
+ * `t` ∈ [0, CONTACT_T] (NOT the whole window), so it's meaningless past
+ * contact; the incoming mesh freezes/fades out there. Not a physics spring
+ * (no velocity/state to integrate) — scrubbing scroll forward or backward
  * always reproduces the exact same motion in reverse.
  *
- * Reworked from a previous "long static hold, then near-instant snap" shape
- * after direct feedback that holding still read as "sticker appears, sits
- * there, sticker is on pole" rather than a visible flight — a viewer needs
- * to actually watch it travel, not just perceive a sudden jump preceded by
- * nothing. This version moves continuously for the whole approach instead:
+ *   t=0             posBlend 0  scale 1.06  tilt entryTilt  radial 1  — OFF SURFACE
+ *   t=0..CONTACT_T  posBlend 0→1  scale 1.06→1.02→0.985  tilt→0  radial 1→0
+ *   t=CONTACT_T     posBlend 1  scale 0.985  tilt 0  radial 0  — CONTACT, matches the attached mesh's own rest transform exactly
  *
- *   t=0.00       posBlend 0.00  scale 1.08                     — OFF POLE, full offset
- *   t=0.00–0.85  posBlend 0→1   scale 1.08→1.02  tilt→0  radial 1→0   — APPROACH (sharp ease-out, continuous)
- *   t=0.85       posBlend 1.00  scale 1.02  tilt 0  radial 0         — CONTACT (position/rotation/depth exactly final)
- *   t=0.85–~0.90 scale 1.02→0.985                                    — impact compression
- *   t=~0.90–1.00 scale 0.985→1.00                                    — settle to rest
- *
- * Position, tilt and the radial (depth) push all share the APPROACH
- * timeline and all reach their final value simultaneously at t=0.85 —
- * that's what guarantees position/rotation/depth match the resting
- * (attached) transform exactly at contact, with nothing left to correct
- * during settle. Only scale continues moving after contact, and only as
- * the requested "one subtle impact cue" (1.02 → 0.985 → 1.00) — no
- * position, rotation or depth change after contact, and no bounce/wobble.
- * Approach eases with a sharp cubic ease-out (heavier deceleration than a
- * quad) so the stop reads as decisive, not floaty.
+ * Scale hits three explicit checkpoints (1.06 start → 1.02 mid-approach →
+ * 0.985 at contact) per the brief's own numbers. Position/tilt/radial all
+ * share ONE sharp cubic ease-out — heavier deceleration than a quad, so the
+ * stop reads as decisive/fast, not floaty.
  */
-function slapCurve(t: number, entryTiltDeg: number) {
-  if (t <= APPROACH_END) {
-    const local = t / APPROACH_END;
-    const eased = 1 - (1 - local) ** 3;
-    return {
-      posBlend: eased,
-      scale: 1.08 + (1.02 - 1.08) * eased,
-      tiltDeg: entryTiltDeg * (1 - eased),
-      radialBlend: 1 - eased,
-    };
-  }
-  const local = (t - APPROACH_END) / (1 - APPROACH_END);
-  const DIP_END = 0.35;
+function approachCurve(t: number, entryTiltDeg: number) {
+  const local = Math.min(1, Math.max(0, t / CONTACT_T));
+  const eased = 1 - (1 - local) ** 3;
   let scale;
-  if (local <= DIP_END) {
-    const l2 = local / DIP_END;
-    const eased2 = 1 - (1 - l2) ** 2;
-    scale = 1.02 + (0.985 - 1.02) * eased2;
+  if (local <= 0.5) {
+    const l2 = local / 0.5;
+    scale = 1.06 + (1.02 - 1.06) * l2;
   } else {
-    const l2 = (local - DIP_END) / (1 - DIP_END);
-    const eased2 = 1 - (1 - l2) ** 2;
-    scale = 0.985 + (1.0 - 0.985) * eased2;
+    const l2 = (local - 0.5) / 0.5;
+    scale = 1.02 + (0.985 - 1.02) * l2;
   }
-  return { posBlend: 1, scale, tiltDeg: 0, radialBlend: 0 };
+  return {
+    posBlend: eased,
+    scale,
+    tiltDeg: entryTiltDeg * (1 - eased),
+    radialBlend: 1 - eased,
+  };
 }
 
 /**
- * One individually-animated sticker: rendered as a small curved patch of
- * the SAME cylinder surface (a partial CylinderGeometry at the sticker's
- * exact (u, v)/widthFrac, not a flat plane) so its resting transform is
- * geometrically identical to a sticker baked into the shared atlas.
+ * Settle curve for the ATTACHED mesh only — a pure function of `t` ∈
+ * [CONTACT_T, 1]. This is the ONLY animation that happens after contact,
+ * and it's scale-only: no position, rotation, or independent movement of
+ * any kind, per "after contact the sticker belongs completely to the
+ * cylinder." Tiny by design (0.985 → 1.0), no overshoot beyond that range.
+ */
+function settleScale(t: number) {
+  const local = Math.min(1, Math.max(0, (t - CONTACT_T) / (1 - CONTACT_T)));
+  const eased = 1 - (1 - local) ** 2;
+  return 0.985 + (1.0 - 0.985) * eased;
+}
+
+/**
+ * One slap-animated sticker, rendered as TWO meshes sharing the SAME curved
+ * cylinder-patch geometry (a partial CylinderGeometry at the sticker's
+ * exact (u, v)/widthFrac — physically identical to a sticker baked into the
+ * shared atlas, not a flat plane):
  *
- * This is deliberately ONE mesh, not two — there is no separate "incoming"
- * object handed off to a separate "attached" object. The brief's contact
- * requirement (incoming and attached must match position/scale/rotation
- * exactly, with an extremely short crossfade so there's zero visible pop)
- * is satisfied structurally instead: since it's the same object the whole
- * time, hidden (visible=false) until its applicationWindow starts and
- * always at full opacity once shown, there is nothing to hand off between
- * and nothing that could mismatch — a stronger guarantee than a real
- * crossfade could give. It's a literal JSX child of PoleGroup's rotating
- * `<group>`, so once at rest it moves with the pole for free, exactly like
- * every atlas sticker.
+ *  - INCOMING: carries the animated off-surface→surface transform. Visible
+ *    from the window's start; fades OUT (opacity 1→0) over a narrow band
+ *    centred on contact, then hidden entirely (`visible = false`) — no
+ *    lingering transform, nothing left animating.
+ *  - ATTACHED: sits at the fixed rest transform ALWAYS (no offset, no
+ *    extra rotation, ever) — exactly how an atlas-baked sticker would sit.
+ *    Hidden entirely until the crossfade band starts, then fades IN
+ *    (opacity 0→1) across that same band, and is what plays the tiny
+ *    post-contact settle (scale 0.985→1.0). Once the crossfade completes,
+ *    this mesh is the ONLY thing left doing anything at all, and even that
+ *    "anything" is a fixed scale curve, not user-visible position/rotation
+ *    drift — it moves only because it's a literal JSX child of PoleGroup's
+ *    rotating `<group>`.
  *
- * Before/during its applicationWindow, the patch is displaced from that
- * resting position by ROTATING it further around the cylinder's own axis
- * and pushing it to a larger radius — NOT by translating it along a raw
- * XYZ vector. That distinction matters: an early version translated the
- * curved patch freely through space, which (confirmed via screenshot)
- * makes a wide patch self-intersect the metal cylinder's own geometry once
- * it's far from its "home" angular position — the translated curve, still
- * shaped as if wrapped around the ORIGINAL axis, ends up partly inside the
- * metal, producing a dark, semi-transparent smear. Expressing horizontal
- * entry as an angular offset (theta) instead keeps the patch always
- * genuinely wrapped around the same axis, just at a different angle and/or
- * radius, so it can never intersect the metal — physically closer to what
- * "a sticker swinging in and around onto the pole" actually is:
- *  - HORIZONTAL entry (`entryOffsetVw.x`) becomes an angular offset,
- *    θ = (entryOffsetVw.x · viewport.width) / CYLINDER_RADIUS (arc length
- *    ÷ radius — the same relationship `widthFracFor` already uses
- *    elsewhere in this codebase). Added to the mesh's OWN rotation too, so
- *    its baked-in curvature/normals stay consistent with its new position.
- *  - VERTICAL entry (`entryOffsetVw.y`) is a plain world-Y translation —
- *    sliding along the cylinder's length is always safe, no rotation
- *    needed.
- *  - The RADIAL (depth) push extends the radius outward at whatever the
- *    current angle is, so it starts proud of the surface and settles onto
- *    the true radius exactly at contact — "moving in depth, not purely
- *    2D", per the brief.
- * All three — plus the tilt wobble — share one easing timeline and reach
- * zero simultaneously at t=0.85, which is what makes contact exact.
+ * Both meshes reach IDENTICAL position/rotation/scale at t=CONTACT_T (the
+ * incoming curve is built to land exactly on the attached mesh's own rest
+ * values — 0.985 scale, 0 tilt, 0 offset), which is what makes the
+ * crossfade invisible: for the ~2–3 "frames" (a narrow scroll-progress
+ * band) where both are visible together, they render the same pixels.
  */
 export function SlapSticker({ placement, progress }: { placement: SlapPlacement; progress: MotionValue<number> }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const incomingRef = useRef<THREE.Mesh>(null);
+  const attachedRef = useRef<THREE.Mesh>(null);
   const loaded = useSingleStickerTexture(placement.src, placement.rotationDeg);
 
   const geo = useMemo(() => {
@@ -156,14 +140,11 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // A touch PROUD of the shared atlas sticker cylinder (which sits at
     // exactly CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET) rather than
     // at the identical radius — two coplanar transparent meshes fight over
-    // the same depth-buffer pixels wherever their padded canvases overlap
-    // (SLAP_TEXTURE_PAD's blank margin extends past the visible artwork, so
-    // this overlaps neighbouring atlas content more often than it looks
-    // like it should), which rendered as a flickering vertical-stripe
-    // z-fighting artifact — confirmed via screenshot, only ever appeared
-    // near a just-attached slap sticker. The extra 0.004 is well under
-    // what's visually perceptible as a "step" at this radius but enough to
-    // resolve depth ordering unambiguously.
+    // the same depth-buffer pixels wherever their padded canvases overlap,
+    // which read as a flickering vertical-stripe z-fighting artifact in an
+    // earlier pass. The extra 0.004 is well under what's visually
+    // perceptible as a "step" at this radius but resolves depth ordering
+    // unambiguously.
     const radius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET + 0.004;
     const segments = Math.max(6, Math.round(RADIAL_SEGMENTS * (thetaLength / (Math.PI * 2))));
 
@@ -185,19 +166,32 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
   }, [loaded, placement.widthFrac, placement.u, placement.v]);
 
   useFrame((state) => {
-    const mesh = meshRef.current;
-    if (!mesh || !geo) return;
+    const incoming = incomingRef.current;
+    const attached = attachedRef.current;
+    if (!incoming || !attached || !geo) return;
 
     const p = progress.get();
-    const [start, end] = placement.applicationWindow;
+    const [rawStart, rawEnd] = placement.applicationWindow;
+    // DEBUG_SLOW_MOTION widens the window around its own midpoint, purely
+    // for local verification — see the constant's doc comment. It does NOT
+    // change sticker-archive.ts (PASS 2 owns real timing).
+    const mid = (rawStart + rawEnd) / 2;
+    const halfWidth = ((rawEnd - rawStart) / 2) * (DEBUG_SLOW_MOTION ? DEBUG_SLOW_MOTION_FACTOR : 1);
+    const start = mid - halfWidth;
+    const end = mid + halfWidth;
+
     if (p < start) {
-      mesh.visible = false;
+      incoming.visible = false;
+      attached.visible = false;
       return;
     }
-    mesh.visible = true;
 
-    const t = Math.min(1, Math.max(0, (p - start) / Math.max(0.0001, end - start)));
-    const { posBlend, scale, tiltDeg, radialBlend } = slapCurve(t, placement.entryTiltDeg);
+    const t = Math.min(1, (p - start) / Math.max(0.0001, end - start));
+    const bandStart = CONTACT_T - CROSSFADE_HALF;
+    const bandEnd = CONTACT_T + CROSSFADE_HALF;
+
+    // --- INCOMING: animated approach, frozen at its CONTACT_T values once t passes that point (it's fading out by then anyway). ---
+    const { posBlend, scale: incomingScale, tiltDeg, radialBlend } = approachCurve(Math.min(t, CONTACT_T), placement.entryTiltDeg);
     const remaining = 1 - posBlend;
 
     // Angular offset (radians): arc length ÷ radius, same relationship
@@ -205,11 +199,9 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // because both the rest position and this offset are expressed as
     // rotations around the same Y axis, the delta is rotation-invariant —
     // it reads as the same screen-relative direction regardless of the
-    // group's current rotation, with no extra unrotate-then-rotate step
-    // needed (unlike a raw world-space vector offset would require). Sign
-    // verified directly against live world-space/NDC coordinates (not just
-    // a screenshot) — this geometry's theta convention maps a positive
-    // (rightward) entryOffsetVw.x to a positive theta delta.
+    // group's current rotation. A positive (rightward) entryOffsetVw.x
+    // maps to a positive theta delta (verified against live world-space/
+    // NDC coordinates in a previous pass).
     const deltaTheta = ((placement.entryOffsetVw.x * VIEWPORT_WORLD_WIDTH) / CYLINDER_RADIUS) * remaining;
     const incomingTheta = geo.centerTheta + deltaTheta;
     const incomingRadius = CYLINDER_RADIUS + RADIAL_PUSH_RADII * CYLINDER_RADIUS * radialBlend;
@@ -217,39 +209,57 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // via the same formula) — added to geo.restPosition (the geometry's
     // real bounding-box centre) rather than used as an absolute position,
     // so any small formula/bounding-box discrepancy at rest cancels out.
+    // Expressing horizontal entry as an angle+radius change (not a raw XYZ
+    // translation) keeps the patch always genuinely wrapped around the
+    // same axis — a previous pass found that translating a wide curved
+    // patch freely through space makes it self-intersect the metal
+    // cylinder's own geometry once far from its "home" angle.
     const dx = incomingRadius * Math.sin(incomingTheta) - CYLINDER_RADIUS * Math.sin(geo.centerTheta);
     const dz = incomingRadius * Math.cos(incomingTheta) - CYLINDER_RADIUS * Math.cos(geo.centerTheta);
     // entryOffsetVw.y is stored in screen/CSS convention (negative = up);
     // world space is the opposite (positive = up), hence the negation.
-    // Vertical entry is a plain world-Y translation — always safe, no
-    // rotation needed, since sliding along the cylinder's length can't
-    // intersect anything. Height genuinely does vary with aspect (unlike
-    // width), so it's derived live from state.size (real canvas pixels,
-    // unlike state.viewport — see VIEWPORT_WORLD_WIDTH's comment above).
+    // Vertical entry is a plain world-Y translation — sliding along the
+    // cylinder's length can't intersect anything, no rotation needed.
     const aspect = state.size.width / Math.max(1, state.size.height);
     const viewportWorldHeight = VIEWPORT_WORLD_WIDTH / aspect;
     const dy = -placement.entryOffsetVw.y * viewportWorldHeight * remaining;
 
-    mesh.position.set(geo.restPosition.x + dx, geo.restPosition.y + dy, geo.restPosition.z + dz);
-    // The mesh's OWN rotation carries the same angular delta as its
-    // position, so the geometry's baked-in curvature/normals stay
-    // consistent with wherever it currently sits — plus the small tilt
-    // wobble on top.
-    mesh.rotation.y = deltaTheta + THREE.MathUtils.degToRad(tiltDeg);
-    mesh.scale.setScalar(scale);
+    incoming.position.set(geo.restPosition.x + dx, geo.restPosition.y + dy, geo.restPosition.z + dz);
+    incoming.rotation.y = deltaTheta + THREE.MathUtils.degToRad(tiltDeg);
+    incoming.scale.setScalar(incomingScale);
+    incoming.visible = t < bandEnd;
+    (incoming.material as THREE.MeshBasicMaterial).opacity = t <= bandStart ? 1 : t >= bandEnd ? 0 : 1 - (t - bandStart) / (bandEnd - bandStart);
+
+    // --- ATTACHED: fixed rest transform, forever. The ONLY thing that moves on it is the tiny post-contact settle scale — no position, no rotation, ever. ---
+    attached.position.copy(geo.restPosition);
+    attached.rotation.y = 0;
+    attached.scale.setScalar(t <= CONTACT_T ? 0.985 : settleScale(t));
+    attached.visible = t >= bandStart;
+    (attached.material as THREE.MeshBasicMaterial).opacity = t <= bandStart ? 0 : t >= bandEnd ? 1 : (t - bandStart) / (bandEnd - bandStart);
   });
 
   if (!loaded || !geo) return null;
 
   return (
-    <mesh ref={meshRef} geometry={geo.geometry} visible={false}>
-      <meshBasicMaterial
-        map={loaded.texture}
-        transparent
-        alphaTest={0.05}
-        depthWrite={true}
-        onBeforeCompile={frontFacingFadeOnBeforeCompile}
-      />
-    </mesh>
+    <>
+      <mesh ref={incomingRef} geometry={geo.geometry} visible={false}>
+        <meshBasicMaterial
+          map={loaded.texture}
+          transparent
+          alphaTest={0.05}
+          depthWrite={true}
+          onBeforeCompile={frontFacingFadeOnBeforeCompile}
+        />
+      </mesh>
+      <mesh ref={attachedRef} geometry={geo.geometry} visible={false}>
+        <meshBasicMaterial
+          map={loaded.texture}
+          transparent
+          alphaTest={0.05}
+          depthWrite={true}
+          onBeforeCompile={frontFacingFadeOnBeforeCompile}
+        />
+      </mesh>
+    </>
   );
 }
