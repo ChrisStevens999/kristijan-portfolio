@@ -19,6 +19,7 @@ import {
   STICKER_SURFACE_RADIUS_OFFSET,
   VERTICAL_TRAVEL_WORLD,
 } from "@/content/projects/sticker-archive";
+import { frontFacingFadeOnBeforeCompile } from "./frontFacingFade";
 import { getMetalTexture, METAL_TILE_WORLD_SIZE } from "./metalTexture";
 import { SlapSticker } from "./SlapSticker";
 import { useStickerAtlasTexture } from "./useStickerAtlasTexture";
@@ -60,10 +61,9 @@ function CameraFraming() {
 function PoleGroup({ progress }: { progress: MotionValue<number> }) {
   const groupRef = useRef<THREE.Group>(null);
   const metalTexture = getMetalTexture();
-  // Only the non-slap stickers go into the shared atlas now — the 8–12
-  // chosen for the slap-on animation (see slapStickers) are rendered as
-  // their own individual meshes below instead, so they can fly in before
-  // attaching. Everything else is pixel-identical to before this pass.
+  // Only the non-slap stickers go into the shared atlas now — the 6 chosen
+  // for the slap-on animation (see slapStickers) are rendered as their own
+  // individual meshes below instead, so they can fly in before attaching.
   const stickerTexture = useStickerAtlasTexture(atlasStickerPlacements, ATLAS_WIDTH, ATLAS_HEIGHT);
 
   const circumference = 2 * Math.PI * CYLINDER_RADIUS;
@@ -101,12 +101,20 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
           colours. Curvature still reads correctly (foreshortening + real
           back-face culling are pure geometry, not lighting), it's only the
           brightness/saturation of the art that's now independent of the
-          metal's light response. */}
+          metal's light response. onBeforeCompile adds a front-facing
+          brightness falloff ON TOP of that unlit base — see
+          frontFacingFade.ts for why this exists (pure placement cannot make
+          "~3 substantial stickers visible" true on its own). */}
       <mesh>
         <cylinderGeometry
           args={[stickerRadius, stickerRadius, CYLINDER_WORLD_HEIGHT, RADIAL_SEGMENTS, 1, true]}
         />
-        <meshBasicMaterial map={stickerTexture} transparent alphaTest={0.05} />
+        <meshBasicMaterial
+          map={stickerTexture}
+          transparent
+          alphaTest={0.05}
+          onBeforeCompile={frontFacingFadeOnBeforeCompile}
+        />
       </mesh>
 
       {/* ONE extremely subtle seam/joint — a shallow groove, not a graphic

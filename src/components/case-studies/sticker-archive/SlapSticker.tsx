@@ -8,39 +8,37 @@ import * as THREE from "three";
 import {
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
-  POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
   ROTATION_TURNS,
   STICKER_SURFACE_RADIUS_OFFSET,
   type SlapPlacement,
 } from "@/content/projects/sticker-archive";
+import { frontFacingFadeOnBeforeCompile } from "./frontFacingFade";
 import { SLAP_TEXTURE_PAD, useSingleStickerTexture } from "./useSingleStickerTexture";
 
 const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 /**
- * Horizontal span of the camera frustum, in world units — CONSTANT
- * regardless of viewport aspect (CameraFraming derives frustum halfWidth
- * from CYLINDER_RADIUS/POLE_FRAME_FRACTION only; halfHeight is what varies
- * with aspect). Used to size entry distance as "N% of viewport width", per
- * direct reference-video comparison — see entryDistance below.
+ * Sign pattern per entryDirection — NOT a normalized travel vector. Entry
+ * distance is anisotropic (see the worldOffset build in useFrame below):
+ * horizontal reach is sized against the viewport's WORLD width, vertical
+ * reach against its WORLD height, per the brief's own "25–35vw" / "20–30vh"
+ * split. A single shared unit vector can't represent that, so direction
+ * here is just which axes move which way; magnitude is computed separately,
+ * live, from R3F's `state.viewport` each frame (auto-updates on resize,
+ * unlike a hand-derived constant).
  */
-const VIEWPORT_WORLD_WIDTH = (2 * CYLINDER_RADIUS) / POLE_FRAME_FRACTION;
-
-/**
- * Pure screen-relative directions (no depth/Z component this pass — direct
- * comparison against a reference clip showed plain lateral/vertical travel
- * reads more clearly as "outside the pole, about to hit it" than adding a
- * toward-camera drift on top).
- */
-const ENTRY_VECTORS: Record<SlapPlacement["entryDirection"], THREE.Vector3> = {
-  left: new THREE.Vector3(-1, 0, 0),
-  right: new THREE.Vector3(1, 0, 0),
-  top: new THREE.Vector3(0, 1, 0),
-  "upper-left": new THREE.Vector3(-0.75, 0.75, 0).normalize(),
-  "upper-right": new THREE.Vector3(0.75, 0.75, 0).normalize(),
+const ENTRY_SIGNS: Record<SlapPlacement["entryDirection"], { x: -1 | 0 | 1; y: -1 | 0 | 1 }> = {
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+  top: { x: 0, y: 1 },
+  "upper-left": { x: -1, y: 1 },
+  "upper-right": { x: 1, y: 1 },
+  "lower-left": { x: -1, y: -1 },
 };
+/** Diagonal directions split their travel across both axes — scaled down a bit per axis so the COMBINED distance lands in the same ballpark as a straight left/right/top entry, not further. */
+const DIAGONAL_AXIS_SCALE = 0.72;
 
 /** Very brief anti-pop fade right as the sticker first appears — a couple of percent of the window. The reference clip's first visible frame already shows its incoming sticker fully opaque and static, so this is just enough to avoid a hard mount pop, not a reveal mechanism. */
 function opacityFor(t: number) {
@@ -69,8 +67,8 @@ function opacityFor(t: number) {
  * the snap read as sudden.
  *
  *   t=0.00–0.82  posBlend 0.00  scale 1.00  tilt entryTilt              — HOLD, static off-pole
- *   t=0.82–0.90  posBlend 0→1   scale 1.00→1.04  tilt → entryTilt·0.15  — THE HIT (nearly all travel here)
- *   t=0.90–0.95  posBlend 1.00  scale 1.04→0.985 tilt → -2°             — compression undershoot
+ *   t=0.82–0.90  posBlend 0→1   scale 1.00→1.03  tilt → entryTilt·0.15  — THE HIT (nearly all travel here)
+ *   t=0.90–0.95  posBlend 1.00  scale 1.03→0.985 tilt → -2°             — compression undershoot
  *   t=0.95–1.00  posBlend 1.00  scale 0.985→1.00 tilt → 0               — LOCKED
  *
  * No motion at all during the hold (not even a subtle idle sway) — the
@@ -91,7 +89,7 @@ function slapCurve(t: number, entryTiltDeg: number) {
     const eased = 1 - (1 - local) ** 2;
     return {
       posBlend: eased,
-      scale: 1.0 + (1.04 - 1.0) * eased,
+      scale: 1.0 + (1.03 - 1.0) * eased,
       tiltDeg: entryTiltDeg + (entryTiltDeg * 0.15 - entryTiltDeg) * eased,
     };
   }
@@ -100,7 +98,7 @@ function slapCurve(t: number, entryTiltDeg: number) {
     const eased = 1 - (1 - local) ** 2;
     return {
       posBlend: 1,
-      scale: 1.04 + (0.985 - 1.04) * eased,
+      scale: 1.03 + (0.985 - 1.03) * eased,
       tiltDeg: entryTiltDeg * 0.15 + (-2 - entryTiltDeg * 0.15) * eased,
     };
   }
@@ -143,7 +141,18 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     const thetaLength = patchWidthWorld / CYLINDER_RADIUS;
     const centerTheta = placement.u * Math.PI * 2;
     const thetaStart = centerTheta - thetaLength / 2;
-    const radius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET;
+    // A touch PROUD of the shared atlas sticker cylinder (which sits at
+    // exactly CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET) rather than
+    // at the identical radius — two coplanar transparent meshes fight over
+    // the same depth-buffer pixels wherever their padded canvases overlap
+    // (SLAP_TEXTURE_PAD's blank margin extends past the visible artwork, so
+    // this overlaps neighbouring atlas content more often than it looks
+    // like it should), which rendered as a flickering vertical-stripe
+    // z-fighting artifact — confirmed via screenshot, only ever appeared
+    // near a just-attached slap sticker. The extra 0.004 is well under
+    // what's visually perceptible as a "step" at this radius but enough to
+    // resolve depth ordering unambiguously.
+    const radius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET + 0.004;
     const segments = Math.max(6, Math.round(RADIAL_SEGMENTS * (thetaLength / (Math.PI * 2))));
 
     const geometry = new THREE.CylinderGeometry(radius, radius, patchHeightWorld, segments, 1, true, thetaStart, thetaLength);
@@ -163,24 +172,27 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     return { geometry, restPosition };
   }, [loaded, placement.widthFrac, placement.u, placement.v]);
 
-  // Entry distance as a fraction of the camera's own viewport width —
-  // 24–38% depending on sticker size — per direct request: the previous
-  // pass's offsets were "too subtle" to read as arriving from clearly
-  // outside the pole. Bigger (hero) stickers travel proportionally further.
-  const entryDistance = useMemo(() => {
+  // How far along each axis the sticker travels, as a FRACTION of that
+  // axis's own viewport extent — 25–35% for the axis(es) actually used,
+  // scaled a little larger for bigger stickers. Multiplied by live
+  // viewport.width/height (world units) every frame in useFrame below, not
+  // here, since viewport.height changes with aspect/resize.
+  const axisFrac = useMemo(() => {
     const sizeFrac = Math.min(1, Math.max(0, placement.widthFrac / 0.18));
-    return VIEWPORT_WORLD_WIDTH * (0.24 + sizeFrac * 0.14);
+    return 0.25 + sizeFrac * 0.1; // 0.25–0.35
   }, [placement.widthFrac]);
+  // ENTRY_SIGNS is a stable module-level lookup, so this reference stays
+  // constant across renders as long as entryDirection doesn't change — no
+  // memoization needed for these trivially-cheap derivations.
+  const signs = ENTRY_SIGNS[placement.entryDirection];
+  const isDiagonal = signs.x !== 0 && signs.y !== 0;
   // Deterministic, hand-varied per sticker (not randomized): the entry tilt
   // leans with the entry direction (arriving from the left tilts as if
   // spun on from that side) so the flight itself reads as physical rather
   // than a straight linear slide.
-  const entryTiltDeg = useMemo(() => {
-    const dir = ENTRY_VECTORS[placement.entryDirection];
-    return -dir.x * 12 + (dir.y > 0 ? 3 : -3);
-  }, [placement.entryDirection]);
+  const entryTiltDeg = -signs.x * 12 + (signs.y > 0 ? 3 : -3);
 
-  useFrame(() => {
+  useFrame((state) => {
     const mesh = meshRef.current;
     if (!mesh || !geo) return;
 
@@ -200,8 +212,13 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // object, so it's guaranteed consistent within this exact frame without
     // needing a ref into the parent.
     const groupRotY = p * ROTATION_TURNS * Math.PI * 2;
-    const dir = ENTRY_VECTORS[placement.entryDirection];
-    const worldOffset = dir.clone().multiplyScalar(entryDistance * (1 - posBlend));
+    const remaining = 1 - posBlend;
+    const axisScale = isDiagonal ? DIAGONAL_AXIS_SCALE : 1;
+    const worldOffset = new THREE.Vector3(
+      signs.x * state.viewport.width * axisFrac * axisScale * remaining,
+      signs.y * state.viewport.height * axisFrac * axisScale * remaining,
+      0,
+    );
     const localOffset = worldOffset.applyAxisAngle(Y_AXIS, -groupRotY);
 
     mesh.position.set(
@@ -220,7 +237,14 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
 
   return (
     <mesh ref={meshRef} geometry={geo.geometry} visible={false}>
-      <meshBasicMaterial map={loaded.texture} transparent alphaTest={0.05} opacity={0} depthWrite={true} />
+      <meshBasicMaterial
+        map={loaded.texture}
+        transparent
+        alphaTest={0.05}
+        opacity={0}
+        depthWrite={true}
+        onBeforeCompile={frontFacingFadeOnBeforeCompile}
+      />
     </mesh>
   );
 }

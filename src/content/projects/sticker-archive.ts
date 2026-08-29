@@ -110,33 +110,42 @@ function normalizeDeg(a: number) {
 
 /**
  * Hand-authored placement, one row per rawStickers entry (same order/index),
- * organized into FIVE GROUPS of 5 — a further correction from a six-group
- * attempt that still read as 5–7+ substantial designs per moment in
- * screenshots, despite Node math predicting closer to 4. The six-group
- * spacing (56.7°) was BELOW the true zero-overlap threshold for two
- * adjacent hero-sized cores (~70.7°, from 2×hero-half-width + margin) —
- * five groups at 68° apart is much closer to that real ceiling, leaving
- * only a small (~2.7°) unavoidable overlap between adjacent cores instead
- * of a much larger one.
+ * organized into FIVE GROUPS of 5. The group STRUCTURE (spacing, roles) is
+ * carried over from the previous pass; what's new is a per-fragment
+ * front-facing brightness falloff on the sticker material itself (see
+ * `frontFacingFade.ts`, applied in StickerScene.tsx and SlapSticker.tsx) —
+ * full brightness within ±40° of dead-front, fading out by ±75°. Three
+ * independent placement-only attempts in earlier passes proved that pure
+ * spacing math cannot deliver "~3 substantial stickers visible at once" by
+ * itself: with 25 stickers needing individual front-facing moments inside a
+ * fixed 340° rotation, and stickers this large, ADJACENT groups' angular
+ * footprints necessarily overlap somewhat no matter how they're spaced (68°
+ * group spacing vs. a real "still looks big" radius that pure foreshortening
+ * alone doesn't shrink much below ~65–70°) — the fade is what actually
+ * enforces "readable" to mean the same thing here as in the brief's own
+ * definition (task D: substantial within ±35° of front), rather than
+ * leaving it as an emergent (and previously wrong) property of raw geometry.
  *
  * Five roles per group, differentiated by `v` (real gaps, checked against
  * each size's actual vertical extent) so upper/hero/lower read as three
  * separate physical stickers, not a touching vertical collage. THREE of the
  * five share one angle (offset 0°) — since `v` already separates them,
  * sharing an angle costs the group NOTHING in angular footprint:
- *   hero  (v≈0.515, offset  0°, ~50–55%) — the biggest design, dead centre.
- *   upper (v≈0.36,  offset  0°, ~40–44%) — a clear gap above the hero.
- *   lower (v≈0.67,  offset  0°, ~42–46%) — a clear gap below the hero.
- * The other two are small (32–35%, at the requested floor) and DO carry a
- * real offset, but small enough that their contribution to the group's
- * angular footprint is minor:
- *   edge1 (v≈0.44, offset -40°) — reads as entering/leaving the left curve.
- *   edge2 (v≈0.58, offset +15°) — offset just enough to feel separate from
- *         the hero without meaningfully widening the group's footprint
- *         (it mostly sits INSIDE the hero's own angular claim).
- * edge1/edge2 overlapping the NEXT group's core envelope is intentional,
- * not a bug — that's what supplies "a partial sticker wrapping a curved
- * edge" without adding a full-weight fourth competitor to the current 3.
+ *   hero  (v≈0.515, offset  0°) — the biggest design, dead centre.
+ *   upper (v≈0.36,  offset  0°) — a clear gap above the hero.
+ *   lower (v≈0.67,  offset  0°) — a clear gap below the hero.
+ * The other two carry a real ±50° offset — enough that at the group's own
+ * front-facing moment they're already meaningfully faded (still readable,
+ * clearly secondary), which is what "a partial sticker wrapping the curved
+ * edge" (task B) actually means once the fade exists to make "secondary" a
+ * real visual state rather than just a smaller size:
+ *   edge1 (v≈0.44, offset -50°)
+ *   edge2 (v≈0.58, offset +50°)
+ * edge1/edge2 overlapping the NEXT/PREVIOUS group's territory is
+ * intentional — each still gets its OWN dead-front moment (see SLAP_CONFIG
+ * and the reveal-progress note below), just with a neighbour's group
+ * sometimes still partly bright nearby, which the brief's own "not mostly
+ * covered, ±35°, large enough" test (task D) tolerates.
  *
  * `angleDeg` is still chosen BACKWARDS from each group's intended reveal
  * moment — rotation only ever runs forward (0° → +ROTATION_TURNS·360°), so
@@ -145,44 +154,46 @@ function normalizeDeg(a: number) {
  * (`angleDeg = -progress · 340°`, matching ROTATION_TURNS exactly so every
  * sticker still reaches a genuine dead-front moment).
  *
- * Sizes: 5 hero (50–55%), 10 upper/lower (40–46%), 10 edge1/edge2 (32–35%,
- * at/near the requested floor) — nothing outside 32–55%, no "small icons".
+ * SIZES (`screenFraction`, task A's own distribution): 20 of 25 (80%) sit at
+ * 42–48%; 2 heroes (miamiViceTiger, blushingDuck) are pushed to 50–55%; 3
+ * edge members are pulled to 35–40% — nothing smaller (no "tiny icons") and
+ * nothing bigger (no single sticker dominating the pole).
  */
 const MANUAL_LAYOUT: { angleDeg: number; v: number; screenFraction: number; rotationDeg: number }[] = [
   // Group 1 (base ≈ -34°, reveal ≈ p0.10 — near-front at rest). 5 members.
-  { angleDeg: -34, v: 0.515, screenFraction: 0.53, rotationDeg: -6 }, // 0 miamiViceTiger — hero
-  { angleDeg: -34, v: 0.36, screenFraction: 0.42, rotationDeg: 8 }, // 1 rhodesianTiger — upper
+  { angleDeg: -34, v: 0.515, screenFraction: 0.52, rotationDeg: -6 }, // 0 miamiViceTiger — hero (large)
+  { angleDeg: -34, v: 0.36, screenFraction: 0.45, rotationDeg: 8 }, // 1 rhodesianTiger — upper [SLAP]
   { angleDeg: -34, v: 0.67, screenFraction: 0.44, rotationDeg: -4 }, // 2 medusa — lower
-  { angleDeg: -74, v: 0.44, screenFraction: 0.34, rotationDeg: 10 }, // 3 cyberSkull — edge1 (partial)
-  { angleDeg: -19, v: 0.58, screenFraction: 0.32, rotationDeg: 3 }, // 4 hornedSkull — edge2 (partial)
+  { angleDeg: -84, v: 0.44, screenFraction: 0.43, rotationDeg: 10 }, // 3 cyberSkull — edge1 (partial)
+  { angleDeg: 16, v: 0.58, screenFraction: 0.42, rotationDeg: 3 }, // 4 hornedSkull — edge2 (partial)
 
   // Group 2 (base ≈ -102°, reveal ≈ p0.30). 5 members.
-  { angleDeg: -102, v: 0.515, screenFraction: 0.51, rotationDeg: -9 }, // 5 cookies — hero
-  { angleDeg: -102, v: 0.36, screenFraction: 0.44, rotationDeg: 5 }, // 6 subzero — upper
-  { angleDeg: -102, v: 0.67, screenFraction: 0.46, rotationDeg: -3 }, // 7 lvGlock — lower
-  { angleDeg: -142, v: 0.44, screenFraction: 0.35, rotationDeg: 7 }, // 8 arcade — edge1 (partial)
-  { angleDeg: -87, v: 0.58, screenFraction: 0.33, rotationDeg: -5 }, // 9 babyBoomers — edge2 (partial)
+  { angleDeg: -102, v: 0.515, screenFraction: 0.46, rotationDeg: -9 }, // 5 cookies — hero [SLAP]
+  { angleDeg: -102, v: 0.36, screenFraction: 0.45, rotationDeg: 5 }, // 6 subzero — upper
+  { angleDeg: -102, v: 0.67, screenFraction: 0.47, rotationDeg: -3 }, // 7 lvGlock — lower
+  { angleDeg: -152, v: 0.44, screenFraction: 0.38, rotationDeg: 7 }, // 8 arcade — edge1 (small partial)
+  { angleDeg: -52, v: 0.58, screenFraction: 0.44, rotationDeg: -5 }, // 9 babyBoomers — edge2 (partial)
 
   // Group 3 (base ≈ -170°, reveal ≈ p0.50). 5 members.
-  { angleDeg: -170, v: 0.515, screenFraction: 0.55, rotationDeg: -8 }, // 10 blushingDuck — hero
-  { angleDeg: -170, v: 0.36, screenFraction: 0.41, rotationDeg: 4 }, // 11 illunis — upper
-  { angleDeg: -170, v: 0.67, screenFraction: 0.43, rotationDeg: -11 }, // 12 generic1 — lower
-  { angleDeg: -210, v: 0.44, screenFraction: 0.33, rotationDeg: 6 }, // 13 generic2 — edge1 (partial)
-  { angleDeg: -155, v: 0.58, screenFraction: 0.32, rotationDeg: -3 }, // 14 generic3 — edge2 (partial)
+  { angleDeg: -170, v: 0.515, screenFraction: 0.54, rotationDeg: -8 }, // 10 blushingDuck — hero (large) [SLAP]
+  { angleDeg: -170, v: 0.36, screenFraction: 0.43, rotationDeg: 4 }, // 11 illunis — upper
+  { angleDeg: -170, v: 0.67, screenFraction: 0.46, rotationDeg: -11 }, // 12 generic1 — lower
+  { angleDeg: -220, v: 0.44, screenFraction: 0.42, rotationDeg: 6 }, // 13 generic2 — edge1 (partial) [SLAP]
+  { angleDeg: -120, v: 0.58, screenFraction: 0.37, rotationDeg: -3 }, // 14 generic3 — edge2 (small partial) [SLAP]
 
   // Group 4 (base ≈ -238°, reveal ≈ p0.70). 5 members.
-  { angleDeg: -238, v: 0.515, screenFraction: 0.52, rotationDeg: -5 }, // 15 generic4 — hero
-  { angleDeg: -238, v: 0.36, screenFraction: 0.43, rotationDeg: -7 }, // 16 generic5 — upper
+  { angleDeg: -238, v: 0.515, screenFraction: 0.48, rotationDeg: -5 }, // 15 generic4 — hero
+  { angleDeg: -238, v: 0.36, screenFraction: 0.44, rotationDeg: -7 }, // 16 generic5 — upper
   { angleDeg: -238, v: 0.67, screenFraction: 0.45, rotationDeg: 9 }, // 17 generic6 — lower
-  { angleDeg: -278, v: 0.44, screenFraction: 0.34, rotationDeg: -4 }, // 18 generic7 — edge1 (partial)
-  { angleDeg: -223, v: 0.58, screenFraction: 0.33, rotationDeg: 3 }, // 19 generic8 — edge2 (partial)
+  { angleDeg: -288, v: 0.44, screenFraction: 0.43, rotationDeg: -4 }, // 18 generic7 — edge1 (partial) [SLAP]
+  { angleDeg: -188, v: 0.58, screenFraction: 0.39, rotationDeg: 3 }, // 19 generic8 — edge2 (small partial)
 
   // Group 5 (base ≈ -306°, reveal ≈ p0.90 — nearest the end). 5 members.
-  { angleDeg: -306, v: 0.515, screenFraction: 0.54, rotationDeg: 6 }, // 20 generic9 — hero
-  { angleDeg: -306, v: 0.36, screenFraction: 0.4, rotationDeg: -10 }, // 21 generic10 — upper
-  { angleDeg: -306, v: 0.67, screenFraction: 0.42, rotationDeg: 3 }, // 22 generic11 — lower
-  { angleDeg: -346, v: 0.44, screenFraction: 0.35, rotationDeg: -6 }, // 23 generic12 — edge1 (partial)
-  { angleDeg: -291, v: 0.58, screenFraction: 0.32, rotationDeg: 8 }, // 24 generic13 — edge2 (partial)
+  { angleDeg: -306, v: 0.515, screenFraction: 0.47, rotationDeg: 6 }, // 20 generic9 — hero
+  { angleDeg: -306, v: 0.36, screenFraction: 0.45, rotationDeg: -10 }, // 21 generic10 — upper
+  { angleDeg: -306, v: 0.67, screenFraction: 0.46, rotationDeg: 3 }, // 22 generic11 — lower
+  { angleDeg: -265, v: 0.44, screenFraction: 0.42, rotationDeg: -6 }, // 23 generic12 — edge1 (partial; NOT group5Angle-50=-356, which wraps to ≈+4° and sits near-front at p=0, cluttering the opening frame — moved to land its own moment around p≈0.78 instead)
+  { angleDeg: -256, v: 0.58, screenFraction: 0.44, rotationDeg: 8 }, // 24 generic13 — edge2 (partial)
 ];
 
 function buildPlacements(inputs: StickerInput[]): StickerPlacement[] {
@@ -204,48 +215,36 @@ export const STICKER_COUNT = stickerPlacements.length;
 
 /**
  * "Slap-on" application animation — see SlapSticker.tsx for the actual
- * motion. A deliberately small test pass (6–8, per the brief, down from a
- * first attempt at 10 that still read as "appearing" rather than hitting):
- * these indices are pulled OUT of the shared atlas (see
- * `atlasStickerPlacements` below) and rendered as their own
- * individually-animated meshes instead, while every other sticker stays
- * exactly as before — already attached, baked into the one shared atlas
- * texture, present from progress 0. That split is what makes this additive
- * rather than a rebuild: the 18 non-slapped stickers are pixel-identical to
- * the previous pass, and there are comfortably more than the requested
- * "3–4 already attached" from the very first frame.
+ * motion. Exactly 6, per this pass's brief (not the whole 25 yet): these
+ * indices are pulled OUT of the shared atlas (see `atlasStickerPlacements`
+ * below) and rendered as their own individually-animated meshes instead,
+ * while every other sticker stays exactly as before — already attached,
+ * baked into the one shared atlas texture, present from progress 0. That
+ * split is what makes this additive rather than a rebuild.
  *
- * `window` is the scroll-progress range the slap plays across. Widened
- * slightly from an even tighter first attempt (≈0.012) to ≈0.018 — not
- * because the HIT itself needed to be slower (see slapCurve's HOLD/SNAP/
- * SETTLE split — the actual travel is still only ~8% of this), but because
- * frame-stepping the reference clip directly showed the incoming sticker
- * sitting essentially STATIC off the pole for the large majority of its
- * on-screen time before it hits. A window this size gives that hold enough
- * real scroll distance to register before the (still near-instant) snap.
- * Real gaps (≈0.018–0.02) sit between consecutive windows so a viewer can
- * perceive "sticker A lands → pause → sticker B lands" rather than a
- * cluster of simultaneous motion — group 1's three core members (which all
- * share one angle — see MANUAL_LAYOUT) are explicitly SEQUENCED here rather
- * than landing together.
+ * `window`'s END is each sticker's own natural dead-front moment
+ * (`-angleDeg / 340` — see MANUAL_LAYOUT), so the hit lands right as the
+ * sticker arrives at its first real front-facing pass, not off to the side.
+ * Width (~0.018) and internal HOLD/SNAP/SETTLE shape are unchanged from the
+ * previous pass's reference-clip-verified tuning — this pass only picks
+ * WHICH 6 stickers and WHICH direction each uses. The six target thresholds
+ * requested (~12/25/38/52/67/82%) are matched to the closest sticker whose
+ * own natural reveal moment lands nearby, per "adjust slightly if
+ * necessary" — actual thresholds used are listed sticker-by-sticker below.
  *
- * `entryDirection` is hand-picked per sticker (not randomized), loosely
- * matched to the sticker's own role, cycled across the direction set so no
- * two adjacent slaps read identically. Deliberately only screen-relative
- * lateral/upward directions (no "from below") — per direct reference
- * comparison, that's what actually reads as unambiguously "outside the
- * pole, about to hit it".
+ * `entryDirection` uses the exact 6 requested, one each: left, upper-right,
+ * top, right, upper-left, lower-left (a diagonal, reintroduced this pass at
+ * explicit request — a previous pass had dropped downward directions).
  */
-export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right";
+export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right" | "lower-left";
 
 const SLAP_CONFIG: Record<number, { entryDirection: EntryDirection; window: [number, number] }> = {
-  0: { entryDirection: "left", window: [0.04, 0.058] }, // miamiViceTiger — hero, group1
-  1: { entryDirection: "top", window: [0.078, 0.096] }, // rhodesianTiger — upper, group1
-  2: { entryDirection: "upper-left", window: [0.116, 0.134] }, // medusa — lower, group1
-  5: { entryDirection: "right", window: [0.26, 0.278] }, // cookies — hero, group2
-  6: { entryDirection: "upper-right", window: [0.298, 0.316] }, // subzero — upper, group2
-  10: { entryDirection: "upper-left", window: [0.46, 0.478] }, // blushingDuck — hero, group3
-  15: { entryDirection: "left", window: [0.66, 0.678] }, // generic4 — hero, group4
+  1: { entryDirection: "left", window: [0.082, 0.1] }, // rhodesianTiger — group1 upper, reveal .10 (target ~12%)
+  5: { entryDirection: "upper-right", window: [0.282, 0.3] }, // cookies — group2 hero, reveal .30 (target ~25%)
+  14: { entryDirection: "top", window: [0.335, 0.353] }, // generic3 — group3 edge2, reveal .353 (target ~38%)
+  10: { entryDirection: "right", window: [0.482, 0.5] }, // blushingDuck — group3 hero, reveal .50 (target ~52%)
+  13: { entryDirection: "upper-left", window: [0.629, 0.647] }, // generic2 — group3 edge1, reveal .647 (target ~67%)
+  18: { entryDirection: "lower-left", window: [0.829, 0.847] }, // generic7 — group4 edge1, reveal .847 (target ~82%)
 };
 
 export interface SlapPlacement extends StickerPlacement {
@@ -253,7 +252,7 @@ export interface SlapPlacement extends StickerPlacement {
   applicationWindow: [number, number];
 }
 
-/** The 7 stickers that play the slap-on animation in this test pass. */
+/** The 6 stickers that play the slap-on animation this pass. */
 export const slapStickers: SlapPlacement[] = Object.entries(SLAP_CONFIG).map(([indexStr, cfg]) => {
   const index = Number(indexStr);
   return {
@@ -263,7 +262,7 @@ export const slapStickers: SlapPlacement[] = Object.entries(SLAP_CONFIG).map(([i
   };
 });
 
-/** Every OTHER sticker — unchanged from before, baked into the shared atlas, attached from progress 0. */
+/** Every other sticker (19 of 25) — already attached, baked into the shared atlas, present from progress 0 — comfortably satisfies "~3 already attached at 0%". */
 export const atlasStickerPlacements: StickerPlacement[] = stickerPlacements.filter((_, i) => !(i in SLAP_CONFIG));
 
 /**
