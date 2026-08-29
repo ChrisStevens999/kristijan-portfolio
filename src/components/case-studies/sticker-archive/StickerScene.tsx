@@ -8,16 +8,19 @@ import * as THREE from "three";
 import {
   ATLAS_HEIGHT,
   ATLAS_WIDTH,
+  atlasStickerPlacements,
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
   INITIAL_Y_OFFSET,
   POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
   ROTATION_TURNS,
+  slapStickers,
+  STICKER_SURFACE_RADIUS_OFFSET,
   VERTICAL_TRAVEL_WORLD,
-  stickerPlacements,
 } from "@/content/projects/sticker-archive";
 import { getMetalTexture, METAL_TILE_WORLD_SIZE } from "./metalTexture";
+import { SlapSticker } from "./SlapSticker";
 import { useStickerAtlasTexture } from "./useStickerAtlasTexture";
 
 /**
@@ -57,7 +60,11 @@ function CameraFraming() {
 function PoleGroup({ progress }: { progress: MotionValue<number> }) {
   const groupRef = useRef<THREE.Group>(null);
   const metalTexture = getMetalTexture();
-  const stickerTexture = useStickerAtlasTexture(stickerPlacements, ATLAS_WIDTH, ATLAS_HEIGHT);
+  // Only the non-slap stickers go into the shared atlas now — the 8–12
+  // chosen for the slap-on animation (see slapStickers) are rendered as
+  // their own individual meshes below instead, so they can fly in before
+  // attaching. Everything else is pixel-identical to before this pass.
+  const stickerTexture = useStickerAtlasTexture(atlasStickerPlacements, ATLAS_WIDTH, ATLAS_HEIGHT);
 
   const circumference = 2 * Math.PI * CYLINDER_RADIUS;
   metalTexture.repeat.set(
@@ -76,7 +83,7 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
     group.position.y = INITIAL_Y_OFFSET + p * VERTICAL_TRAVEL_WORLD;
   });
 
-  const stickerRadius = CYLINDER_RADIUS + 0.012;
+  const stickerRadius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET;
 
   return (
     <group ref={groupRef}>
@@ -113,6 +120,14 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
         />
         <meshStandardMaterial color="#9198a0" roughness={0.6} metalness={0.42} />
       </mesh>
+
+      {/* Slap-on animated stickers — individual curved patches (see
+          SlapSticker.tsx), literal children of this same rotating group so
+          their attached resting state moves with the pole for free, exactly
+          like the atlas stickers above. */}
+      {slapStickers.map((placement) => (
+        <SlapSticker key={placement.src.src} placement={placement} progress={progress} />
+      ))}
     </group>
   );
 }
