@@ -26,6 +26,11 @@ import * as THREE from "three";
  * fine enough to be non-repeating but coarse enough for the eye to track
  * as the cylinder turned, which read as a faint directional "streak".
  *
+ * A further revision layers in two real photographed metal textures
+ * (public/textures/metal-scratches.jpg, metal-zinc.jpg) as subtle detail —
+ * see `applyPhotoDetailLayers` below for how they're processed so they
+ * don't fight the procedural base or the real lighting.
+ *
  * Built once and cached at module scope (not per-mount) — it never changes.
  */
 let cached: THREE.CanvasTexture | null = null;
@@ -175,9 +180,147 @@ export function getMetalTexture(): THREE.CanvasTexture {
   ctx.putImageData(img, 0, 0);
 
   const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
+  // MirroredRepeatWrapping rather than plain RepeatWrapping: every other
+  // tile is flipped, so the pixels AT the boundary between two tiles are
+  // always identical by construction — a guaranteed seam match (not just a
+  // statistically-seamless one) in both directions. This matters more now
+  // that real photo detail is layered in below (see applyPhotoDetailLayers):
+  // that detail has actual macro-scale features (blotches, scratch runs) an
+  // eye can lock onto, unlike the procedural spangle's fine uniform noise,
+  // so a hard non-mirrored repeat would be far more likely to read as
+  // "the same tile again" as the cylinder turns through it ~17 times.
+  texture.wrapS = THREE.MirroredRepeatWrapping;
+  texture.wrapT = THREE.MirroredRepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   cached = texture;
+
+  // Photo detail is loaded/processed asynchronously (real <img> decode) and
+  // painted onto this SAME canvas once ready, then needsUpdate is flagged —
+  // exactly the synchronous-placeholder + async-fill pattern already used
+  // for the sticker atlas (useStickerAtlasTexture). Fire-and-forget: if it's
+  // slow or a file 404s, the procedural material above is already a
+  // complete, correct-looking result on its own.
+  void applyPhotoDetailLayers(canvas, ctx, texture);
+
   return texture;
+}
+
+let photoLayersRequested = false;
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/**
+ * Turns one arbitrary lit photo of metal into a flattened, desaturated
+ * square detail layer, ready to be blended in at low strength:
+ *
+ *  - grayscale first — these are ordinary lit photos (one has a visible
+ *    green cast, the other a blue-ish shadow side); the brief is explicit
+ *    that the pole must not pick up a colour shift, so colour is discarded
+ *    entirely rather than just reduced.
+ *  - high-pass filtered — subtract a heavily blurred copy of the same
+ *    grayscale image (mid-grey where nothing changes, lighter/darker where
+ *    the original deviates from its own local average). This is what
+ *    strips out each photo's own baked-in studio lighting gradient (one of
+ *    the two source photos is strongly lit bright-corner-to-dark-corner)
+ *    while keeping the actual surface detail — the pole's own bright-centre/
+ *    dark-edge look must still come only from StickerScene's real lights.
+ *  - `blurPx` controls what counts as "lighting" (removed) vs. "detail"
+ *    (kept): a small radius keeps only fine marks (used for the scratch
+ *    layer), a larger radius keeps broader cloudy patches too (used for the
+ *    zinc/tonal layer) while still washing out the whole-image gradient.
+ */
+function buildFlattenedGrayscaleLayer(img: HTMLImageElement, tilePx: number, blurPx: number): HTMLCanvasElement {
+  const src = document.createElement("canvas");
+  src.width = tilePx;
+  src.height = tilePx;
+  const sctx = src.getContext("2d")!;
+  const side = Math.min(img.naturalWidth, img.naturalHeight);
+  const sx = (img.naturalWidth - side) / 2;
+  const sy = (img.naturalHeight - side) / 2;
+  sctx.drawImage(img, sx, sy, side, side, 0, 0, tilePx, tilePx);
+
+  const flat = sctx.getImageData(0, 0, tilePx, tilePx);
+  for (let i = 0; i < flat.data.length; i += 4) {
+    const g = flat.data[i] * 0.299 + flat.data[i + 1] * 0.587 + flat.data[i + 2] * 0.114;
+    flat.data[i] = g;
+    flat.data[i + 1] = g;
+    flat.data[i + 2] = g;
+  }
+
+  const blurred = document.createElement("canvas");
+  blurred.width = tilePx;
+  blurred.height = tilePx;
+  const bctx = blurred.getContext("2d")!;
+  bctx.putImageData(flat, 0, 0);
+  bctx.filter = `blur(${blurPx}px)`;
+  // Draw the already-grayscale canvas onto itself through the blur filter —
+  // drawImage(self) reads the pre-filter pixels and writes filtered ones.
+  bctx.drawImage(blurred, 0, 0);
+  const blurData = bctx.getImageData(0, 0, tilePx, tilePx);
+
+  for (let i = 0; i < flat.data.length; i += 4) {
+    const detail = flat.data[i] - blurData.data[i] + 128;
+    flat.data[i] = detail;
+    flat.data[i + 1] = detail;
+    flat.data[i + 2] = detail;
+    flat.data[i + 3] = 255;
+  }
+  const out = document.createElement("canvas");
+  out.width = tilePx;
+  out.height = tilePx;
+  out.getContext("2d")!.putImageData(flat, 0, 0);
+  return out;
+}
+
+/**
+ * Loads the two reference photos and blends each in as a restrained detail
+ * layer on top of the already-complete procedural base:
+ *  - metal-zinc.jpg → broad tonal variation / cloudy patches. Larger blur
+ *    radius (keeps mid-scale blotchiness, discards the photo's own overall
+ *    gradient). Stronger of the two, but still low-to-medium strength.
+ *  - metal-scratches.jpg → fine scratches/scuffs/wear marks. Smaller blur
+ *    radius (keeps only fine marks). Kept subtle — scratches must read as
+ *    incidental wear, not as the dominant surface pattern.
+ * Both use 'overlay' compositing: the high-pass layers are centred on
+ * neutral grey (128), so overlay only lightens/darkens relative to that
+ * midpoint instead of washing a flat tint across the metal.
+ */
+async function applyPhotoDetailLayers(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  texture: THREE.CanvasTexture,
+) {
+  if (photoLayersRequested) return;
+  photoLayersRequested = true;
+
+  try {
+    const [zincImg, scratchImg] = await Promise.all([
+      loadImage("/textures/metal-zinc.jpg"),
+      loadImage("/textures/metal-scratches.jpg"),
+    ]);
+
+    const tilePx = canvas.width;
+    const zincLayer = buildFlattenedGrayscaleLayer(zincImg, tilePx, tilePx * 0.22);
+    const scratchLayer = buildFlattenedGrayscaleLayer(scratchImg, tilePx, tilePx * 0.05);
+
+    ctx.save();
+    ctx.globalCompositeOperation = "overlay";
+    ctx.globalAlpha = 0.4;
+    ctx.drawImage(zincLayer, 0, 0);
+    ctx.globalAlpha = 0.22;
+    ctx.drawImage(scratchLayer, 0, 0);
+    ctx.restore();
+
+    texture.needsUpdate = true;
+  } catch {
+    // A missing/failed photo load leaves the procedural-only material in
+    // place — already a complete, correct result on its own.
+  }
 }
