@@ -215,16 +215,19 @@ export const STICKER_COUNT = stickerPlacements.length;
  * the previous pass, and there are comfortably more than the requested
  * "3–4 already attached" from the very first frame.
  *
- * `window` is the scroll-progress range the slap plays across — after
- * direct comparison against a reference clip (a sticker visibly starts off
- * the surface, closes the gap in a handful of frames, and hits — the whole
- * thing reads as maybe a third of a second), the previous ≈0.03–0.04 windows
- * were roughly 2–3× too wide and read as "drifting into place" rather than
- * a hit. Shrunk to ≈0.012 here, with real gaps (≈0.015–0.02) between
- * consecutive ones so a viewer can perceive "sticker A lands → pause →
- * sticker B lands" rather than a cluster of simultaneous motion — group 1's
- * three core members (which all share one angle — see MANUAL_LAYOUT) are
- * explicitly SEQUENCED here rather than landing together.
+ * `window` is the scroll-progress range the slap plays across. Widened
+ * slightly from an even tighter first attempt (≈0.012) to ≈0.018 — not
+ * because the HIT itself needed to be slower (see slapCurve's HOLD/SNAP/
+ * SETTLE split — the actual travel is still only ~8% of this), but because
+ * frame-stepping the reference clip directly showed the incoming sticker
+ * sitting essentially STATIC off the pole for the large majority of its
+ * on-screen time before it hits. A window this size gives that hold enough
+ * real scroll distance to register before the (still near-instant) snap.
+ * Real gaps (≈0.018–0.02) sit between consecutive windows so a viewer can
+ * perceive "sticker A lands → pause → sticker B lands" rather than a
+ * cluster of simultaneous motion — group 1's three core members (which all
+ * share one angle — see MANUAL_LAYOUT) are explicitly SEQUENCED here rather
+ * than landing together.
  *
  * `entryDirection` is hand-picked per sticker (not randomized), loosely
  * matched to the sticker's own role, cycled across the direction set so no
@@ -236,13 +239,13 @@ export const STICKER_COUNT = stickerPlacements.length;
 export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right";
 
 const SLAP_CONFIG: Record<number, { entryDirection: EntryDirection; window: [number, number] }> = {
-  0: { entryDirection: "left", window: [0.04, 0.052] }, // miamiViceTiger — hero, group1
-  1: { entryDirection: "top", window: [0.07, 0.082] }, // rhodesianTiger — upper, group1
-  2: { entryDirection: "upper-left", window: [0.1, 0.112] }, // medusa — lower, group1
-  5: { entryDirection: "right", window: [0.26, 0.272] }, // cookies — hero, group2
-  6: { entryDirection: "upper-right", window: [0.29, 0.302] }, // subzero — upper, group2
-  10: { entryDirection: "upper-left", window: [0.46, 0.472] }, // blushingDuck — hero, group3
-  15: { entryDirection: "left", window: [0.66, 0.672] }, // generic4 — hero, group4
+  0: { entryDirection: "left", window: [0.04, 0.058] }, // miamiViceTiger — hero, group1
+  1: { entryDirection: "top", window: [0.078, 0.096] }, // rhodesianTiger — upper, group1
+  2: { entryDirection: "upper-left", window: [0.116, 0.134] }, // medusa — lower, group1
+  5: { entryDirection: "right", window: [0.26, 0.278] }, // cookies — hero, group2
+  6: { entryDirection: "upper-right", window: [0.298, 0.316] }, // subzero — upper, group2
+  10: { entryDirection: "upper-left", window: [0.46, 0.478] }, // blushingDuck — hero, group3
+  15: { entryDirection: "left", window: [0.66, 0.678] }, // generic4 — hero, group4
 };
 
 export interface SlapPlacement extends StickerPlacement {

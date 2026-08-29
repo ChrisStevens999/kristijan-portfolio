@@ -42,9 +42,9 @@ const ENTRY_VECTORS: Record<SlapPlacement["entryDirection"], THREE.Vector3> = {
   "upper-right": new THREE.Vector3(0.75, 0.75, 0).normalize(),
 };
 
-/** Very brief anti-pop fade right as the sticker first appears — a few percent of the window, NOT the main reveal mechanism. Positional travel (see slapCurve/entryDistance) is what has to carry the "hit", per direct reference comparison. */
+/** Very brief anti-pop fade right as the sticker first appears — a couple of percent of the window. The reference clip's first visible frame already shows its incoming sticker fully opaque and static, so this is just enough to avoid a hard mount pop, not a reveal mechanism. */
 function opacityFor(t: number) {
-  const FADE_END = 0.06;
+  const FADE_END = 0.03;
   if (t >= FADE_END) return 1;
   const local = t / FADE_END;
   return local * local * (3 - 2 * local);
@@ -58,38 +58,45 @@ function opacityFor(t: number) {
  * glitch-free backward scrolling / re-scrolling.
  *
  * `t` is progress WITHIN this sticker's own applicationWindow (0–1), not
- * the page's scroll progress. Proportions match a reference clip's own
- * pacing (a sticker closes the gap and hits within a handful of frames):
- * APPROACH takes the first 75% of the window, CONTACT the next 12.5%,
- * SETTLE the last 12.5%.
+ * the page's scroll progress. Reshaped after frame-stepping the actual
+ * reference clip (not just estimating from the written brief): a sticker
+ * there does NOT drift in continuously — it sits essentially STATIC off
+ * the pole for the large majority of its on-screen time (frame-stepped in
+ * ~0.03–0.05s increments, its position was visually unchanged across many
+ * consecutive samples), then closes the entire remaining distance and hits
+ * within only 1–2 frames. That hold-then-snap shape, not a continuous
+ * glide, is what actually reads as "rude/quick" — the hold is what makes
+ * the snap read as sudden.
  *
- *   t=0.000  posBlend 0.00  scale 1.00  tilt  entryTilt        — OFF POLE
- *   t=0.750  posBlend 1.00  scale 1.04  tilt  entryTilt·0.15   — HIT (position locked, compression peak)
- *   t=0.875  posBlend 1.00  scale 0.985 tilt -2°               — undershoot
- *   t=1.000  posBlend 1.00  scale 1.00  tilt  0                — LOCKED
+ *   t=0.00–0.82  posBlend 0.00  scale 1.00  tilt entryTilt              — HOLD, static off-pole
+ *   t=0.82–0.90  posBlend 0→1   scale 1.00→1.04  tilt → entryTilt·0.15  — THE HIT (nearly all travel here)
+ *   t=0.90–0.95  posBlend 1.00  scale 1.04→0.985 tilt → -2°             — compression undershoot
+ *   t=0.95–1.00  posBlend 1.00  scale 0.985→1.00 tilt → 0               — LOCKED
  *
- * APPROACH is near-linear (mild power-1.3 ease, not the soft easeOutCubic
- * used previously) — the deceleration a viewer perceives should come from
- * the impact itself (the scale/tilt snap at 0.75), not from the travel
- * quietly slowing to a stop beforehand, which is what read as "floating"
- * before. The 1.00→1.04 jump exactly at t=0.75 is a deliberate hard cut,
- * not eased into — that's the "hit" instant.
+ * No motion at all during the hold (not even a subtle idle sway) — the
+ * reference doesn't have one, and adding one would undercut the abruptness
+ * of the snap. Each sub-phase eases with easeOutQuad (short, decisive, no
+ * elastic overshoot).
  */
 function slapCurve(t: number, entryTiltDeg: number) {
-  const APPROACH_END = 0.75;
-  const CONTACT_END = 0.875;
+  const HOLD_END = 0.82;
+  const SNAP_END = 0.9;
+  const SETTLE_MID = 0.95;
 
-  if (t <= APPROACH_END) {
-    const local = t / APPROACH_END;
-    const eased = 1 - (1 - local) ** 1.3;
+  if (t <= HOLD_END) {
+    return { posBlend: 0, scale: 1.0, tiltDeg: entryTiltDeg };
+  }
+  if (t <= SNAP_END) {
+    const local = (t - HOLD_END) / (SNAP_END - HOLD_END);
+    const eased = 1 - (1 - local) ** 2;
     return {
       posBlend: eased,
-      scale: 1.0,
-      tiltDeg: entryTiltDeg * (1 - 0.85 * eased),
+      scale: 1.0 + (1.04 - 1.0) * eased,
+      tiltDeg: entryTiltDeg + (entryTiltDeg * 0.15 - entryTiltDeg) * eased,
     };
   }
-  if (t <= CONTACT_END) {
-    const local = (t - APPROACH_END) / (CONTACT_END - APPROACH_END);
+  if (t <= SETTLE_MID) {
+    const local = (t - SNAP_END) / (SETTLE_MID - SNAP_END);
     const eased = 1 - (1 - local) ** 2;
     return {
       posBlend: 1,
@@ -97,7 +104,7 @@ function slapCurve(t: number, entryTiltDeg: number) {
       tiltDeg: entryTiltDeg * 0.15 + (-2 - entryTiltDeg * 0.15) * eased,
     };
   }
-  const local = (t - CONTACT_END) / (1 - CONTACT_END);
+  const local = (t - SETTLE_MID) / (1 - SETTLE_MID);
   const eased = 1 - (1 - local) ** 2;
   return {
     posBlend: 1,
