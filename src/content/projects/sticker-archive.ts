@@ -215,40 +215,56 @@ export const STICKER_COUNT = stickerPlacements.length;
 
 /**
  * "Slap-on" application animation — see SlapSticker.tsx for the actual
- * motion. Exactly 6, per this pass's brief (not the whole 25 yet): these
- * indices are pulled OUT of the shared atlas (see `atlasStickerPlacements`
- * below) and rendered as their own individually-animated meshes instead,
- * while every other sticker stays exactly as before — already attached,
- * baked into the one shared atlas texture, present from progress 0. That
- * split is what makes this additive rather than a rebuild.
+ * motion. Exactly 6: these indices are pulled OUT of the shared atlas (see
+ * `atlasStickerPlacements` below) and rendered as their own individually-
+ * animated meshes instead, while every other sticker stays exactly as
+ * before — already attached, baked into the one shared atlas texture,
+ * present from progress 0.
  *
- * `window`'s END is each sticker's own natural dead-front moment
- * (`-angleDeg / 340` — see MANUAL_LAYOUT), so the hit lands right as the
- * sticker arrives at its first real front-facing pass, not off to the side.
- * Width (~0.018) and internal HOLD/SNAP/SETTLE shape are unchanged from the
- * previous pass's reference-clip-verified tuning — this pass only picks
- * WHICH 6 stickers and WHICH direction each uses. The six target thresholds
- * requested (~12/25/38/52/67/82%) are matched to the closest sticker whose
- * own natural reveal moment lands nearby, per "adjust slightly if
- * necessary" — actual thresholds used are listed sticker-by-sticker below.
+ * `entryOffsetVw` is the sticker's exact incoming start position, as a
+ * fraction of the viewport's own world-space width/height (SlapSticker.tsx
+ * multiplies by R3F's live `state.viewport.width/height` every frame, not a
+ * hand-derived constant, so it stays correct across resize) — hand-specified
+ * per sticker rather than derived from `entryDirection` + a shared formula,
+ * per explicit exact values requested. Sign convention: x follows screen
+ * convention directly (negative = left); y is CSS/screen convention in the
+ * input (negative = up) and gets flipped to world convention (positive =
+ * up) in SlapSticker.tsx.
  *
- * `entryDirection` uses the exact 6 requested, one each: left, upper-right,
- * top, right, upper-left, lower-left (a diagonal, reintroduced this pass at
- * explicit request — a previous pass had dropped downward directions).
+ * `window`: explicit thresholds requested, used as-is — each one checked
+ * against that sticker's own natural front-facing angle at the window's END
+ * (`angleDeg + end·340`, see MANUAL_LAYOUT) and confirmed to land within
+ * ~13° of true dead-front (well inside the front-facing-fade's ±30°
+ * full-brightness zone — see frontFacingFade.ts), so none needed adjusting
+ * per "adjust only if the target sticker is not visible at that exact
+ * moment". Gaps between consecutive windows are ~0.11–0.13 — comfortably
+ * more separation than the requested minimum, so each hit reads as a
+ * distinct event.
  */
 export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right" | "lower-left";
 
-const SLAP_CONFIG: Record<number, { entryDirection: EntryDirection; window: [number, number] }> = {
-  1: { entryDirection: "left", window: [0.082, 0.1] }, // rhodesianTiger — group1 upper, reveal .10 (target ~12%)
-  5: { entryDirection: "upper-right", window: [0.282, 0.3] }, // cookies — group2 hero, reveal .30 (target ~25%)
-  14: { entryDirection: "top", window: [0.335, 0.353] }, // generic3 — group3 edge2, reveal .353 (target ~38%)
-  10: { entryDirection: "right", window: [0.482, 0.5] }, // blushingDuck — group3 hero, reveal .50 (target ~52%)
-  13: { entryDirection: "upper-left", window: [0.629, 0.647] }, // generic2 — group3 edge1, reveal .647 (target ~67%)
-  18: { entryDirection: "lower-left", window: [0.829, 0.847] }, // generic7 — group4 edge1, reveal .847 (target ~82%)
+const SLAP_CONFIG: Record<
+  number,
+  { entryDirection: EntryDirection; entryOffsetVw: { x: number; y: number }; entryTiltDeg: number; window: [number, number] }
+> = {
+  // 1. rhodesianTiger — group1 upper. angleDeg -34, world angle at contact (p=.132) ≈ +10.9° (near-front).
+  1: { entryDirection: "left", entryOffsetVw: { x: -0.32, y: 0 }, entryTiltDeg: -8, window: [0.11, 0.132] },
+  // 2. cookies — group2 hero. angleDeg -102, world angle at contact (p=.262) ≈ -13.9° (near-front).
+  5: { entryDirection: "upper-right", entryOffsetVw: { x: 0.26, y: 0.22 }, entryTiltDeg: 7, window: [0.24, 0.262] },
+  // 3. generic3 — group3 edge2. angleDeg -120, world angle at contact (p=.392) ≈ +13.3° (near-front).
+  14: { entryDirection: "top", entryOffsetVw: { x: 0, y: 0.28 }, entryTiltDeg: 6, window: [0.37, 0.392] },
+  // 4. blushingDuck — group3 hero. angleDeg -170, world angle at contact (p=.522) ≈ +7.5° (near-front).
+  10: { entryDirection: "right", entryOffsetVw: { x: 0.32, y: 0 }, entryTiltDeg: 8, window: [0.5, 0.522] },
+  // 5. generic2 — group3 edge1. angleDeg -220, world angle at contact (p=.662) ≈ +5.1° (near-front).
+  13: { entryDirection: "upper-left", entryOffsetVw: { x: -0.26, y: 0.22 }, entryTiltDeg: -7, window: [0.64, 0.662] },
+  // 6. generic7 — group4 edge1. angleDeg -288, world angle at contact (p=.812) ≈ -11.9° (near-front).
+  18: { entryDirection: "lower-left", entryOffsetVw: { x: -0.24, y: -0.18 }, entryTiltDeg: -6, window: [0.79, 0.812] },
 };
 
 export interface SlapPlacement extends StickerPlacement {
   entryDirection: EntryDirection;
+  entryOffsetVw: { x: number; y: number };
+  entryTiltDeg: number;
   applicationWindow: [number, number];
 }
 
@@ -258,6 +274,8 @@ export const slapStickers: SlapPlacement[] = Object.entries(SLAP_CONFIG).map(([i
   return {
     ...stickerPlacements[index],
     entryDirection: cfg.entryDirection,
+    entryOffsetVw: cfg.entryOffsetVw,
+    entryTiltDeg: cfg.entryTiltDeg,
     applicationWindow: cfg.window,
   };
 });

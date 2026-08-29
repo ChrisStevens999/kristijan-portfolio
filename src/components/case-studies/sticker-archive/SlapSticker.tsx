@@ -8,8 +8,8 @@ import * as THREE from "three";
 import {
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
+  POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
-  ROTATION_TURNS,
   STICKER_SURFACE_RADIUS_OFFSET,
   type SlapPlacement,
 } from "@/content/projects/sticker-archive";
@@ -17,117 +17,129 @@ import { frontFacingFadeOnBeforeCompile } from "./frontFacingFade";
 import { SLAP_TEXTURE_PAD, useSingleStickerTexture } from "./useSingleStickerTexture";
 
 const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
+/**
+ * Horizontal span of the camera frustum, in world units — CONSTANT
+ * regardless of viewport aspect (CameraFraming derives frustum halfWidth
+ * from CYLINDER_RADIUS/POLE_FRAME_FRACTION only; halfHeight is what varies
+ * with aspect). NOT read from R3F's `state.viewport` — that's computed from
+ * the camera's own props, but CameraFraming sets left/right/top/bottom
+ * imperatively outside Fiber's normal reactive flow, so `state.viewport`
+ * doesn't reflect it (confirmed via direct logging: it was returning the
+ * canvas's PIXEL size, ~1330, instead of the ~6.67 world units expected —
+ * a 200x error that sent the entry offset thousands of degrees around the
+ * cylinder). `state.size` (the canvas's real pixel dimensions) is reliable
+ * for deriving live aspect, so that's used for the vertical extent instead.
+ */
+const VIEWPORT_WORLD_WIDTH = (2 * CYLINDER_RADIUS) / POLE_FRAME_FRACTION;
 
 /**
- * Sign pattern per entryDirection — NOT a normalized travel vector. Entry
- * distance is anisotropic (see the worldOffset build in useFrame below):
- * horizontal reach is sized against the viewport's WORLD width, vertical
- * reach against its WORLD height, per the brief's own "25–35vw" / "20–30vh"
- * split. A single shared unit vector can't represent that, so direction
- * here is just which axes move which way; magnitude is computed separately,
- * live, from R3F's `state.viewport` each frame (auto-updates on resize,
- * unlike a hand-derived constant).
+ * Where the approach ends and the tiny settle begins, as a fraction of the
+ * sticker's own applicationWindow — matches the requested "~85% approach /
+ * ~15% settle" (roughly 180–220ms / 40–60ms at typical scroll speed).
  */
-const ENTRY_SIGNS: Record<SlapPlacement["entryDirection"], { x: -1 | 0 | 1; y: -1 | 0 | 1 }> = {
-  left: { x: -1, y: 0 },
-  right: { x: 1, y: 0 },
-  top: { x: 0, y: 1 },
-  "upper-left": { x: -1, y: 1 },
-  "upper-right": { x: 1, y: 1 },
-  "lower-left": { x: -1, y: -1 },
-};
-/** Diagonal directions split their travel across both axes — scaled down a bit per axis so the COMBINED distance lands in the same ballpark as a straight left/right/top entry, not further. */
-const DIAGONAL_AXIS_SCALE = 0.72;
-
-/** Very brief anti-pop fade right as the sticker first appears — a couple of percent of the window. The reference clip's first visible frame already shows its incoming sticker fully opaque and static, so this is just enough to avoid a hard mount pop, not a reveal mechanism. */
-function opacityFor(t: number) {
-  const FADE_END = 0.03;
-  if (t >= FADE_END) return 1;
-  const local = t / FADE_END;
-  return local * local * (3 - 2 * local);
-}
+const APPROACH_END = 0.85;
+/** How far outside the surface (in cylinder radii) the incoming sticker starts, along its own outward normal — "0.5–0.8 radii closer to camera" from the brief; interpolated to exactly 0 (the true surface) by contact. */
+const RADIAL_PUSH_RADII = 0.65;
 
 /**
  * Deterministic "slap" curve — NOT a physics spring (no velocity/state to
  * integrate, which would make it timer- rather than scroll-driven). Every
  * output is a pure function of t, so scrubbing scroll forward or backward
- * always reproduces the exact same motion in reverse — required for
- * glitch-free backward scrolling / re-scrolling.
+ * always reproduces the exact same motion in reverse.
  *
- * `t` is progress WITHIN this sticker's own applicationWindow (0–1), not
- * the page's scroll progress. Reshaped after frame-stepping the actual
- * reference clip (not just estimating from the written brief): a sticker
- * there does NOT drift in continuously — it sits essentially STATIC off
- * the pole for the large majority of its on-screen time (frame-stepped in
- * ~0.03–0.05s increments, its position was visually unchanged across many
- * consecutive samples), then closes the entire remaining distance and hits
- * within only 1–2 frames. That hold-then-snap shape, not a continuous
- * glide, is what actually reads as "rude/quick" — the hold is what makes
- * the snap read as sudden.
+ * Reworked from a previous "long static hold, then near-instant snap" shape
+ * after direct feedback that holding still read as "sticker appears, sits
+ * there, sticker is on pole" rather than a visible flight — a viewer needs
+ * to actually watch it travel, not just perceive a sudden jump preceded by
+ * nothing. This version moves continuously for the whole approach instead:
  *
- *   t=0.00–0.82  posBlend 0.00  scale 1.00  tilt entryTilt              — HOLD, static off-pole
- *   t=0.82–0.90  posBlend 0→1   scale 1.00→1.03  tilt → entryTilt·0.15  — THE HIT (nearly all travel here)
- *   t=0.90–0.95  posBlend 1.00  scale 1.03→0.985 tilt → -2°             — compression undershoot
- *   t=0.95–1.00  posBlend 1.00  scale 0.985→1.00 tilt → 0               — LOCKED
+ *   t=0.00       posBlend 0.00  scale 1.08                     — OFF POLE, full offset
+ *   t=0.00–0.85  posBlend 0→1   scale 1.08→1.02  tilt→0  radial 1→0   — APPROACH (sharp ease-out, continuous)
+ *   t=0.85       posBlend 1.00  scale 1.02  tilt 0  radial 0         — CONTACT (position/rotation/depth exactly final)
+ *   t=0.85–~0.90 scale 1.02→0.985                                    — impact compression
+ *   t=~0.90–1.00 scale 0.985→1.00                                    — settle to rest
  *
- * No motion at all during the hold (not even a subtle idle sway) — the
- * reference doesn't have one, and adding one would undercut the abruptness
- * of the snap. Each sub-phase eases with easeOutQuad (short, decisive, no
- * elastic overshoot).
+ * Position, tilt and the radial (depth) push all share the APPROACH
+ * timeline and all reach their final value simultaneously at t=0.85 —
+ * that's what guarantees position/rotation/depth match the resting
+ * (attached) transform exactly at contact, with nothing left to correct
+ * during settle. Only scale continues moving after contact, and only as
+ * the requested "one subtle impact cue" (1.02 → 0.985 → 1.00) — no
+ * position, rotation or depth change after contact, and no bounce/wobble.
+ * Approach eases with a sharp cubic ease-out (heavier deceleration than a
+ * quad) so the stop reads as decisive, not floaty.
  */
 function slapCurve(t: number, entryTiltDeg: number) {
-  const HOLD_END = 0.82;
-  const SNAP_END = 0.9;
-  const SETTLE_MID = 0.95;
-
-  if (t <= HOLD_END) {
-    return { posBlend: 0, scale: 1.0, tiltDeg: entryTiltDeg };
-  }
-  if (t <= SNAP_END) {
-    const local = (t - HOLD_END) / (SNAP_END - HOLD_END);
-    const eased = 1 - (1 - local) ** 2;
+  if (t <= APPROACH_END) {
+    const local = t / APPROACH_END;
+    const eased = 1 - (1 - local) ** 3;
     return {
       posBlend: eased,
-      scale: 1.0 + (1.03 - 1.0) * eased,
-      tiltDeg: entryTiltDeg + (entryTiltDeg * 0.15 - entryTiltDeg) * eased,
+      scale: 1.08 + (1.02 - 1.08) * eased,
+      tiltDeg: entryTiltDeg * (1 - eased),
+      radialBlend: 1 - eased,
     };
   }
-  if (t <= SETTLE_MID) {
-    const local = (t - SNAP_END) / (SETTLE_MID - SNAP_END);
-    const eased = 1 - (1 - local) ** 2;
-    return {
-      posBlend: 1,
-      scale: 1.03 + (0.985 - 1.03) * eased,
-      tiltDeg: entryTiltDeg * 0.15 + (-2 - entryTiltDeg * 0.15) * eased,
-    };
+  const local = (t - APPROACH_END) / (1 - APPROACH_END);
+  const DIP_END = 0.35;
+  let scale;
+  if (local <= DIP_END) {
+    const l2 = local / DIP_END;
+    const eased2 = 1 - (1 - l2) ** 2;
+    scale = 1.02 + (0.985 - 1.02) * eased2;
+  } else {
+    const l2 = (local - DIP_END) / (1 - DIP_END);
+    const eased2 = 1 - (1 - l2) ** 2;
+    scale = 0.985 + (1.0 - 0.985) * eased2;
   }
-  const local = (t - SETTLE_MID) / (1 - SETTLE_MID);
-  const eased = 1 - (1 - local) ** 2;
-  return {
-    posBlend: 1,
-    scale: 0.985 + (1.0 - 0.985) * eased,
-    tiltDeg: -2 + (0 - -2) * eased,
-  };
+  return { posBlend: 1, scale, tiltDeg: 0, radialBlend: 0 };
 }
 
 /**
  * One individually-animated sticker: rendered as a small curved patch of
  * the SAME cylinder surface (a partial CylinderGeometry at the sticker's
  * exact (u, v)/widthFrac, not a flat plane) so its resting transform is
- * geometrically identical to a sticker baked into the shared atlas — no
- * separate "attached representation" to hand off to, no risk of a visible
- * jump at contact. It's a literal JSX child of PoleGroup's rotating
- * `<group>`, so once at rest (offset 0) it moves with the pole for free,
- * exactly like every atlas sticker.
+ * geometrically identical to a sticker baked into the shared atlas.
  *
- * Before/during its applicationWindow, an additional WORLD-space offset is
- * added on top of that same resting local position — computed fresh every
- * frame by converting the sticker's fixed entryDirection into the group's
- * CURRENT local space (the group keeps rotating slowly while a slap plays),
- * so the incoming trajectory always reads as arriving from a consistent
- * screen-relative direction regardless of when in the rotation it happens
- * to attach.
+ * This is deliberately ONE mesh, not two — there is no separate "incoming"
+ * object handed off to a separate "attached" object. The brief's contact
+ * requirement (incoming and attached must match position/scale/rotation
+ * exactly, with an extremely short crossfade so there's zero visible pop)
+ * is satisfied structurally instead: since it's the same object the whole
+ * time, hidden (visible=false) until its applicationWindow starts and
+ * always at full opacity once shown, there is nothing to hand off between
+ * and nothing that could mismatch — a stronger guarantee than a real
+ * crossfade could give. It's a literal JSX child of PoleGroup's rotating
+ * `<group>`, so once at rest it moves with the pole for free, exactly like
+ * every atlas sticker.
+ *
+ * Before/during its applicationWindow, the patch is displaced from that
+ * resting position by ROTATING it further around the cylinder's own axis
+ * and pushing it to a larger radius — NOT by translating it along a raw
+ * XYZ vector. That distinction matters: an early version translated the
+ * curved patch freely through space, which (confirmed via screenshot)
+ * makes a wide patch self-intersect the metal cylinder's own geometry once
+ * it's far from its "home" angular position — the translated curve, still
+ * shaped as if wrapped around the ORIGINAL axis, ends up partly inside the
+ * metal, producing a dark, semi-transparent smear. Expressing horizontal
+ * entry as an angular offset (theta) instead keeps the patch always
+ * genuinely wrapped around the same axis, just at a different angle and/or
+ * radius, so it can never intersect the metal — physically closer to what
+ * "a sticker swinging in and around onto the pole" actually is:
+ *  - HORIZONTAL entry (`entryOffsetVw.x`) becomes an angular offset,
+ *    θ = (entryOffsetVw.x · viewport.width) / CYLINDER_RADIUS (arc length
+ *    ÷ radius — the same relationship `widthFracFor` already uses
+ *    elsewhere in this codebase). Added to the mesh's OWN rotation too, so
+ *    its baked-in curvature/normals stay consistent with its new position.
+ *  - VERTICAL entry (`entryOffsetVw.y`) is a plain world-Y translation —
+ *    sliding along the cylinder's length is always safe, no rotation
+ *    needed.
+ *  - The RADIAL (depth) push extends the radius outward at whatever the
+ *    current angle is, so it starts proud of the surface and settles onto
+ *    the true radius exactly at contact — "moving in depth, not purely
+ *    2D", per the brief.
+ * All three — plus the tilt wobble — share one easing timeline and reach
+ * zero simultaneously at t=0.85, which is what makes contact exact.
  */
 export function SlapSticker({ placement, progress }: { placement: SlapPlacement; progress: MotionValue<number> }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -169,28 +181,8 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
 
     const localY = (0.5 - placement.v) * CYLINDER_WORLD_HEIGHT;
     const restPosition = new THREE.Vector3(center.x, localY + center.y, center.z);
-    return { geometry, restPosition };
+    return { geometry, restPosition, centerTheta };
   }, [loaded, placement.widthFrac, placement.u, placement.v]);
-
-  // How far along each axis the sticker travels, as a FRACTION of that
-  // axis's own viewport extent — 25–35% for the axis(es) actually used,
-  // scaled a little larger for bigger stickers. Multiplied by live
-  // viewport.width/height (world units) every frame in useFrame below, not
-  // here, since viewport.height changes with aspect/resize.
-  const axisFrac = useMemo(() => {
-    const sizeFrac = Math.min(1, Math.max(0, placement.widthFrac / 0.18));
-    return 0.25 + sizeFrac * 0.1; // 0.25–0.35
-  }, [placement.widthFrac]);
-  // ENTRY_SIGNS is a stable module-level lookup, so this reference stays
-  // constant across renders as long as entryDirection doesn't change — no
-  // memoization needed for these trivially-cheap derivations.
-  const signs = ENTRY_SIGNS[placement.entryDirection];
-  const isDiagonal = signs.x !== 0 && signs.y !== 0;
-  // Deterministic, hand-varied per sticker (not randomized): the entry tilt
-  // leans with the entry direction (arriving from the left tilts as if
-  // spun on from that side) so the flight itself reads as physical rather
-  // than a straight linear slide.
-  const entryTiltDeg = -signs.x * 12 + (signs.y > 0 ? 3 : -3);
 
   useFrame((state) => {
     const mesh = meshRef.current;
@@ -205,32 +197,46 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     mesh.visible = true;
 
     const t = Math.min(1, Math.max(0, (p - start) / Math.max(0.0001, end - start)));
-    const { posBlend, scale, tiltDeg } = slapCurve(t, entryTiltDeg);
-
-    // The group (see PoleGroup) rotates purely as a function of the same
-    // `progress` value — recomputed here rather than read off the live
-    // object, so it's guaranteed consistent within this exact frame without
-    // needing a ref into the parent.
-    const groupRotY = p * ROTATION_TURNS * Math.PI * 2;
+    const { posBlend, scale, tiltDeg, radialBlend } = slapCurve(t, placement.entryTiltDeg);
     const remaining = 1 - posBlend;
-    const axisScale = isDiagonal ? DIAGONAL_AXIS_SCALE : 1;
-    const worldOffset = new THREE.Vector3(
-      signs.x * state.viewport.width * axisFrac * axisScale * remaining,
-      signs.y * state.viewport.height * axisFrac * axisScale * remaining,
-      0,
-    );
-    const localOffset = worldOffset.applyAxisAngle(Y_AXIS, -groupRotY);
 
-    mesh.position.set(
-      geo.restPosition.x + localOffset.x,
-      geo.restPosition.y + localOffset.y,
-      geo.restPosition.z + localOffset.z,
-    );
-    mesh.rotation.y = THREE.MathUtils.degToRad(tiltDeg);
+    // Angular offset (radians): arc length ÷ radius, same relationship
+    // widthFracFor uses elsewhere. This is a LOCAL-space theta delta, and
+    // because both the rest position and this offset are expressed as
+    // rotations around the same Y axis, the delta is rotation-invariant —
+    // it reads as the same screen-relative direction regardless of the
+    // group's current rotation, with no extra unrotate-then-rotate step
+    // needed (unlike a raw world-space vector offset would require). Sign
+    // verified directly against live world-space/NDC coordinates (not just
+    // a screenshot) — this geometry's theta convention maps a positive
+    // (rightward) entryOffsetVw.x to a positive theta delta.
+    const deltaTheta = ((placement.entryOffsetVw.x * VIEWPORT_WORLD_WIDTH) / CYLINDER_RADIUS) * remaining;
+    const incomingTheta = geo.centerTheta + deltaTheta;
+    const incomingRadius = CYLINDER_RADIUS + RADIAL_PUSH_RADII * CYLINDER_RADIUS * radialBlend;
+    // Offset = (position on the incoming arc) - (position on the rest arc,
+    // via the same formula) — added to geo.restPosition (the geometry's
+    // real bounding-box centre) rather than used as an absolute position,
+    // so any small formula/bounding-box discrepancy at rest cancels out.
+    const dx = incomingRadius * Math.sin(incomingTheta) - CYLINDER_RADIUS * Math.sin(geo.centerTheta);
+    const dz = incomingRadius * Math.cos(incomingTheta) - CYLINDER_RADIUS * Math.cos(geo.centerTheta);
+    // entryOffsetVw.y is stored in screen/CSS convention (negative = up);
+    // world space is the opposite (positive = up), hence the negation.
+    // Vertical entry is a plain world-Y translation — always safe, no
+    // rotation needed, since sliding along the cylinder's length can't
+    // intersect anything. Height genuinely does vary with aspect (unlike
+    // width), so it's derived live from state.size (real canvas pixels,
+    // unlike state.viewport — see VIEWPORT_WORLD_WIDTH's comment above).
+    const aspect = state.size.width / Math.max(1, state.size.height);
+    const viewportWorldHeight = VIEWPORT_WORLD_WIDTH / aspect;
+    const dy = -placement.entryOffsetVw.y * viewportWorldHeight * remaining;
+
+    mesh.position.set(geo.restPosition.x + dx, geo.restPosition.y + dy, geo.restPosition.z + dz);
+    // The mesh's OWN rotation carries the same angular delta as its
+    // position, so the geometry's baked-in curvature/normals stay
+    // consistent with wherever it currently sits — plus the small tilt
+    // wobble on top.
+    mesh.rotation.y = deltaTheta + THREE.MathUtils.degToRad(tiltDeg);
     mesh.scale.setScalar(scale);
-
-    const material = mesh.material as THREE.MeshBasicMaterial;
-    material.opacity = opacityFor(t);
   });
 
   if (!loaded || !geo) return null;
@@ -241,7 +247,6 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
         map={loaded.texture}
         transparent
         alphaTest={0.05}
-        opacity={0}
         depthWrite={true}
         onBeforeCompile={frontFacingFadeOnBeforeCompile}
       />
