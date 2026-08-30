@@ -23,18 +23,25 @@ import closingCredit from "../../../assets/projects/lxix/End Page.png";
 
 /**
  * One panel per beat in the supplied LXIX reference board, in the exact
- * order of that reference — every panel is a flat, already-art-directed
- * image (text/captions baked into the pixels, not live overlays), reusing
- * the same PanelSequence renderer as BoyzClub/Damaged Goods. The single
- * exception is `intro-video`: the reference board shows a black spacer
- * panel at this exact point, replaced here with the project's real intro
- * animation footage per explicit request.
+ * order of that reference — almost every panel is a flat, already-art-
+ * directed image (text/captions baked into the pixels, not live overlays),
+ * reusing the same PanelSequence renderer as BoyzClub/Damaged Goods. Two
+ * exceptions:
  *
- * The two flattened "sticker sheet"-style grids in other case studies don't
- * apply here — LXIX's moodboard (`moodboard`) and 3-across bottle shot
- * (`bottleTriptychStatement`) are likewise pre-composited single images,
- * not live CSS grids, for the same reason: they're exact art-directed
- * layouts (specific crops/captions) a generic grid rebuild can't reproduce.
+ *  - `intro-video`: the reference board shows a black spacer panel at this
+ *    exact point, replaced here with the project's real intro animation
+ *    footage per explicit request.
+ *  - `detail-row`: the reference shows the sunglasses/hands/lips detail
+ *    shots as a tight side-by-side row, but those three exist as separate
+ *    source files (not one flattened image like the moodboard or the
+ *    bottle triptych below) — rendered via PanelSequence's `row` panel kind
+ *    instead of stacking them as three full-width panels, which doesn't
+ *    match the reference.
+ *
+ * The moodboard (`moodboard`) and 3-across bottle shot
+ * (`bottleTriptychStatement`) ARE already pre-composited single images
+ * (specific crops/captions baked in), so those stay as plain image panels,
+ * not rebuilt as rows.
  */
 export const lxixPanels: SequencePanel[] = [
   {
@@ -108,22 +115,14 @@ export const lxixPanels: SequencePanel[] = [
     alt: "LXIX cufflink detail beside a wristwatch",
   },
   {
-    id: "sunglasses-portrait",
+    id: "detail-row",
     enabled: true,
-    src: sunglassesPortrait,
-    alt: "Close-up portrait wearing LXIX sunglasses, water droplets on skin",
-  },
-  {
-    id: "ringed-hands-detail",
-    enabled: true,
-    src: ringedHandsDetail,
-    alt: "Hands in rings and chains gripping an LXIX bag, the symbol engraved in metal",
-  },
-  {
-    id: "lips-symbol-detail",
-    enabled: true,
-    src: lipsSymbolDetail,
-    alt: "Close-up of lips holding the LXIX symbol in polished metal",
+    kind: "row",
+    items: [
+      { src: sunglassesPortrait, alt: "Close-up portrait wearing LXIX sunglasses, water droplets on skin" },
+      { src: ringedHandsDetail, alt: "Hands in rings and chains gripping an LXIX bag, the symbol engraved in metal" },
+      { src: lipsSymbolDetail, alt: "Close-up of lips holding the LXIX symbol in polished metal" },
+    ],
   },
   {
     id: "billboard-at-night",

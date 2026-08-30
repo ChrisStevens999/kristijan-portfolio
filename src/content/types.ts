@@ -96,6 +96,23 @@ export interface SequenceVideoPanel {
   mobileObjectPosition?: string;
 }
 
+/**
+ * A tight horizontal row of N separate images (not one flattened asset) —
+ * e.g. a triptych of individual detail photos meant to sit side by side,
+ * each cropped to the same aspect ratio, no gap between them. Distinct from
+ * a single already-composited multi-image panel (SequenceImagePanel with
+ * one flat asset that already contains a grid) — use this when the source
+ * files are genuinely separate images that need to be arranged into a row.
+ */
+export interface SequenceRowPanel {
+  id: string;
+  enabled: true;
+  kind: "row";
+  items: { src: ImageAsset["src"]; alt: string }[];
+  /** Aspect ratio each column is cropped to (object-cover) — defaults to square. */
+  aspectRatio?: number;
+}
+
 export interface SequenceDisabledPanel {
   id: string;
   enabled: false;
@@ -106,6 +123,7 @@ export interface SequenceDisabledPanel {
 export type SequencePanel =
   | SequenceImagePanel
   | SequenceVideoPanel
+  | SequenceRowPanel
   | SequenceDisabledPanel;
 
 export interface SiteConfig {

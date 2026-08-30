@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type {
   SequenceImagePanel,
   SequencePanel,
+  SequenceRowPanel,
   SequenceVideoPanel,
 } from "@/content/types";
 
@@ -98,6 +99,27 @@ function Panel({ panel, framed }: { panel: SequenceImagePanel; framed: boolean }
   );
 }
 
+/** A tight row of separate images, each cropped to the same aspect ratio, no gap — see SequenceRowPanel. */
+function RowPanel({ panel }: { panel: SequenceRowPanel }) {
+  const aspectRatio = panel.aspectRatio ?? 1;
+  return (
+    <div className="flex w-full">
+      {panel.items.map((item, index) => (
+        <div key={index} className="relative w-full" style={{ aspectRatio }}>
+          <Image
+            src={item.src}
+            alt={item.alt}
+            fill
+            sizes="33vw"
+            quality={95}
+            className="object-cover"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Renders a flat, ordered SequencePanel array as one seamless vertical
  * composition — no gap, no padding, no max-width wrapper. Shared by every
@@ -120,7 +142,7 @@ export function PanelSequence({
   framed?: boolean;
 }) {
   const enabledPanels = panels.filter(
-    (panel): panel is SequenceImagePanel | SequenceVideoPanel => panel.enabled,
+    (panel): panel is SequenceImagePanel | SequenceVideoPanel | SequenceRowPanel => panel.enabled,
   );
 
   return (
@@ -136,13 +158,15 @@ export function PanelSequence({
             : "flex flex-col"
         }
       >
-        {enabledPanels.map((panel) =>
-          "kind" in panel && panel.kind === "video" ? (
-            <VideoPanel key={panel.id} panel={panel} framed={framed} />
-          ) : (
-            <Panel key={panel.id} panel={panel as SequenceImagePanel} framed={framed} />
-          ),
-        )}
+        {enabledPanels.map((panel) => {
+          if ("kind" in panel && panel.kind === "video") {
+            return <VideoPanel key={panel.id} panel={panel} framed={framed} />;
+          }
+          if ("kind" in panel && panel.kind === "row") {
+            return <RowPanel key={panel.id} panel={panel} />;
+          }
+          return <Panel key={panel.id} panel={panel as SequenceImagePanel} framed={framed} />;
+        })}
       </div>
 
       {exitNav}
