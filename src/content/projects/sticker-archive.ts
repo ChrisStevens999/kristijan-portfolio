@@ -341,8 +341,20 @@ const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
  */
 export const CYLINDER_WORLD_HEIGHT = (ATLAS_HEIGHT / ATLAS_WIDTH) * CIRCUMFERENCE;
 
-/** The pole occupies ~48% of the frame width at rest — a small bump from 0.46, closer to the reference's roughly-half-frame pole with strong black margins either side. */
-export const POLE_FRAME_FRACTION = 0.48;
+/**
+ * PASS 3 (camera/framing): bumped from 0.48 to 0.50 — the reference's pole
+ * occupies ~48–52% of frame width; 0.50 sits centred in that range instead
+ * of right at its lower edge. The camera is a plain OrthographicCamera
+ * looking straight down -Z at the origin (see CameraFraming in
+ * StickerScene.tsx) with left/right/top/bottom derived directly from this
+ * fraction, so the pole's rendered width is EXACTLY
+ * `2·CYLINDER_RADIUS / POLE_FRAME_FRACTION` in world units, on every
+ * resize — not an approximation to be re-tuned per breakpoint. Symmetrical
+ * ~25% black margin on each side falls out of the same formula for free
+ * (camera.left = -halfWidth, camera.right = +halfWidth, both centred on
+ * the pole's own x=0 axis, which never moves).
+ */
+export const POLE_FRAME_FRACTION = 0.5;
 
 /**
  * 340° total rotation across the whole scroll section — nearly a full
