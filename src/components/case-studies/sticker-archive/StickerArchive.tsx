@@ -53,14 +53,21 @@ export function StickerArchive({ category }: { category: Category }) {
     offset: ["start start", "end end"],
   });
 
-  // Tight, near-1:1 follow — heavy/mechanical rather than springy. Only
-  // enough smoothing to remove raw scroll-event jitter; no perceptible lag,
-  // no overshoot, so scrolling feels like scrubbing the pole directly
-  // rather than watching it catch up.
+  // PASS 2 (timing-only): tightened further — the previous spring
+  // (280/38/1, damping ratio ~1.13) was still soft enough to read as a
+  // faint accelerate/decelerate lag whenever scroll speed changed between
+  // sections, undermining "one continuous physical movement." Higher
+  // stiffness + lower mass shortens the follow lag to well under a frame
+  // at normal scroll speeds while the damping ratio (~1.5, still
+  // overdamped) keeps it free of any spring overshoot/bounce — the result
+  // reads as near-linear/1:1 with scroll, "only very light smoothing," not
+  // a perceptibly separate rotation/vertical-travel formula (both already
+  // are exactly linear in this value, see StickerScene.tsx) reading as
+  // heavy and steady rather than springy.
   const smoothed = useSpring(scrollYProgress, {
-    stiffness: 280,
-    damping: 38,
-    mass: 1,
+    stiffness: 500,
+    damping: 55,
+    mass: 0.5,
   });
 
   // Reduced motion: freeze at a static angle/position, no scroll binding.

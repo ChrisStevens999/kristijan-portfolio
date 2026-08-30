@@ -231,15 +231,24 @@ export const STICKER_COUNT = stickerPlacements.length;
  * input (negative = up) and gets flipped to world convention (positive =
  * up) in SlapSticker.tsx.
  *
- * `window`: explicit thresholds requested, used as-is — each one checked
- * against that sticker's own natural front-facing angle at the window's END
- * (`angleDeg + end·340`, see MANUAL_LAYOUT) and confirmed to land within
- * ~13° of true dead-front (well inside the front-facing-fade's ±30°
- * full-brightness zone — see frontFacingFade.ts), so none needed adjusting
- * per "adjust only if the target sticker is not visible at that exact
- * moment". Gaps between consecutive windows are ~0.11–0.13 — comfortably
- * more separation than the requested minimum, so each hit reads as a
- * distinct event.
+ * `window`: PASS 2 (timing-only) rewrote these to give each slap its own
+ * isolated moment instead of packing them into the pole's first ~80% —
+ * centres now sit on an EVEN 15%-apart rhythm (12/27/42/57/72/87%), each
+ * only ~2% wide (the requested "slap centred at 27% -> 26% to 28%" shape),
+ * so the gap between one window's end and the next one's start is ~13% of
+ * total scroll — comfortably inside the requested 10–12%+ hold, enough to
+ * read the pole rotating and the sticker sitting there before the next hit.
+ * The first window starts at 11% (not before the requested 5–8% "no slap
+ * yet" opening), and the last ends at 88%, leaving 89–100% as a pure
+ * final-composition hold with no slap events at all. Each entry's own
+ * `angleDeg` (see MANUAL_LAYOUT) is fixed from PASS 1/earlier passes —
+ * unchanged this pass, per "do not touch entry direction/distance" — so
+ * moving the window shifts WHEN each sticker reaches its own front-facing
+ * moment; re-checked against `angleDeg + contact·340` (contact ≈ centre +
+ * 0.5%, where the approach curve in SlapSticker.tsx actually reaches the
+ * surface) and every one lands within ~27° of true dead-front — well
+ * inside the front-facing-fade's ±30° full-brightness zone (see
+ * frontFacingFade.ts) — so none needed the ±2% "badly positioned" nudge.
  */
 export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right" | "lower-left";
 
@@ -247,18 +256,18 @@ const SLAP_CONFIG: Record<
   number,
   { entryDirection: EntryDirection; entryOffsetVw: { x: number; y: number }; entryTiltDeg: number; window: [number, number] }
 > = {
-  // 1. rhodesianTiger — group1 upper. angleDeg -34, world angle at contact (p=.132) ≈ +10.9° (near-front).
-  1: { entryDirection: "left", entryOffsetVw: { x: -0.32, y: 0 }, entryTiltDeg: -8, window: [0.11, 0.132] },
-  // 2. cookies — group2 hero. angleDeg -102, world angle at contact (p=.262) ≈ -13.9° (near-front).
-  5: { entryDirection: "upper-right", entryOffsetVw: { x: 0.26, y: 0.22 }, entryTiltDeg: 7, window: [0.24, 0.262] },
-  // 3. generic3 — group3 edge2. angleDeg -120, world angle at contact (p=.392) ≈ +13.3° (near-front).
-  14: { entryDirection: "top", entryOffsetVw: { x: 0, y: 0.28 }, entryTiltDeg: 6, window: [0.37, 0.392] },
-  // 4. blushingDuck — group3 hero. angleDeg -170, world angle at contact (p=.522) ≈ +7.5° (near-front).
-  10: { entryDirection: "right", entryOffsetVw: { x: 0.32, y: 0 }, entryTiltDeg: 8, window: [0.5, 0.522] },
-  // 5. generic2 — group3 edge1. angleDeg -220, world angle at contact (p=.662) ≈ +5.1° (near-front).
-  13: { entryDirection: "upper-left", entryOffsetVw: { x: -0.26, y: 0.22 }, entryTiltDeg: -7, window: [0.64, 0.662] },
-  // 6. generic7 — group4 edge1. angleDeg -288, world angle at contact (p=.812) ≈ -11.9° (near-front).
-  18: { entryDirection: "lower-left", entryOffsetVw: { x: -0.24, y: -0.18 }, entryTiltDeg: -6, window: [0.79, 0.812] },
+  // 1. rhodesianTiger — group1 upper. angleDeg -34, world angle at contact (p≈.125) ≈ +8.6° (near-front).
+  1: { entryDirection: "left", entryOffsetVw: { x: -0.32, y: 0 }, entryTiltDeg: -8, window: [0.11, 0.13] },
+  // 2. cookies — group2 hero. angleDeg -102, world angle at contact (p≈.275) ≈ -8.4° (near-front).
+  5: { entryDirection: "upper-right", entryOffsetVw: { x: 0.26, y: 0.22 }, entryTiltDeg: 7, window: [0.26, 0.28] },
+  // 3. generic3 — group3 edge2. angleDeg -120, world angle at contact (p≈.425) ≈ +24.6° (still full-brightness).
+  14: { entryDirection: "top", entryOffsetVw: { x: 0, y: 0.28 }, entryTiltDeg: 6, window: [0.41, 0.43] },
+  // 4. blushingDuck — group3 hero. angleDeg -170, world angle at contact (p≈.575) ≈ +25.6° (still full-brightness).
+  10: { entryDirection: "right", entryOffsetVw: { x: 0.32, y: 0 }, entryTiltDeg: 8, window: [0.56, 0.58] },
+  // 5. generic2 — group3 edge1. angleDeg -220, world angle at contact (p≈.725) ≈ +26.6° (still full-brightness).
+  13: { entryDirection: "upper-left", entryOffsetVw: { x: -0.26, y: 0.22 }, entryTiltDeg: -7, window: [0.71, 0.73] },
+  // 6. generic7 — group4 edge1. angleDeg -288, world angle at contact (p≈.875) ≈ +9.6° (near-front).
+  18: { entryDirection: "lower-left", entryOffsetVw: { x: -0.24, y: -0.18 }, entryTiltDeg: -6, window: [0.86, 0.88] },
 };
 
 export interface SlapPlacement extends StickerPlacement {
