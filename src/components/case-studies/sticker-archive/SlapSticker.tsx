@@ -8,7 +8,6 @@ import * as THREE from "three";
 import {
   CYLINDER_RADIUS,
   CYLINDER_WORLD_HEIGHT,
-  POLE_FRAME_FRACTION,
   RADIAL_SEGMENTS,
   STICKER_SURFACE_RADIUS_OFFSET,
   type SlapPlacement,
@@ -16,19 +15,6 @@ import {
 import { SLAP_TEXTURE_PAD, useSingleStickerTexture } from "./useSingleStickerTexture";
 
 const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
-/**
- * Horizontal span of the camera frustum, in world units — CONSTANT
- * regardless of viewport aspect (CameraFraming derives frustum halfWidth
- * from CYLINDER_RADIUS/POLE_FRAME_FRACTION only; halfHeight is what varies
- * with aspect). NOT read from R3F's `state.viewport` — that's computed from
- * the camera's own props, but CameraFraming sets left/right/top/bottom
- * imperatively outside Fiber's normal reactive flow, so `state.viewport`
- * doesn't reflect it (confirmed via direct logging in a previous pass: it
- * returned the canvas's PIXEL size, ~1330, instead of the ~6.67 world units
- * expected). `state.size` (the canvas's real pixel dimensions) is reliable
- * for deriving live aspect, so that's used for the vertical extent instead.
- */
-const VIEWPORT_WORLD_WIDTH = (2 * CYLINDER_RADIUS) / POLE_FRAME_FRACTION;
 
 /**
  * Where CONTACT happens, as a fraction of the sticker's own
@@ -237,6 +223,21 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     const { posBlend, scale: incomingScale, tiltDeg, radialBlend } = approachCurve(Math.min(t, CONTACT_T), placement.entryTiltDeg);
     const remaining = 1 - posBlend;
 
+    // Horizontal span of the camera frustum, in world units, read LIVE off
+    // the camera's own left/right every frame — NOT a fixed module
+    // constant. CameraFraming (StickerScene.tsx) now tightens the frustum
+    // responsively on narrow/mobile aspect ratios, so this genuinely
+    // varies by viewport, not just a value computed once at module scope.
+    // NOT read from R3F's `state.viewport` — that's computed from the
+    // camera's own props, but CameraFraming sets left/right/top/bottom
+    // imperatively outside Fiber's normal reactive flow, so `state.viewport`
+    // doesn't reflect it (confirmed via direct logging in a previous pass:
+    // it returned the canvas's PIXEL size, ~1330, instead of the ~6.67
+    // world units expected). The camera's own `left`/`right` floats are
+    // always in sync (CameraFraming just set them), so read those directly.
+    const orthoCamera = state.camera as THREE.OrthographicCamera;
+    const viewportWorldWidth = orthoCamera.right - orthoCamera.left;
+
     // Angular offset (radians): arc length ÷ radius, same relationship
     // widthFracFor uses elsewhere. This is a LOCAL-space theta delta, and
     // because both the rest position and this offset are expressed as
@@ -246,7 +247,7 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // maps to a positive theta delta (verified against live world-space/
     // NDC coordinates in a previous pass).
     const deltaTheta =
-      ((placement.entryOffsetVw.x * ENTRY_DISTANCE_MULTIPLIER * VIEWPORT_WORLD_WIDTH) / CYLINDER_RADIUS) * remaining;
+      ((placement.entryOffsetVw.x * ENTRY_DISTANCE_MULTIPLIER * viewportWorldWidth) / CYLINDER_RADIUS) * remaining;
     const incomingTheta = geo.centerTheta + deltaTheta;
     const incomingRadius = CYLINDER_RADIUS + RADIAL_PUSH_RADII * CYLINDER_RADIUS * radialBlend;
     // Offset = (position on the incoming arc) - (position on the rest arc,
@@ -265,7 +266,7 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // Vertical entry is a plain world-Y translation — sliding along the
     // cylinder's length can't intersect anything, no rotation needed.
     const aspect = state.size.width / Math.max(1, state.size.height);
-    const viewportWorldHeight = VIEWPORT_WORLD_WIDTH / aspect;
+    const viewportWorldHeight = viewportWorldWidth / aspect;
     const dy = -placement.entryOffsetVw.y * ENTRY_DISTANCE_MULTIPLIER * viewportWorldHeight * remaining;
 
     incoming.position.set(geo.restPosition.x + dx, geo.restPosition.y + dy, geo.restPosition.z + dz);

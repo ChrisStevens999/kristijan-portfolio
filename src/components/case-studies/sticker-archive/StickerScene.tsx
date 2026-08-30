@@ -31,7 +31,34 @@ import { useStickerAtlasTexture } from "./useStickerAtlasTexture";
  * back-face occlusion are genuine geometry/UV effects, not simulated.
  */
 
-/** Keeps the orthographic frustum sized so the pole holds POLE_FRAME_FRACTION of the frame width, on every resize. */
+/**
+ * Aspect ratio at/above which the frame is treated as "desktop-like" — the
+ * locked, approved POLE_FRAME_FRACTION (0.5) applies unchanged here and
+ * above. Below this, the viewport is narrow/tall enough (portrait phones,
+ * portrait tablets) that a FIXED pole-width fraction starts showing an
+ * excessive amount of plain metal above and below the stickers — because
+ * for an orthographic camera to render without stretching (circles staying
+ * circular), frustum height is mechanically `frustum-width / aspect`: a
+ * fixed width fraction combined with a narrow aspect forces a tall
+ * vertical frustum no matter what. The only real lever is zooming in
+ * (raising the effective pole-width fraction) as aspect narrows, which
+ * shrinks both dimensions together and brings the excess vertical metal
+ * back down.
+ */
+const MOBILE_ASPECT_BREAKPOINT = 1.0;
+/** Narrow-phone aspect (~iPhone-class, e.g. 375/812) treated as the far end of the responsive range — clamped beyond this so extremely tall/narrow windows don't zoom in indefinitely. */
+const NARROW_PHONE_ASPECT = 0.45;
+/** Pole-width fraction target at NARROW_PHONE_ASPECT — tight enough to noticeably cut the empty-metal margin, still ≤1 so the pole's own left/right edges are never actually cropped by the viewport. */
+const NARROW_PHONE_POLE_FRACTION = 0.92;
+
+/** Interpolates POLE_FRAME_FRACTION up toward NARROW_PHONE_POLE_FRACTION as the viewport gets narrower than MOBILE_ASPECT_BREAKPOINT — unchanged (locked, approved) at/above it. */
+function poleFrameFractionFor(aspect: number): number {
+  if (aspect >= MOBILE_ASPECT_BREAKPOINT) return POLE_FRAME_FRACTION;
+  const t = Math.min(1, (MOBILE_ASPECT_BREAKPOINT - aspect) / (MOBILE_ASPECT_BREAKPOINT - NARROW_PHONE_ASPECT));
+  return POLE_FRAME_FRACTION + t * (NARROW_PHONE_POLE_FRACTION - POLE_FRAME_FRACTION);
+}
+
+/** Keeps the orthographic frustum sized so the pole holds POLE_FRAME_FRACTION of the frame width on desktop-like aspects, tightening on narrow/mobile aspects (see poleFrameFractionFor) — on every resize. */
 function CameraFraming() {
   const { camera, size } = useThree();
   useEffect(() => {
@@ -40,8 +67,8 @@ function CameraFraming() {
        R3F/drei itself keeps an orthographic frustum in sync with the
        canvas, not a case of treating React state as immutable data. */
     const cam = camera as THREE.OrthographicCamera;
-    const halfWidth = CYLINDER_RADIUS / POLE_FRAME_FRACTION;
     const aspect = size.width / Math.max(1, size.height);
+    const halfWidth = CYLINDER_RADIUS / poleFrameFractionFor(aspect);
     const halfHeight = halfWidth / aspect;
     cam.left = -halfWidth;
     cam.right = halfWidth;
