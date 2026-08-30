@@ -4,6 +4,7 @@ import project02Cover from "../../../assets/featured projects/2 Fav.png";
 import project03Cover from "../../../assets/featured projects/3 Fav.png";
 import hardcoreCover from "../../../assets/featured projects/4 Fav.png";
 import boyzclubCover from "../../../assets/projects/boyzclub/BZC 1.png";
+import lxixCover from "../../../assets/projects/lxix/Cover Page.png";
 import damagedGoodsCover from "../../../assets/projects/damaged goods/4 5.png";
 import tagDesignsCover from "../../../assets/projects/tag designs/hero/Venom.png";
 import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/Miami Vice Tiger C-Drip Sticker-Front.png";
@@ -101,6 +102,32 @@ export const projects: Project[] = [
     order: 5,
   },
   {
+    slug: "lxix",
+    title: "LXIX",
+    category: "brand-direction",
+    summary:
+      "A luxury champagne identity where aristocracy collides with the attitude of rebellion.",
+    introduction:
+      "LXIX is a luxury champagne brand where aristocracy collides with the attitude of rebellion — rooted in art, rebellion, and provocative storytelling.",
+    services: [
+      "Creative Direction",
+      "Brand Identity",
+      "Packaging",
+      "Icon & Symbol Design",
+      "Campaign Direction",
+    ],
+    cover: { src: lxixCover, alt: "A champagne bottle held to a model's lips, LXIX wordmark below" },
+    gallery: [],
+    challenge: "",
+    process: "",
+    outcome: "",
+    // Not part of the curated homepage Selected Works — reachable via the
+    // Brand Direction category listing (now a real listing — this is the
+    // second Brand Direction project) and its own project page.
+    featured: false,
+    order: 6,
+  },
+  {
     slug: "damaged-goods",
     title: "Damaged Goods",
     category: "illustration",
@@ -115,7 +142,7 @@ export const projects: Project[] = [
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
-    order: 6,
+    order: 7,
   },
   {
     slug: "tag-designs",
@@ -130,7 +157,7 @@ export const projects: Project[] = [
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
-    order: 7,
+    order: 8,
   },
   {
     slug: "sticker-archive",
@@ -147,6 +174,6 @@ export const projects: Project[] = [
     // Phase 1 interactive prototype — reachable at /projects/sticker-archive
     // and via the Illustration category listing.
     featured: false,
-    order: 8,
+    order: 9,
   },
 ];

@@ -16,10 +16,8 @@ export const categories: Category[] = [
     title: "Brand Direction",
     description: "",
     cover: { src: brandDirectionCover, alt: "Brand Direction" },
-    // Only one Brand Direction project exists today — go straight to it
-    // instead of stopping at the category listing page. Remove this once a
-    // second Brand Direction project makes a real listing worthwhile.
-    href: "/projects/boyzclub",
+    // Bypass removed — LXIX is now a second Brand Direction project, so the
+    // category listing page is a real listing worth stopping at.
   },
   {
     slug: "apparel-design",
