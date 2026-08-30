@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { IllustrationCategoryPage } from "@/components/categories/IllustrationCategoryPage";
 import { getAllCategories, getCategoryBySlug, getProjectsByCategory } from "@/lib/content";
 
 export function generateStaticParams() {
@@ -21,6 +22,13 @@ export default async function CategoryPage({
   }
 
   const categoryProjects = getProjectsByCategory(slug);
+
+  // Illustration has its own designed look (see the reference board) —
+  // every other category keeps this original minimal listing until its
+  // own look is designed too.
+  if (slug === "illustration") {
+    return <IllustrationCategoryPage category={category} projects={categoryProjects} />;
+  }
 
   // Minimal generic listing: large cover + short introduction per project,
   // linking into its full case study. The curated visual language (mockup-

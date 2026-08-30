@@ -7,7 +7,9 @@ import boyzclubCover from "../../../assets/projects/boyzclub/BZC 1.png";
 import lxixCover from "../../../assets/projects/lxix/Cover Page.png";
 import damagedGoodsCover from "../../../assets/projects/damaged goods/4 5.png";
 import tagDesignsCover from "../../../assets/projects/tag designs/hero/Venom.png";
+import tagDesignsThumbnail from "../../../assets/sub categories/DSC03342.jpg";
 import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/Miami Vice Tiger C-Drip Sticker-Front.png";
+import stickerArchiveThumbnail from "../../../assets/sub categories/Stickers Thumbnail.png";
 
 /**
  * One entry per project. Titles/categories below are placeholders pending
@@ -131,10 +133,18 @@ export const projects: Project[] = [
     slug: "damaged-goods",
     title: "Damaged Goods",
     category: "illustration",
-    summary: "Illustration-Led Pop-Up Identity",
+    summary: "Pop-up apparel design project.",
     introduction:
       "Damaged Goods is an illustration-led pop-up concept centered around mental wellbeing, self-love and human connection. Its visual language combines bold color, expressive artwork and imperfect textures to create memorable physical and digital experiences.",
     cover: { src: damagedGoodsCover, alt: "Damaged Goods branded skateboard deck" },
+    // Same source photo as `cover`, cropped tighter to a portrait grid tile
+    // — the category page needs a much taller crop than the wide hero shot.
+    categoryThumbnail: {
+      src: damagedGoodsCover,
+      alt: "Damaged Goods branded skateboard deck, cropped portrait",
+      desktopObjectPosition: "50% 15%",
+      mobileObjectPosition: "50% 15%",
+    },
     gallery: [],
     challenge: "",
     process: "",
@@ -148,8 +158,15 @@ export const projects: Project[] = [
     slug: "tag-designs",
     title: "Tag Designs",
     category: "illustration",
-    summary: "Original illustrations created for clothing tags.",
+    categoryTitle: "Tag Design Illustrations",
+    summary: "Apparel tag design illustration.",
     cover: { src: tagDesignsCover, alt: "The Symbiote tag illustration" },
+    categoryThumbnail: {
+      src: tagDesignsThumbnail,
+      alt: "A pistol and game controller on a camo-print WARRIOR jacket, lit in red",
+      desktopObjectPosition: "60% 50%",
+      mobileObjectPosition: "60% 50%",
+    },
     gallery: [],
     challenge: "",
     process: "",
@@ -163,10 +180,15 @@ export const projects: Project[] = [
     slug: "sticker-archive",
     title: "Sticker Archive",
     category: "illustration",
-    summary: "An interactive archive of die-cut sticker graphics.",
+    categoryTitle: "Sticker Illustrations",
+    summary: "Sticker illustrations done over the years.",
     introduction:
       "Selected graphic work presented as a rotating, sticker-covered street object.",
     cover: { src: stickerArchiveCover, alt: "Miami Vice tiger sticker" },
+    categoryThumbnail: {
+      src: stickerArchiveThumbnail,
+      alt: "A cluster of die-cut sticker designs on black",
+    },
     gallery: [],
     challenge: "",
     process: "",

@@ -53,6 +53,19 @@ export interface Project {
   services?: string[];
   /** One or two-line project statement, distinct from the card-facing `summary`. */
   introduction?: string;
+  /**
+   * Dedicated portrait-crop thumbnail for the category listing grid
+   * ("ILLUSTRATION PROJECTS" style page) — distinct from `cover` (used on
+   * the project's own hero/other listings), since the best category-grid
+   * crop is often a tight detail from a different, usually landscape,
+   * source image. Falls back to `cover` when omitted.
+   */
+  categoryThumbnail?: ImageAsset & {
+    desktopObjectPosition?: string;
+    mobileObjectPosition?: string;
+  };
+  /** Display title on the category listing grid, when it differs from the canonical `title` (e.g. "Sticker Illustrations" vs. "Sticker Archive"). Falls back to `title`. */
+  categoryTitle?: string;
 }
 
 /**
