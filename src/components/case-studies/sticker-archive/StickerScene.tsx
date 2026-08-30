@@ -19,7 +19,6 @@ import {
   STICKER_SURFACE_RADIUS_OFFSET,
   VERTICAL_TRAVEL_WORLD,
 } from "@/content/projects/sticker-archive";
-import { frontFacingFadeOnBeforeCompile } from "./frontFacingFade";
 import { getMetalTexture, METAL_TILE_WORLD_SIZE } from "./metalTexture";
 import { SlapSticker } from "./SlapSticker";
 import { useStickerAtlasTexture } from "./useStickerAtlasTexture";
@@ -101,20 +100,37 @@ function PoleGroup({ progress }: { progress: MotionValue<number> }) {
           colours. Curvature still reads correctly (foreshortening + real
           back-face culling are pure geometry, not lighting), it's only the
           brightness/saturation of the art that's now independent of the
-          metal's light response. onBeforeCompile adds a front-facing
-          brightness falloff ON TOP of that unlit base — see
-          frontFacingFade.ts for why this exists (pure placement cannot make
-          "~3 substantial stickers visible" true on its own). */}
-      <mesh>
+          metal's light response.
+
+          RENDERING FIX 1 (transparency): depthWrite disabled — without
+          this, every fragment that passes alphaTest writes its own full
+          depth regardless of its actual (possibly near-transparent) alpha,
+          so this mesh's own padded canvas margins were cutting
+          rectangular/irregular holes through whatever a nearer slap
+          sticker mesh sat in front of. depthTest stays on (default true)
+          so the metal cylinder's real geometry still correctly hides the
+          far side of the pole. renderOrder=0 makes this the explicit base
+          layer — every slap sticker mesh (SlapSticker.tsx) renders with a
+          higher renderOrder so any overlap resolves deterministically,
+          never via three.js's default per-object distance sort (which is
+          a poor fit for one huge atlas mesh against several small curved
+          patches). alphaTest kept at 0.05 (within the requested
+          0.01–0.05 range) — high enough to skip fully-empty canvas
+          margin, low enough to leave soft PNG edges blending normally via
+          real alpha, not a hard cutout.
+
+          RENDERING FIX 2 (fake edge fade): the front-facing brightness/
+          alpha falloff previously injected here via onBeforeCompile
+          (frontFacingFade.ts) has been removed entirely — it was exactly
+          the "fake opacity/brightness gradient as stickers approach the
+          edge" the reference calls out. Curvature now reads purely from
+          the real cylinder geometry + perspective; sticker colour stays
+          clean until the surface actually turns away from the camera. */}
+      <mesh renderOrder={0}>
         <cylinderGeometry
           args={[stickerRadius, stickerRadius, CYLINDER_WORLD_HEIGHT, RADIAL_SEGMENTS, 1, true]}
         />
-        <meshBasicMaterial
-          map={stickerTexture}
-          transparent
-          alphaTest={0.05}
-          onBeforeCompile={frontFacingFadeOnBeforeCompile}
-        />
+        <meshBasicMaterial map={stickerTexture} transparent alphaTest={0.05} depthWrite={false} />
       </mesh>
 
       {/* ONE extremely subtle seam/joint — a shallow groove, not a graphic
@@ -150,13 +166,22 @@ export function StickerScene({ progress }: { progress: MotionValue<number> }) {
     >
       <color attach="background" args={["#000000"]} />
       <CameraFraming />
-      {/* Low ambient + a strong, tight key light — the reference's
-          left-dark / centre-bright-silver / right-dark falloff needs real
-          contrast between the key light and everything else. Pushed
-          further than the previous pass, which was still too even. */}
-      <ambientLight intensity={0.12} />
-      <directionalLight position={[0, 1.5, 9]} intensity={2.6} />
-      <directionalLight position={[-5, 2, -2]} intensity={0.1} />
+      {/* RENDERING FIX 2: the previous balance here (ambient 0.12, key
+          2.6, fill 0.1) was tuned for maximum centre/edge CONTRAST — with
+          ambient this low and the fill this dim, the grazing sides of the
+          cylinder (where the real Lambertian dot(N,L) term is naturally
+          near zero) dropped close to pure black, reading as an obvious
+          "dark edge -> bright centre -> dark edge" band rather than a
+          photographed metal object. Rebalanced for the same real
+          bright-centre/dark-side shape (still driven purely by geometry +
+          lighting, nothing baked or screen-space) but with a visible metal
+          floor all the way to the silhouette: more ambient plus a
+          stronger fill light on the shadow side, key light eased back
+          slightly so the centre doesn't blow out relative to the now-less-
+          dark edges. */}
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[0, 1.5, 9]} intensity={2} />
+      <directionalLight position={[-5, 2, -2]} intensity={0.35} />
       <PoleGroup progress={progress} />
     </Canvas>
   );

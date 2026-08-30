@@ -13,7 +13,6 @@ import {
   STICKER_SURFACE_RADIUS_OFFSET,
   type SlapPlacement,
 } from "@/content/projects/sticker-archive";
-import { frontFacingFadeOnBeforeCompile } from "./frontFacingFade";
 import { SLAP_TEXTURE_PAD, useSingleStickerTexture } from "./useSingleStickerTexture";
 
 const CIRCUMFERENCE = 2 * Math.PI * CYLINDER_RADIUS;
@@ -179,7 +178,17 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     // earlier pass. The extra 0.004 is well under what's visually
     // perceptible as a "step" at this radius but resolves depth ordering
     // unambiguously.
-    const radius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET + 0.004;
+    //
+    // RENDERING FIX 1 (z-fighting): on top of that, each of the 6 slap
+    // stickers gets its OWN further micro-step (+layer * 0.0005, so 0 to
+    // 0.0025 across all 6) — belt-and-suspenders alongside depthWrite=false
+    // and renderOrder (below/in the JSX): even though depthWrite=false
+    // means two overlapping sticker meshes no longer fight over the depth
+    // buffer at all, giving them genuinely distinct radii too means there's
+    // never a literal coplanar pair to begin with. 0.0025 world units
+    // against a radius of 1.6 is ~0.15% — nowhere near visible as
+    // "floating off the pole."
+    const radius = CYLINDER_RADIUS + STICKER_SURFACE_RADIUS_OFFSET + 0.004 + placement.layer * 0.0005;
     const segments = Math.max(6, Math.round(RADIAL_SEGMENTS * (thetaLength / (Math.PI * 2))));
 
     const geometry = new THREE.CylinderGeometry(radius, radius, patchHeightWorld, segments, 1, true, thetaStart, thetaLength);
@@ -197,7 +206,7 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
     const localY = (0.5 - placement.v) * CYLINDER_WORLD_HEIGHT;
     const restPosition = new THREE.Vector3(center.x, localY + center.y, center.z);
     return { geometry, restPosition, centerTheta };
-  }, [loaded, placement.widthFrac, placement.u, placement.v]);
+  }, [loaded, placement.widthFrac, placement.u, placement.v, placement.layer]);
 
   useFrame((state) => {
     const incoming = incomingRef.current;
@@ -275,25 +284,28 @@ export function SlapSticker({ placement, progress }: { placement: SlapPlacement;
 
   if (!loaded || !geo) return null;
 
+  // RENDERING FIX 1 (transparency): depthWrite was previously `true` here
+  // -- meaning every fragment passing alphaTest wrote its own full depth
+  // regardless of its actual (possibly near-transparent) alpha, so this
+  // patch's own padded canvas margin could cut a rectangular hole through
+  // whatever atlas/slap content sat behind it. Now `false` on both meshes
+  // -- depthTest stays on (default true) so the metal cylinder's real
+  // geometry still correctly hides the far side of the pole, but sticker
+  // meshes no longer occlude each other via the depth buffer at all.
+  // renderOrder gives deterministic stacking instead: the atlas mesh is 0
+  // (StickerScene.tsx), this sticker's ATTACHED mesh is 10+layer (always
+  // above the atlas base layer), and its INCOMING mesh is 100+layer
+  // (always above every attached sticker while it's still flying in) --
+  // see `layer` in sticker-archive.ts for why each of the 6 gets a fixed,
+  // explicit number instead of leaving overlaps to three.js's own
+  // distance-based transparent-object sort.
   return (
     <>
-      <mesh ref={incomingRef} geometry={geo.geometry} visible={false}>
-        <meshBasicMaterial
-          map={loaded.texture}
-          transparent
-          alphaTest={0.05}
-          depthWrite={true}
-          onBeforeCompile={frontFacingFadeOnBeforeCompile}
-        />
+      <mesh ref={incomingRef} geometry={geo.geometry} visible={false} renderOrder={100 + placement.layer}>
+        <meshBasicMaterial map={loaded.texture} transparent alphaTest={0.05} depthWrite={false} />
       </mesh>
-      <mesh ref={attachedRef} geometry={geo.geometry} visible={false}>
-        <meshBasicMaterial
-          map={loaded.texture}
-          transparent
-          alphaTest={0.05}
-          depthWrite={true}
-          onBeforeCompile={frontFacingFadeOnBeforeCompile}
-        />
+      <mesh ref={attachedRef} geometry={geo.geometry} visible={false} renderOrder={10 + placement.layer}>
+        <meshBasicMaterial map={loaded.texture} transparent alphaTest={0.05} depthWrite={false} />
       </mesh>
     </>
   );

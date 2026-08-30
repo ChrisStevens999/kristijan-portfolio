@@ -111,21 +111,21 @@ function normalizeDeg(a: number) {
 /**
  * Hand-authored placement, one row per rawStickers entry (same order/index),
  * organized into FIVE GROUPS of 5. The group STRUCTURE (spacing, roles) is
- * carried over from the previous pass; what's new is a per-fragment
- * front-facing brightness falloff on the sticker material itself (see
- * `frontFacingFade.ts`, applied in StickerScene.tsx and SlapSticker.tsx) —
- * full brightness within ±40° of dead-front, fading out by ±75°. Three
- * independent placement-only attempts in earlier passes proved that pure
- * spacing math cannot deliver "~3 substantial stickers visible at once" by
- * itself: with 25 stickers needing individual front-facing moments inside a
- * fixed 340° rotation, and stickers this large, ADJACENT groups' angular
- * footprints necessarily overlap somewhat no matter how they're spaced (68°
- * group spacing vs. a real "still looks big" radius that pure foreshortening
- * alone doesn't shrink much below ~65–70°) — the fade is what actually
- * enforces "readable" to mean the same thing here as in the brief's own
- * definition (task D: substantial within ±35° of front), rather than
- * leaving it as an emergent (and previously wrong) property of raw geometry.
+ * carried over from the previous pass.
  *
+ * HISTORICAL NOTE: an earlier pass added a per-fragment front-facing
+ * brightness/alpha falloff on the sticker material itself (previously
+ * `frontFacingFade.ts`, applied in StickerScene.tsx and SlapSticker.tsx) to
+ * enforce "~3 substantial stickers visible at once" beyond what placement
+ * math alone could guarantee. A later rendering-fixes pass REMOVED that
+ * fade entirely, per explicit instruction that any artificial edge
+ * darkening/fading on stickers (as opposed to real lighting/geometry) is
+ * unwanted — see StickerScene.tsx and SlapSticker.tsx. This placement table
+ * itself is unchanged (moving/resizing stickers is out of scope for that
+ * pass), so the "substantial within ±35°" property is now whatever raw
+ * geometry + spacing produces on their own, without the fade's help.
+ *
+
  * Five roles per group, differentiated by `v` (real gaps, checked against
  * each size's actual vertical extent) so upper/hero/lower read as three
  * separate physical stickers, not a touching vertical collage. THREE of the
@@ -246,28 +246,43 @@ export const STICKER_COUNT = stickerPlacements.length;
  * moving the window shifts WHEN each sticker reaches its own front-facing
  * moment; re-checked against `angleDeg + contact·340` (contact ≈ centre +
  * 0.5%, where the approach curve in SlapSticker.tsx actually reaches the
- * surface) and every one lands within ~27° of true dead-front — well
- * inside the front-facing-fade's ±30° full-brightness zone (see
- * frontFacingFade.ts) — so none needed the ±2% "badly positioned" nudge.
+ * surface) and every one lands within ~27° of true dead-front. (The
+ * front-facing brightness/alpha fade that used to keep this readable was
+ * removed in the rendering-fixes pass below — see the note after
+ * MANUAL_LAYOUT — so "near dead-front" here is judged by raw angle alone.)
+ *
+ * `layer`: explicit deterministic stacking order for the rendering-fixes
+ * pass below — each slap sticker's meshes get `renderOrder` derived from
+ * this number (10 + layer for the attached mesh, 100 + layer for the
+ * incoming mesh; see SlapSticker.tsx), so if any two ever visually overlap
+ * on screen the winner is fixed by this table, never left to three.js's
+ * own distance-based transparent-object sort guessing across a huge atlas
+ * mesh and several small curved patches.
  */
 export type EntryDirection = "left" | "right" | "top" | "upper-left" | "upper-right" | "lower-left";
 
 const SLAP_CONFIG: Record<
   number,
-  { entryDirection: EntryDirection; entryOffsetVw: { x: number; y: number }; entryTiltDeg: number; window: [number, number] }
+  {
+    entryDirection: EntryDirection;
+    entryOffsetVw: { x: number; y: number };
+    entryTiltDeg: number;
+    window: [number, number];
+    layer: number;
+  }
 > = {
   // 1. rhodesianTiger — group1 upper. angleDeg -34, world angle at contact (p≈.125) ≈ +8.6° (near-front).
-  1: { entryDirection: "left", entryOffsetVw: { x: -0.32, y: 0 }, entryTiltDeg: -8, window: [0.11, 0.13] },
+  1: { entryDirection: "left", entryOffsetVw: { x: -0.32, y: 0 }, entryTiltDeg: -8, window: [0.11, 0.13], layer: 0 },
   // 2. cookies — group2 hero. angleDeg -102, world angle at contact (p≈.275) ≈ -8.4° (near-front).
-  5: { entryDirection: "upper-right", entryOffsetVw: { x: 0.26, y: 0.22 }, entryTiltDeg: 7, window: [0.26, 0.28] },
+  5: { entryDirection: "upper-right", entryOffsetVw: { x: 0.26, y: 0.22 }, entryTiltDeg: 7, window: [0.26, 0.28], layer: 1 },
   // 3. generic3 — group3 edge2. angleDeg -120, world angle at contact (p≈.425) ≈ +24.6° (still full-brightness).
-  14: { entryDirection: "top", entryOffsetVw: { x: 0, y: 0.28 }, entryTiltDeg: 6, window: [0.41, 0.43] },
+  14: { entryDirection: "top", entryOffsetVw: { x: 0, y: 0.28 }, entryTiltDeg: 6, window: [0.41, 0.43], layer: 2 },
   // 4. blushingDuck — group3 hero. angleDeg -170, world angle at contact (p≈.575) ≈ +25.6° (still full-brightness).
-  10: { entryDirection: "right", entryOffsetVw: { x: 0.32, y: 0 }, entryTiltDeg: 8, window: [0.56, 0.58] },
+  10: { entryDirection: "right", entryOffsetVw: { x: 0.32, y: 0 }, entryTiltDeg: 8, window: [0.56, 0.58], layer: 3 },
   // 5. generic2 — group3 edge1. angleDeg -220, world angle at contact (p≈.725) ≈ +26.6° (still full-brightness).
-  13: { entryDirection: "upper-left", entryOffsetVw: { x: -0.26, y: 0.22 }, entryTiltDeg: -7, window: [0.71, 0.73] },
+  13: { entryDirection: "upper-left", entryOffsetVw: { x: -0.26, y: 0.22 }, entryTiltDeg: -7, window: [0.71, 0.73], layer: 4 },
   // 6. generic7 — group4 edge1. angleDeg -288, world angle at contact (p≈.875) ≈ +9.6° (near-front).
-  18: { entryDirection: "lower-left", entryOffsetVw: { x: -0.24, y: -0.18 }, entryTiltDeg: -6, window: [0.86, 0.88] },
+  18: { entryDirection: "lower-left", entryOffsetVw: { x: -0.24, y: -0.18 }, entryTiltDeg: -6, window: [0.86, 0.88], layer: 5 },
 };
 
 export interface SlapPlacement extends StickerPlacement {
@@ -275,6 +290,7 @@ export interface SlapPlacement extends StickerPlacement {
   entryOffsetVw: { x: number; y: number };
   entryTiltDeg: number;
   applicationWindow: [number, number];
+  layer: number;
 }
 
 /** The 6 stickers that play the slap-on animation this pass. */
@@ -286,6 +302,7 @@ export const slapStickers: SlapPlacement[] = Object.entries(SLAP_CONFIG).map(([i
     entryOffsetVw: cfg.entryOffsetVw,
     entryTiltDeg: cfg.entryTiltDeg,
     applicationWindow: cfg.window,
+    layer: cfg.layer,
   };
 });
 
