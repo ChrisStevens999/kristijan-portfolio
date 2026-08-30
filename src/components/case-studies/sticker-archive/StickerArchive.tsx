@@ -13,6 +13,8 @@ import {
 import { NextProjectNav } from "@/components/ui/NextProjectNav";
 import type { Category } from "@/content/types";
 
+import { StickerShowcase } from "./StickerShowcase";
+
 // WebGL/canvas — client-only, no SSR.
 const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.StickerScene), {
   ssr: false,
@@ -33,8 +35,12 @@ const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.Sticke
  * hero sticker's moment enough scroll distance to actually look at it.
  * Scroll progress drives the cylinder group's rotation/position directly
  * (not autoplay); a tight spring removes raw scroll jitter without adding
- * perceptible lag. The exit nav returns to the category. Reduced motion
- * freezes the composition and drops the tall scroll region.
+ * perceptible lag. After the pole finishes, StickerShowcase (a static
+ * editorial artboard — the "red Illustration section" the exit-boundary
+ * work below was built for) runs in normal document flow, then the exit
+ * nav returns to the category. Reduced motion freezes the composition and
+ * drops the tall scroll region (StickerShowcase and the exit nav are
+ * unaffected either way — they're plain static content, not scroll-driven).
  *
  * The editorial HUD (StickerArchiveHUD — collection counter, "scroll to
  * explore", etc.) and the click-to-inspect StickerViewer are deliberately
@@ -133,6 +139,8 @@ export function StickerArchive({ category }: { category: Category }) {
           <StickerScene progress={progress} />
         </div>
       </section>
+
+      <StickerShowcase />
 
       <NextProjectNav mode="back-to-category" category={category} />
     </main>
