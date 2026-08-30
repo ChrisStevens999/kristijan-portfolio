@@ -43,6 +43,29 @@ const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.Sticke
  * atlas (individual stickers are no longer separate objects) — add that,
  * and re-add `<StickerArchiveHUD total={STICKER_COUNT} />`, once this core
  * motion is approved.
+ *
+ * INTEGRATION PASS (entrance/exit): the outer section's height and the
+ * sticky stage's height both use `svh` (small viewport height — the
+ * mobile-safe, address-bar-visible basis), not a `vh`/`svh` mix. They used
+ * to differ (section in `vh`, sticky stage in `svh`) — harmless on desktop
+ * where the two units are identical, but on a mobile browser `vh` and `svh`
+ * can disagree by the height of the address bar, which throws off exactly
+ * where `position: sticky` actually releases relative to where
+ * `useScroll`'s `"end end"` offset computes progress = 1 (that offset
+ * measures the section's real rendered height, whichever unit produced it —
+ * a taller `560vh` than the sticky stage's own `100svh` means progress can
+ * reach 1 (rotation/vertical-travel fully settled, per SlapSticker/
+ * StickerScene) before the sticky stage has actually finished releasing, or
+ * the reverse — either way, a visible jump/early-release right at the
+ * boundary NextProjectNav sits behind). Matching units removes that
+ * mismatch at its source instead of patching the symptom. No other
+ * structural change was needed for a clean hand-off to NextProjectNav
+ * (below): it's already a plain sibling in normal document flow — nothing
+ * positions it to overlap the sticky stage early, and the sticky
+ * release point and useScroll's progress=1 point are the SAME scrollY by
+ * construction once the units agree, so "sticker archive finishes, THEN
+ * normal scroll reveals the next section" falls out of the existing
+ * structure rather than needing new transition code.
  */
 export function StickerArchive({ category }: { category: Category }) {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -79,7 +102,7 @@ export function StickerArchive({ category }: { category: Category }) {
       <section
         ref={sectionRef}
         className="relative"
-        style={{ height: reduce ? "100vh" : "560vh" }}
+        style={{ height: reduce ? "100svh" : "560svh" }}
       >
         <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-black">
           <StickerScene progress={progress} />
