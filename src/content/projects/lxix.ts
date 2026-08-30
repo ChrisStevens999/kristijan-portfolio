@@ -31,12 +31,13 @@ import closingCredit from "../../../assets/projects/lxix/End Page.png";
  *  - `intro-video`: the reference board shows a black spacer panel at this
  *    exact point, replaced here with the project's real intro animation
  *    footage per explicit request.
- *  - `detail-row`: the reference shows the sunglasses/hands/lips detail
- *    shots as a tight side-by-side row, but those three exist as separate
- *    source files (not one flattened image like the moodboard or the
- *    bottle triptych below) — rendered via PanelSequence's `row` panel kind
- *    instead of stacking them as three full-width panels, which doesn't
- *    match the reference.
+ *  - `hands-lips-row`: the reference shows the sunglasses portrait full
+ *    width (its own panel, `sunglasses-portrait`, same treatment as the
+ *    cufflink/watch panel before it), then the ringed-hands and lips-with-
+ *    symbol shots as a 50/50 side-by-side row underneath — those two exist
+ *    as separate source files (not one flattened image like the moodboard
+ *    or the bottle triptych below), so they're rendered via PanelSequence's
+ *    `row` panel kind instead of stacking as full-width panels.
  *
  * The moodboard (`moodboard`) and 3-across bottle shot
  * (`bottleTriptychStatement`) ARE already pre-composited single images
@@ -115,11 +116,16 @@ export const lxixPanels: SequencePanel[] = [
     alt: "LXIX cufflink detail beside a wristwatch",
   },
   {
-    id: "detail-row",
+    id: "sunglasses-portrait",
+    enabled: true,
+    src: sunglassesPortrait,
+    alt: "Close-up portrait wearing LXIX sunglasses, water droplets on skin",
+  },
+  {
+    id: "hands-lips-row",
     enabled: true,
     kind: "row",
     items: [
-      { src: sunglassesPortrait, alt: "Close-up portrait wearing LXIX sunglasses, water droplets on skin" },
       { src: ringedHandsDetail, alt: "Hands in rings and chains gripping an LXIX bag, the symbol engraved in metal" },
       { src: lipsSymbolDetail, alt: "Close-up of lips holding the LXIX symbol in polished metal" },
     ],
