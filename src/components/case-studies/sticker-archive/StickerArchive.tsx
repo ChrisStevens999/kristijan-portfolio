@@ -7,6 +7,7 @@ import {
   useSpring,
   useReducedMotion,
   useMotionValue,
+  useTransform,
 } from "framer-motion";
 
 import { NextProjectNav } from "@/components/ui/NextProjectNav";
@@ -46,27 +47,43 @@ const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.Sticke
  *
  * INTEGRATION PASS (entrance/exit): the outer section's height and the
  * sticky stage's height both use `svh` (small viewport height — the
- * mobile-safe, address-bar-visible basis), not a `vh`/`svh` mix. They used
- * to differ (section in `vh`, sticky stage in `svh`) — harmless on desktop
- * where the two units are identical, but on a mobile browser `vh` and `svh`
- * can disagree by the height of the address bar, which throws off exactly
- * where `position: sticky` actually releases relative to where
- * `useScroll`'s `"end end"` offset computes progress = 1 (that offset
- * measures the section's real rendered height, whichever unit produced it —
- * a taller `560vh` than the sticky stage's own `100svh` means progress can
- * reach 1 (rotation/vertical-travel fully settled, per SlapSticker/
- * StickerScene) before the sticky stage has actually finished releasing, or
- * the reverse — either way, a visible jump/early-release right at the
- * boundary NextProjectNav sits behind). Matching units removes that
- * mismatch at its source instead of patching the symptom. No other
- * structural change was needed for a clean hand-off to NextProjectNav
- * (below): it's already a plain sibling in normal document flow — nothing
- * positions it to overlap the sticky stage early, and the sticky
- * release point and useScroll's progress=1 point are the SAME scrollY by
- * construction once the units agree, so "sticker archive finishes, THEN
- * normal scroll reveals the next section" falls out of the existing
- * structure rather than needing new transition code.
+ * mobile-safe, address-bar-visible basis), not a `vh`/`svh` mix, so
+ * `position: sticky`'s real release point and useScroll's own measurement
+ * of the section always agree on the same basis.
+ *
+ * EXIT BOUNDARY FIX: `scrollYProgress` still spans the section's ENTIRE
+ * pinned-scroll distance (0 at the top, 1 at the true release point) — but
+ * the pole's own 0→1 animation (see ANIMATION_TO_PIN_RATIO below) now only
+ * consumes the FIRST 92% of that distance, remapped via `useTransform`
+ * (clamped) into `rawAnimationProgress`. The remaining ~8% is a pure,
+ * static, real-scroll-distance buffer: `rawAnimationProgress` — and
+ * therefore the spring built from it, and therefore the pole's rotation/
+ * position — is already sitting at its final p=1 pose and cannot change
+ * further, for a genuine stretch of scroll BEFORE the sticky stage
+ * actually releases. This is a single-source-of-truth guarantee (one
+ * MotionValue, remapped once) rather than relying on two independently-
+ * measured boundaries (the CSS sticky release vs. useScroll's own
+ * measurement) landing on the exact same pixel — belt-and-suspenders on
+ * top of the matching-units fix above, and immune to any residual spring
+ * settling time during a fast scroll: by the time raw scroll reaches the
+ * true release point, the animation has been fully at rest for a real,
+ * substantial stretch of scroll distance, not just an instant.
+ * NextProjectNav needed no changes: it's a plain sibling in normal
+ * document flow, already confirmed to sit exactly at the section's own
+ * bottom edge with no overlap — the fix here is entirely about WHEN the
+ * pole finishes moving relative to WHEN the sticky stage can release, not
+ * about how NextProjectNav is positioned.
  */
+/** How much of the section's total pinned-scroll distance drives the pole's own 0→1 animation — the rest (below) is a pure post-animation hold before release. */
+const ANIMATION_TO_PIN_RATIO = 0.92;
+/** Existing pinned-scroll distance the approved animation/timing was tuned against (560svh section − 100svh sticky stage) — kept as an ABSOLUTE svh figure, not a ratio, so the animation's real-world pacing is byte-for-byte unchanged; only new scroll distance is added around it. */
+const EXISTING_ANIMATION_PIN_SVH = 460;
+/** Total pinned-scroll distance once the exit buffer is included: EXISTING_ANIMATION_PIN_SVH is exactly ANIMATION_TO_PIN_RATIO of this. */
+const TOTAL_PIN_SVH = EXISTING_ANIMATION_PIN_SVH / ANIMATION_TO_PIN_RATIO;
+/** Sticky stage height, svh. */
+const STICKY_STAGE_SVH = 100;
+/** Section height = sticky stage + total pinned-scroll distance (animation + exit buffer). ~600svh, up from 560svh — the extra ~40svh is pure hold, not part of the animation itself. */
+const SECTION_HEIGHT_SVH = STICKY_STAGE_SVH + TOTAL_PIN_SVH;
 export function StickerArchive({ category }: { category: Category }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
@@ -74,6 +91,14 @@ export function StickerArchive({ category }: { category: Category }) {
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"],
+  });
+
+  // EXIT BOUNDARY FIX: remap the section's full [0,1] scroll range down to
+  // just the first ANIMATION_TO_PIN_RATIO of it — clamped, so the output
+  // holds at exactly 1 for the remaining tail instead of extrapolating
+  // past it. See the doc comment above for why this exists.
+  const rawAnimationProgress = useTransform(scrollYProgress, [0, ANIMATION_TO_PIN_RATIO], [0, 1], {
+    clamp: true,
   });
 
   // PASS 2 (timing-only): tightened further — the previous spring
@@ -87,7 +112,7 @@ export function StickerArchive({ category }: { category: Category }) {
   // a perceptibly separate rotation/vertical-travel formula (both already
   // are exactly linear in this value, see StickerScene.tsx) reading as
   // heavy and steady rather than springy.
-  const smoothed = useSpring(scrollYProgress, {
+  const smoothed = useSpring(rawAnimationProgress, {
     stiffness: 500,
     damping: 55,
     mass: 0.5,
@@ -102,7 +127,7 @@ export function StickerArchive({ category }: { category: Category }) {
       <section
         ref={sectionRef}
         className="relative"
-        style={{ height: reduce ? "100svh" : "560svh" }}
+        style={{ height: reduce ? "100svh" : `${SECTION_HEIGHT_SVH}svh` }}
       >
         <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-black">
           <StickerScene progress={progress} />
