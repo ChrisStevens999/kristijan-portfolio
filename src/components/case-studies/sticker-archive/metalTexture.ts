@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
+
 /**
  * Galvanized-steel material texture — a small tileable canvas, repeated
  * across the cylinder via RepeatWrapping rather than stretched over the
@@ -301,9 +303,13 @@ async function applyPhotoDetailLayers(
   photoLayersRequested = true;
 
   try {
+    // 828 is the nearest of Next's allowed optimizer widths at/above
+    // TILE_PX (768, the flattened layer's own square size) — see
+    // optimizedImageUrl's doc comment for why these are routed through the
+    // optimizer instead of fetching the multi-megabyte originals raw.
     const [zincImg, scratchImg] = await Promise.all([
-      loadImage("/textures/metal-zinc.jpg"),
-      loadImage("/textures/metal-scratches.jpg"),
+      loadImage(optimizedImageUrl("/textures/metal-zinc.jpg", 828)),
+      loadImage(optimizedImageUrl("/textures/metal-scratches.jpg", 828)),
     ]);
 
     const tilePx = canvas.width;

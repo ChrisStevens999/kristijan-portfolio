@@ -5,7 +5,18 @@ import * as THREE from "three";
 
 import type { StaticImageData } from "next/image";
 
+import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
 import { getAlphaBBox } from "./alphaBBox";
+
+/**
+ * Long-edge px requested from the optimizer for the source sticker photo —
+ * the output canvas itself is capped at MAX_CANVAS_DIM (512px), so this
+ * still leaves generous headroom over the final render while cutting the
+ * fetch from a multi-megabyte camera original down to a small fraction of
+ * that. Must be one of Next's allowed imageSizes/deviceSizes — see
+ * optimizedImageUrl's doc comment.
+ */
+const STICKER_SOURCE_WIDTH = 1080;
 
 /**
  * How much blank canvas margin surrounds the artwork's alpha bounding box,
@@ -72,7 +83,7 @@ export function useSingleStickerTexture(
       texture.needsUpdate = true;
       setResult({ texture, aspect: bbox.h / bbox.w });
     };
-    img.src = src.src;
+    img.src = optimizedImageUrl(src.src, STICKER_SOURCE_WIDTH);
 
     return () => {
       cancelled = true;

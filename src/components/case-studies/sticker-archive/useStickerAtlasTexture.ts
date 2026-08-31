@@ -4,7 +4,19 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 import type { StickerPlacement } from "@/content/projects/sticker-archive";
+import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
 import { getAlphaBBox } from "./alphaBBox";
+
+/**
+ * Long-edge px requested from the optimizer for each source sticker photo.
+ * The atlas canvas itself is only ATLAS_WIDTH (2048px) wide and even the
+ * largest single sticker occupies well under half that — 1080 leaves
+ * several times the final on-atlas resolution as headroom (retina/DPR
+ * included) while cutting each fetch from multi-megabyte camera originals
+ * down to a small fraction of that. Must be one of Next's allowed
+ * imageSizes/deviceSizes — see optimizedImageUrl's doc comment.
+ */
+const STICKER_SOURCE_WIDTH = 1080;
 
 /**
  * Builds the ONE transparent canvas texture that carries every sticker's
@@ -53,7 +65,7 @@ export function useStickerAtlasTexture(
             const img = new Image();
             img.onload = () => resolve({ p, img });
             img.onerror = reject;
-            img.src = p.src.src;
+            img.src = optimizedImageUrl(p.src.src, STICKER_SOURCE_WIDTH);
           }),
       ),
     )
