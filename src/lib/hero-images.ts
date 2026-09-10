@@ -10,6 +10,8 @@ export interface HeroImage {
   src: string;
   alt: string;
   objectPosition: string;
+  /** Stage background colour while this illustration is the centre card. */
+  bg: string;
 }
 
 /**
@@ -36,6 +38,7 @@ export function getHeroImages(): HeroImage[] {
         src: `/${HERO_DIR_NAME}/${encodeURIComponent(name)}`,
         alt: meta.alt,
         objectPosition: meta.objectPosition,
+        bg: meta.bg,
       };
     });
 }
