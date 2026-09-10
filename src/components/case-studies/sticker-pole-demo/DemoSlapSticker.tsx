@@ -142,6 +142,15 @@ export function DemoSlapSticker({
     const tStart = ev.tLand - APPROACH_DURATION;
     if (t < tStart) return hide();
 
+    // Stacking follows LANDING ORDER, not asset order: a sticker slapped on
+    // later always sits on top of whatever is already on the pole, like
+    // real stickers. All sticker meshes have depthWrite off, so among
+    // themselves renderOrder alone decides who's on top — later contact
+    // time = higher order. The incoming mesh is lifted above every landed
+    // sticker (any of them) while it's still flying in.
+    attached.renderOrder = 10 + ev.tLand;
+    incoming.renderOrder = 1e6 + ev.tLand;
+
     const cam = state.camera as THREE.OrthographicCamera;
     const halfW = cam.right;
     const halfH = cam.top;
@@ -198,14 +207,16 @@ export function DemoSlapSticker({
 
   if (!loaded || !geo) return null;
 
-  // depthWrite off + explicit renderOrder: same transparency/stacking
-  // rules as the archive's rendering-fix pass (see SlapSticker.tsx).
+  // depthWrite off + explicit renderOrder: same transparency rules as the
+  // archive's rendering-fix pass (see SlapSticker.tsx); the actual order is
+  // set per event in useFrame (landing order), these are just the initial
+  // values before the first event.
   return (
     <>
-      <mesh ref={incomingRef} geometry={geo.geometry} visible={false} renderOrder={100 + index}>
+      <mesh ref={incomingRef} geometry={geo.geometry} visible={false} renderOrder={1e6}>
         <meshBasicMaterial map={loaded.texture} transparent alphaTest={0.05} depthWrite={false} />
       </mesh>
-      <mesh ref={attachedRef} geometry={geo.geometry} visible={false} renderOrder={10 + index}>
+      <mesh ref={attachedRef} geometry={geo.geometry} visible={false} renderOrder={10}>
         <meshBasicMaterial map={loaded.texture} transparent alphaTest={0.05} depthWrite={false} />
       </mesh>
     </>
