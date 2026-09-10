@@ -13,8 +13,6 @@ import polybagFrontBack from "../../../assets/projects/boyzclub/Polybag Design.p
 import uniformChapterPhoto from "../../../assets/projects/boyzclub/The Uniform.png";
 import shirtHawaiian from "../../../assets/projects/boyzclub/Shirt.png";
 import shirtSynthTiger from "../../../assets/projects/boyzclub/sYNTH.png";
-import flannelStreet1 from "../../../assets/projects/boyzclub/Flannel 1.png";
-import flannelStreet2 from "../../../assets/projects/boyzclub/Flannel 2.png";
 import flannelStudio from "../../../assets/projects/boyzclub/Flannel 3.png";
 import capProduct from "../../../assets/projects/boyzclub/Hat.png";
 import jeansProduct from "../../../assets/projects/boyzclub/Jeans.png";
@@ -132,18 +130,6 @@ export const boyzClubPanels: SequencePanel[] = [
     enabled: true,
     src: shirtSynthTiger,
     alt: "BoyzClub Synth Tiger button-down shirt, flat lay",
-  },
-  {
-    id: "flannel-street-1",
-    enabled: true,
-    src: flannelStreet1,
-    alt: "BoyzClub plaid overshirt worn on the street",
-  },
-  {
-    id: "flannel-street-2",
-    enabled: true,
-    src: flannelStreet2,
-    alt: "BoyzClub blue plaid shirt and pinstripe trousers worn on the street",
   },
   {
     id: "flannel-studio",
