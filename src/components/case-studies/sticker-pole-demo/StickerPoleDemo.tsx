@@ -2,6 +2,9 @@
 
 import dynamic from "next/dynamic";
 
+import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import type { Category } from "@/content/types";
+
 import { StickerShowcase } from "../sticker-archive/StickerShowcase";
 import { STAGE_ASPECT } from "./demoConfig";
 
@@ -16,14 +19,16 @@ const DemoScene = dynamic(() => import("./DemoScene").then((m) => m.DemoScene), 
  * black — so the composition (pole width, landing zone, entry paths) reads
  * the same on any screen instead of stretching with the browser window.
  *
- * Not scroll-driven and not wired into any project/category listing; it
- * lives at /demo/sticker-pole only. The approved Sticker Archive
- * (../sticker-archive) is untouched — its static showcase section (red
- * intro panel, lifestyle photos, sticker sheets) is simply reused below
- * the stage, so scrolling past the looping animation lands on the same
- * editorial artboard the archive has.
+ * Not scroll-driven. This now IS the Sticker Archive project page
+ * (/projects/sticker-archive) — it replaced the earlier scroll-driven pole
+ * (../sticker-archive/StickerArchive.tsx, kept in the tree but no longer
+ * routed). The archive's static showcase section (red intro panel,
+ * lifestyle photos, sticker sheets) is reused below the stage, so
+ * scrolling past the looping animation lands on the same editorial
+ * artboard, followed by the back-to-category nav when rendered as a
+ * project page.
  */
-export function StickerPoleDemo() {
+export function StickerPoleDemo({ category }: { category?: Category }) {
   return (
     <main className="bg-[#000000]">
       <section className="flex h-[100svh] items-center justify-center">
@@ -38,6 +43,7 @@ export function StickerPoleDemo() {
         </div>
       </section>
       <StickerShowcase />
+      {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
     </main>
   );
 }

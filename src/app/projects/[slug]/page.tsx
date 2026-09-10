@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
 import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCaseStudy";
 import { LxixCaseStudy } from "@/components/case-studies/LxixCaseStudy";
-import { StickerArchive } from "@/components/case-studies/sticker-archive/StickerArchive";
+import { StickerPoleDemo } from "@/components/case-studies/sticker-pole-demo/StickerPoleDemo";
 import { TagDesignsCaseStudy } from "@/components/case-studies/TagDesignsCaseStudy";
 import {
   getAllProjects,
@@ -40,7 +40,7 @@ export default async function ProjectPage({
   if (slug === "sticker-archive") {
     const category = getCategoryBySlug(project.category);
     if (category) {
-      return <StickerArchive category={category} />;
+      return <StickerPoleDemo category={category} />;
     }
   }
 
