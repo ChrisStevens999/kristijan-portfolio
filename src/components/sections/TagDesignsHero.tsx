@@ -15,11 +15,14 @@ import type { HeroImage } from "@/lib/hero-images";
  * arrival (sampled at the frame edge the same way).
  */
 const CYCLE_MS = 667;
-const MOVE_S = 0.18;
+const MOVE_S = 0.26;
 const BG_FADE_S = 0.4;
 // Fast decisive settle (expo-out) rather than a symmetric ease — the snap
 // should feel weighted arriving, not identical in both directions.
 const SNAP_EASE = [0.16, 1, 0.3, 1] as const;
+/** How long to wait for every illustration to decode before revealing the stage regardless (slow network) — the queue is running underneath either way. */
+const PRELOAD_TIMEOUT_MS = 4000;
+const REVEAL_S = 0.6;
 
 /**
  * One queue, one journey, travelling UPWARD: every illustration enters
@@ -49,6 +52,8 @@ const FIRST_WAYPOINT = 1;
 const LAST_WAYPOINT = 7;
 const EXIT_WAYPOINT = 8;
 const CENTER_WAYPOINT = 4;
+/** Every card's box is laid out at the CENTRE tier's width; other tiers are that box scaled down (transform), never re-laid-out. */
+const BASE_WIDTH_PCT = WAYPOINTS[CENTER_WAYPOINT].width;
 
 /** The reference's centre card is 240x300 at 480x600 — a plain 4:5 portrait; every tier shares it (object-cover crops the artwork to fit). */
 const CARD_ASPECT = "4/5";
@@ -57,41 +62,62 @@ interface Traveler {
   id: number;
   imageIndex: number;
   position: number; // index into WAYPOINTS, always 1-7 while in state
+  /** Laid down as part of the opening stack — renders straight at its tier, no entry flight. */
+  preplaced: boolean;
+}
+
+interface StageSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * Transform-only motion: y in px (from the measured stage height) and a
+ * uniform scale about the card's top-centre, so the visual top edge lands
+ * exactly on the tier's `top` and the width shrinks symmetrically — the
+ * same picture as animating top/width, but composited on the GPU instead
+ * of re-laying-out seven large images every frame, which is what made the
+ * previous version hitch on the snaps.
+ */
+function poseFor(position: number, stage: StageSize) {
+  const wp = WAYPOINTS[position];
+  return {
+    y: (wp.top / 100) * stage.height,
+    scale: wp.width / BASE_WIDTH_PCT,
+    opacity: wp.opacity,
+    zIndex: wp.zIndex,
+  };
 }
 
 function Card({
   image,
   position,
+  preplaced,
+  stage,
   reduceMotion,
 }: {
   image: HeroImage;
   position: number;
+  preplaced: boolean;
+  stage: StageSize;
   reduceMotion: boolean;
 }) {
-  const target = WAYPOINTS[position];
-  const targetProps = {
-    top: `${target.top}%`,
-    width: `${target.width}%`,
-    opacity: target.opacity,
-    zIndex: target.zIndex,
-  };
+  const target = poseFor(position, stage);
+  const instant = reduceMotion || preplaced;
   return (
     <motion.div
       // Square corners, no drop shadow: the reference's posters are flat
       // cut-outs stacked on a coloured ground, not floating cards.
-      className="absolute left-1/2 -translate-x-1/2 overflow-hidden"
-      style={{ aspectRatio: CARD_ASPECT }}
-      initial={
-        reduceMotion
-          ? targetProps
-          : { top: `${WAYPOINTS[0].top}%`, width: `${WAYPOINTS[0].width}%`, opacity: 0 }
-      }
-      animate={targetProps}
-      exit={
-        reduceMotion
-          ? undefined
-          : { top: `${WAYPOINTS[EXIT_WAYPOINT].top}%`, width: `${WAYPOINTS[EXIT_WAYPOINT].width}%`, opacity: 0 }
-      }
+      className="absolute left-1/2 top-0 overflow-hidden will-change-transform"
+      style={{
+        width: `${BASE_WIDTH_PCT}%`,
+        aspectRatio: CARD_ASPECT,
+        x: "-50%",
+        transformOrigin: "top center",
+      }}
+      initial={instant ? false : poseFor(0, stage)}
+      animate={target}
+      exit={reduceMotion ? undefined : poseFor(EXIT_WAYPOINT, stage)}
       transition={reduceMotion ? { duration: 0 } : { duration: MOVE_S, ease: SNAP_EASE }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- dynamic, server-enumerated file list; can't be a static next/image import */}
@@ -100,6 +126,7 @@ function Card({
         alt={image.alt}
         className="h-full w-full object-cover"
         style={{ objectPosition: image.objectPosition }}
+        decoding="async"
       />
     </motion.div>
   );
@@ -127,19 +154,39 @@ function ChromeRow({ cells, boxed }: { cells: readonly [string, string, string];
 }
 
 /**
+ * The opening stack: every visible tier already occupied, as if the queue
+ * had been running for a while — the page never shows an empty ground or
+ * a lone first card. Tiers are filled so that folder order still flows
+ * bottom-to-top (image 0 at the top peek, about to leave; the next new
+ * arrival continues the sequence from there).
+ */
+function openingStack(imageCount: number): Traveler[] {
+  const tiers = LAST_WAYPOINT - FIRST_WAYPOINT + 1;
+  return Array.from({ length: tiers }, (_, i) => ({
+    id: i,
+    imageIndex: (tiers - 1 - i) % imageCount,
+    position: FIRST_WAYPOINT + i,
+    preplaced: true,
+  }));
+}
+
+/**
  * A single continuous conveyor: one queue of illustrations moving through a
  * fixed sequence of positions, all in lockstep. Every ~670ms the entire
  * queue advances one waypoint together — nothing swaps independently,
  * nothing flashes. Exactly one illustration occupies centre (the hero) at
  * any moment; everything else is the same artwork at an earlier or later
  * stage of the same journey (growing toward centre, shrinking away from
- * it). Illustrations enter strictly in folder order (index 0, 1, 2, ...)
- * and wrap back to 0 after the last — a plain round-robin over
- * `imageCounterRef`, so every image gets its turn at centre exactly once
- * per full lap before any repeats, none are skipped, and the sequence is
- * fully deterministic (never random). The stage starts empty and fills one
- * illustration at a time from the bottom — every image, including the
- * first, plays the exact same below-frame-to-above-frame journey.
+ * it). Illustrations enter strictly in folder order and wrap after the
+ * last — a plain round-robin over `imageCounterRef`, so every image gets
+ * its turn at centre exactly once per full lap before any repeats, none
+ * are skipped, and the sequence is fully deterministic (never random).
+ *
+ * It's already running when you get there: the stack is pre-filled (see
+ * openingStack), the beat starts on mount, and the stage is revealed with
+ * a short fade only once every illustration has decoded — so what appears
+ * is a full, moving stack of finished images, never cards popping in or
+ * artwork loading in place.
  *
  * The whole section's background follows the hero: each illustration
  * carries its own muted tone (see HERO_IMAGE_META.bg) and the ground
@@ -148,48 +195,71 @@ function ChromeRow({ cells, boxed }: { cells: readonly [string, string, string];
  */
 export function TagDesignsHero({ images }: { images: HeroImage[] }) {
   const prefersReducedMotion = useReducedMotion();
-  const idRef = useRef(0);
-  const imageCounterRef = useRef(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const idRef = useRef(LAST_WAYPOINT - FIRST_WAYPOINT + 1);
+  const imageCounterRef = useRef(LAST_WAYPOINT - FIRST_WAYPOINT + 1);
 
-  const [travelers, setTravelers] = useState<Traveler[]>([]);
+  const [travelers, setTravelers] = useState<Traveler[]>(() => openingStack(Math.max(1, images.length)));
+  const [stage, setStage] = useState<StageSize>({ width: 0, height: 0 });
+  const [ready, setReady] = useState(false);
 
+  // Stage size in px (for the transform-based poses) — kept in sync with
+  // the viewport via ResizeObserver; positions are recomputed from the
+  // same percentages, so the composition is identical at every size.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const measure = () => setStage({ width: el.clientWidth, height: el.clientHeight });
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Decode every illustration up front, then reveal — with a cap so a slow
+  // connection still gets the (running) stage rather than a blank ground.
   useEffect(() => {
     if (images.length === 0) return;
+    let cancelled = false;
+    const reveal = () => {
+      if (!cancelled) setReady(true);
+    };
+    const timeout = setTimeout(reveal, PRELOAD_TIMEOUT_MS);
+    Promise.all(
+      images.map(
+        (image) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => img.decode().then(resolve, () => resolve());
+            img.onerror = () => resolve();
+            img.src = image.src;
+          }),
+      ),
+    ).then(reveal);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [images]);
+
+  useEffect(() => {
+    if (images.length === 0 || prefersReducedMotion) return;
 
     function advance() {
       setTravelers((prev) => {
         const advanced = prev
-          .map((t) => ({ ...t, position: t.position + 1 }))
+          .map((t) => ({ ...t, position: t.position + 1, preplaced: false }))
           .filter((t) => t.position <= LAST_WAYPOINT);
         const newTraveler: Traveler = {
           id: idRef.current++,
           imageIndex: imageCounterRef.current % images.length,
           position: FIRST_WAYPOINT,
+          preplaced: false,
         };
         imageCounterRef.current += 1;
         return [...advanced, newTraveler];
       });
     }
 
-    if (prefersReducedMotion) {
-      // Skip the queue choreography entirely: freeze the first images (in
-      // the same deterministic order) across the visible tiers, no motion.
-      const slots = Math.min(images.length, LAST_WAYPOINT - FIRST_WAYPOINT + 1);
-      const timer = setTimeout(() => {
-        setTravelers(
-          Array.from({ length: slots }, (_, i) => ({
-            id: i,
-            imageIndex: i,
-            // Later indices sit higher, matching the direction of travel.
-            position: FIRST_WAYPOINT + i,
-          })),
-        );
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-
-    // First card arrives one beat in — the stage opens empty, on its
-    // resting ground, and fills from the bottom.
     const interval = setInterval(advance, CYCLE_MS);
     return () => clearInterval(interval);
   }, [images.length, prefersReducedMotion]);
@@ -209,27 +279,36 @@ export function TagDesignsHero({ images }: { images: HeroImage[] }) {
       <ChromeRow cells={HERO_CHROME.header} />
 
       {/* The stage: the reference's own 4:5 frame, as tall as the room
-          between the two chrome rows allows, centred. Card positions are
-          percentages of this box, so the composition holds at any size. */}
-      <div className="relative min-h-0 flex-1 w-full">
-        <div
-          className="absolute left-1/2 top-1/2 aspect-[4/5] -translate-x-1/2 -translate-y-1/2"
+          between the two chrome rows allows, centred. Card poses are
+          derived from this box's measured size, so the composition holds
+          at any viewport. */}
+      <div className="relative min-h-0 w-full flex-1">
+        <motion.div
+          ref={stageRef}
+          className="absolute top-1/2 left-1/2 aspect-[4/5] -translate-x-1/2 -translate-y-1/2"
           // Height-limited, but never wider than the viewport (narrow
           // phones): 4:5 means width = height / 1.25, so cap height at
           // 125vw and aspect-ratio derives the width.
           style={{ height: "min(100%, 125vw)" }}
+          initial={false}
+          animate={{ opacity: ready && stage.height > 0 ? 1 : 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : REVEAL_S, ease: "easeOut" }}
         >
-          <AnimatePresence>
-            {travelers.map((t) => (
-              <Card
-                key={t.id}
-                image={images[t.imageIndex]}
-                position={t.position}
-                reduceMotion={!!prefersReducedMotion}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+          {stage.height > 0 && (
+            <AnimatePresence>
+              {travelers.map((t) => (
+                <Card
+                  key={t.id}
+                  image={images[t.imageIndex]}
+                  position={t.position}
+                  preplaced={t.preplaced}
+                  stage={stage}
+                  reduceMotion={!!prefersReducedMotion}
+                />
+              ))}
+            </AnimatePresence>
+          )}
+        </motion.div>
       </div>
 
       <ChromeRow cells={HERO_CHROME.footer} boxed />

@@ -2,6 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { DEFAULT_HERO_IMAGE_META, HERO_IMAGE_META } from "@/content/tag-designs-hero";
+import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
+
+/**
+ * Long edge requested from the optimizer. The originals are 0.7–7.5MB
+ * PNGs (45MB for the set) — far too heavy to have ten of them in flight on
+ * a hero; the centre card renders at ~360–450 CSS px, so 828 covers 2x
+ * displays with room to spare at a few percent of the payload.
+ */
+const HERO_SOURCE_WIDTH = 828;
 
 const HERO_DIR_NAME = "tag-designs-hero";
 const HERO_DIR = path.join(process.cwd(), "public", HERO_DIR_NAME);
@@ -35,7 +44,7 @@ export function getHeroImages(): HeroImage[] {
     .map((name) => {
       const meta = HERO_IMAGE_META[name] ?? DEFAULT_HERO_IMAGE_META;
       return {
-        src: `/${HERO_DIR_NAME}/${encodeURIComponent(name)}`,
+        src: optimizedImageUrl(`/${HERO_DIR_NAME}/${encodeURIComponent(name)}`, HERO_SOURCE_WIDTH),
         alt: meta.alt,
         objectPosition: meta.objectPosition,
         bg: meta.bg,
