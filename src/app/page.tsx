@@ -1,4 +1,3 @@
-import { About } from "@/components/sections/About";
 import { Intro } from "@/components/sections/Intro";
 import { SelectedWorks } from "@/components/sections/SelectedWorks";
 import { ExploreByCategory } from "@/components/sections/ExploreByCategory";
@@ -9,12 +8,11 @@ export default function Home() {
       <Intro />
       <SelectedWorks />
       <ExploreByCategory />
-      <About />
       {/*
-        Remaining homepage sections are composed here in order, per
-        04_CONTENT_ARCHITECTURE.md — none are built yet:
+        The About section (bio, car reveal, free-time page) was removed from
+        the homepage by request. Remaining planned section, per
+        04_CONTENT_ARCHITECTURE.md, not built yet:
 
-        <About />   // id="about"  ->  /#about
         <Contact /> // id="contact" -> /#contact
       */}
     </main>
