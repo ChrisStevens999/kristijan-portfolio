@@ -15,17 +15,16 @@ export function SectionTitle({
   title,
   kicker,
   texture,
-  onTitleVisible,
 }: {
   title: string;
   kicker?: string;
   texture: string;
-  /** Fires once, the first time the title scrolls into view — used to auto-advance to whatever follows the section (see SelectedWorks). */
-  onTitleVisible?: () => void;
 }) {
   return (
     <div
-      className="relative flex h-[70vh] w-full snap-start items-center justify-center px-6 sm:h-screen"
+      // A full-screen snap stop of its own on the snapping homepage — read,
+      // then scrolled past with the same one-gesture step as the images.
+      className="relative flex h-[100svh] w-full snap-start snap-always items-center justify-center px-6"
       style={{
         backgroundImage: `url('${texture}')`,
         backgroundSize: "cover",
@@ -38,7 +37,6 @@ export function SectionTitle({
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.6 }}
-        onViewportEnter={onTitleVisible}
         transition={{ duration: 1, ease: "easeOut" }}
       >
         {kicker ? (

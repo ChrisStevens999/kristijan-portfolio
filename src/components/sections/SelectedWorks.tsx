@@ -1,13 +1,6 @@
-"use client";
-
-import { useRef } from "react";
-
 import { getSelectedWorks } from "@/lib/content";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { SelectedWorkCard } from "@/components/ui/SelectedWorkCard";
-
-/** Held after the title finishes fading in (transition duration 1s) before auto-scrolling, so it's actually legible for a beat first. */
-const AUTO_SCROLL_DELAY_MS = 1300;
 
 /**
  * 04_CONTENT_ARCHITECTURE.md: a curated collection, not a complete archive.
@@ -17,43 +10,21 @@ const AUTO_SCROLL_DELAY_MS = 1300;
  * not separated "cards" — one piece should lead directly into the next.
  * Opens with a chapter card using the Intro's texture language.
  *
- * The chapter card auto-advances into the first project once its title has
- * been on screen for a beat, rather than requiring a second manual scroll
- * past what looks like a title screen — skipped for prefers-reduced-motion,
- * and skipped if the visitor has already scrolled past the target by the
- * time the delay elapses (so a fast scroller is never yanked backward).
+ * The homepage snaps one section per gesture (see globals.css): the chapter
+ * card is a full-screen stop of its own, exactly like each image after it,
+ * so the visitor reads "Curated / Selected Work", then scrolls through the
+ * four pieces one at a time. (An earlier version auto-advanced past the
+ * card after a beat — removed, so the card is actually seen and left on
+ * the visitor's own scroll.)
  */
 export function SelectedWorks() {
   const works = getSelectedWorks();
-  const worksRef = useRef<HTMLDivElement>(null);
-  const hasAutoScrolled = useRef(false);
-
-  function handleTitleVisible() {
-    if (hasAutoScrolled.current) return;
-    hasAutoScrolled.current = true;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    setTimeout(() => {
-      const target = worksRef.current;
-      if (!target) return;
-      // Already scrolled to (or past) the first project — don't yank back.
-      if (target.getBoundingClientRect().top <= 0) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, AUTO_SCROLL_DELAY_MS);
-  }
-
   if (works.length === 0) return null;
 
   return (
     <section id="selected-works" className="relative bg-black">
-      <SectionTitle
-        title="Selected Work"
-        kicker="Curated"
-        texture="/textures/black-page.png"
-        onTitleVisible={handleTitleVisible}
-      />
-      <div ref={worksRef} className="flex flex-col gap-1">
+      <SectionTitle title="Selected Work" kicker="Curated" texture="/textures/black-page.png" />
+      <div className="flex flex-col gap-1">
         {works.map((project, index) => (
           <SelectedWorkCard key={project.slug} project={project} index={index} />
         ))}
