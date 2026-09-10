@@ -14,7 +14,7 @@ export function ExploreByCategory() {
   return (
     <section
       id="explore-by-category"
-      className="relative flex min-h-screen w-full items-center justify-center px-6 py-16 lg:px-8 lg:py-10"
+      className="relative flex min-h-screen w-full snap-start items-center justify-center px-6 py-16 lg:px-8 lg:py-10"
       style={{
         backgroundImage: "url('/textures/textured-page.png')",
         backgroundSize: "cover",

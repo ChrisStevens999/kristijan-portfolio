@@ -25,7 +25,7 @@ export function SectionTitle({
 }) {
   return (
     <div
-      className="relative flex h-[70vh] w-full items-center justify-center px-6 sm:h-screen"
+      className="relative flex h-[70vh] w-full snap-start items-center justify-center px-6 sm:h-screen"
       style={{
         backgroundImage: `url('${texture}')`,
         backgroundSize: "cover",

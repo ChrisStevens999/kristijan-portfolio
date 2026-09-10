@@ -61,6 +61,18 @@
   --radius-md: var(--radius-md);
 }
 
+/*
+ * Homepage scroll snapping (as on poison.studio): the document snaps to the
+ * top of every home section, so one wheel/track-pad gesture lands exactly
+ * one section further — the four featured images additionally force a stop
+ * each (snap-always). Scoped to the home page via its <main data-scroll-snap>
+ * so project/category pages scroll freely. Sections taller than the
+ * viewport (categories, about) are still free-scrolling inside.
+ */
+html:has(main[data-scroll-snap]) {
+  scroll-snap-type: y mandatory;
+}
+
 body {
   background: var(--color-black);
   color: var(--color-off-white);

@@ -24,7 +24,9 @@ export function SelectedWorkCard({
   return (
     <Link
       href={`/projects/${project.slug}`}
-      className="group relative block h-screen w-full overflow-hidden"
+      // snap-start + snap-always: on the snapping homepage each of these
+      // full-screen images is a mandatory stop — one gesture, one image.
+      className="group relative block h-screen w-full snap-start snap-always overflow-hidden"
     >
       <motion.div
         className="absolute inset-0"
