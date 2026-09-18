@@ -1,5 +1,6 @@
 import type { Project } from "@/content/types";
 
+import skateboardsThumbnail from "../../../assets/projects/skateboarding/hf_20260713_144648_eab4affd-b95c-405f-97cd-3f50bb56a7cd.png";
 import project02Cover from "../../../assets/featured projects/2 Fav.png";
 import project03Cover from "../../../assets/featured projects/3 Fav.png";
 import hardcoreCover from "../../../assets/featured projects/4 Fav.png";
@@ -23,8 +24,17 @@ export const projects: Project[] = [
   {
     slug: "dropin-skateboards",
     title: "Dropin Skateboards",
-    category: "apparel-design",
-    summary: "Skateboard deck graphic and campaign photography.",
+    category: "illustration",
+    summary: "Skateboard deck illustrations and campaign photography.",
+    categoryTitle: "Skateboard Designs",
+    // The samurai campaign photo: its deck sits dead centre, so a portrait
+    // tile crop keeps the whole board in frame.
+    categoryThumbnail: {
+      src: skateboardsThumbnail,
+      alt: "Figure holding the pink and blue samurai skateboard deck",
+      desktopObjectPosition: "50% 50%",
+      mobileObjectPosition: "50% 50%",
+    },
     // Bypasses next/image entirely — the optimizer's WebP re-encode was
     // introducing real block-compression artifacts in this image's dark
     // areas (confirmed: source is clean, blockRatio 1.0 vs 16.3 optimized).
