@@ -6,24 +6,30 @@ import Link from "next/link";
 import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
+
+import wallPlate from "../../../../assets/projects/skateboarding/wall-plate.jpg";
 import { skateCampaigns, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
 
 /**
- * Geometry, all expressed against ONE length — the deck canvas height
- * (--deck-h) — so the composition scales as a unit. Ratios measured off the
- * approved reference (16:9 wall): canvas height ≈ 36.4% of the wall width,
- * deck-to-deck pitch ≈ 13.5% of it, bars at 20% / 75% of the deck's height.
- * The cutouts are 834x1871 with the deck in the middle ~58% of the width,
- * so the stable hit area is that narrow column while the image (and its
- * baked shadow) overhangs it on both sides without catching the pointer.
+ * Geometry. The wall is the approved mock-up's own wall — a clean plate
+ * (assets/.../wall-plate.jpg, built by scripts/build-skate-wall-plate.js:
+ * the real concrete, ceiling spotlights and steel rails with the baked-in
+ * decks, heading and labels removed). Everything live is positioned in that
+ * plate's coordinates (3840 x 2036) so the decks hang on its rails exactly
+ * where the mock-up's did: same height, centres on one equal pitch fitted
+ * to the mock-up's six (its own spacing wandered by ~50px).
  */
+const PLATE_W = 3840;
+const PLATE_H = 2036;
+const PLATE_ASPECT = PLATE_W / PLATE_H;
+const DECK_TOP = 428 / PLATE_H; // × stage height
+const DECK_HEIGHT = 1393 / PLATE_H; // × stage height
+const DECK_CENTRE_0 = 664 / PLATE_W; // × stage width (keep in step with the plate script's screws)
+const DECK_PITCH = 513.4 / PLATE_W; // × stage width
 const CANVAS_W = 834;
 const CANVAS_H = 1871;
-/** Every deck is normalised to the same height (--deck-h) from its measured bbox; real decks are ~0.268 wide per unit of height. */
+/** Every deck is normalised to the same height from its measured bbox; real decks are ~0.268 wide per unit of height. */
 const HIT_WIDTH = 0.268; // × --deck-h
-const PITCH = 0.371; // × --deck-h (desktop/tablet)
-const BAR_POSITIONS = [0.2, 0.75];
-const BAR_HEIGHT = "max(12px, calc(var(--deck-h) * 0.042))";
 
 /** Hover feel — restrained, per the brief (6–10px, 1.025–1.04, ≤3°). */
 const LIFT_PX = 8;
@@ -33,14 +39,6 @@ const MAX_TILT_DEG = 3;
 const LIFT_SPRING = { type: "spring", stiffness: 260, damping: 27, mass: 1 } as const;
 /** Pointer tracking: soft and damped, never twitchy. */
 const TILT_SPRING = { stiffness: 140, damping: 22, mass: 0.7 } as const;
-
-/** Inline SVG fractal-noise tiles (stitched, so they repeat seamlessly) for the wall's concrete. */
-function noiseTile(size: number, baseFrequency: number, octaves: number) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='${baseFrequency}' numOctaves='${octaves}' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-const MOTTLE_TILE = noiseTile(900, 0.006, 3);
-const GRAIN_TILE = noiseTile(260, 0.9, 3);
 
 function scrollToCampaign(id: string, reduceMotion: boolean) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -172,20 +170,28 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
 
   return (
     <li
-      className="relative flex shrink-0 snap-center justify-center"
-      style={{ width: "var(--pitch)", zIndex: active ? 20 : 1 }}
+      className="absolute flex snap-center justify-center"
+      style={{
+        left: `${(DECK_CENTRE_0 + DECK_PITCH * index) * 100}%`,
+        top: `${DECK_TOP * 100}%`,
+        width: `${DECK_PITCH * 100}%`,
+        transform: "translateX(-50%)",
+        zIndex: active ? 20 : 1,
+      }}
     >
-      {/* SPOTLIGHT — off (a faint glow) at rest, switched on by hover/focus;
-          always on for phones, which have no hover. Three parts: the beam
-          falling from above the row, the pool it throws on the wall, and
-          (inside the deck, below) a sheen masked to the deck's own shape. */}
+      {/* SPOTLIGHT — the wall plate carries the dim resting ceiling lights;
+          this is the deck's own lamp switching ON with hover/focus (always
+          on for phones, which have no hover). Three parts: the beam from
+          the ceiling, the pool it throws on the wall, and (inside the deck,
+          below) a sheen masked to the deck's own shape. */}
       <span
         aria-hidden
-        className={`pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-[0.1]"}`}
+        className={`pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
         style={{
           width: "calc(var(--deck-h) * 0.66)",
-          top: "calc(var(--deck-h) * -0.24)",
-          height: "calc(var(--deck-h) * 1)",
+          // from the very top of the wall (the ceiling) down onto the deck
+          top: `calc(var(--deck-h) * ${-DECK_TOP / DECK_HEIGHT})`,
+          height: `calc(var(--deck-h) * ${DECK_TOP / DECK_HEIGHT + 0.72})`,
           // Blur lives on this OUTER box and the cone shape on the inner one:
           // a filter is applied before clip-path, so blurring the clipped
           // element itself would leave the cone hard-edged.
@@ -203,7 +209,7 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
       </span>
       <span
         aria-hidden
-        className={`pointer-events-none absolute left-1/2 -z-10 w-[240%] -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-[0.18]"}`}
+        className={`pointer-events-none absolute left-1/2 -z-10 w-[240%] -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
         style={{
           top: 0,
           height: "calc(var(--deck-h) * 0.95)",
@@ -211,22 +217,6 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
             "radial-gradient(ellipse 50% 40% at 50% 40%, rgba(205,222,255,0.34), rgba(205,222,255,0.1) 50%, rgba(205,222,255,0) 100%)",
         }}
       />
-      {/* Rail brackets: a clamp plate behind the deck at each rail, its
-          bolted ears showing either side — like the reference's mounts. */}
-      {BAR_POSITIONS.map((at) => (
-        <span
-          key={at}
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 rounded-[3px]"
-          style={{
-            top: `calc(var(--deck-h) * ${at} - (${BAR_HEIGHT}) * 0.3)`,
-            height: `calc((${BAR_HEIGHT}) * 1.6)`,
-            width: `calc(var(--deck-h) * ${HIT_WIDTH} * 1.17)`,
-            background: "linear-gradient(180deg, #4a525e 0%, #262c35 30%, #151a20 75%, #0b0e12 100%)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.14) inset, 0 6px 10px rgba(0,0,0,0.6)",
-          }}
-        />
-      ))}
       <DeckShell
         deck={deck}
         reduceMotion={reduceMotion}
@@ -258,7 +248,9 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
             <Image
               src={deck.src}
               alt=""
-              sizes="(max-width: 767px) 70vw, 18vw"
+              // the cutout canvas is ~1.8x the deck column, and tall windows widen the stage
+              sizes="(max-width: 767px) 80vw, 28vw"
+              loading="eager"
               quality={95}
               draggable={false}
               className="absolute max-w-none select-none"
@@ -307,57 +299,20 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
   );
 }
 
-/** One steel rail: CSS only — a chunky bevelled bar (lit top edge, dark underside), hard drop shadow on the wall, capped and bolted at both ends. */
-function MountingBar({ at }: { at: number }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute"
-      style={{
-        top: `calc(var(--track-pad) + var(--deck-h) * ${at})`,
-        left: "calc(var(--deck-h) * -0.06)",
-        right: "calc(var(--deck-h) * -0.06)",
-        height: BAR_HEIGHT,
-      }}
-    >
-      <div
-        className="absolute inset-0 rounded-[2px]"
-        style={{
-          background:
-            "linear-gradient(180deg, #5a6370 0%, #3a424d 12%, #232931 40%, #161b21 70%, #0a0d11 100%)",
-          boxShadow:
-            "0 1px 0 rgba(255,255,255,0.22) inset, 0 -1px 0 rgba(0,0,0,0.7) inset, 0 14px 20px rgba(0,0,0,0.7), 0 3px 4px rgba(0,0,0,0.85)",
-        }}
-      />
-      {["left-0", "right-0"].map((side) => (
-        <span
-          key={side}
-          className={`absolute -top-[22%] ${side} flex h-[144%] w-[2.2%] min-w-[14px] items-center justify-center rounded-[3px]`}
-          style={{
-            background: "linear-gradient(180deg, #4a525e 0%, #242a32 35%, #0e1216 100%)",
-            boxShadow: "0 1px 0 rgba(255,255,255,0.16) inset, 0 8px 12px rgba(0,0,0,0.65)",
-          }}
-        >
-          <span
-            className="aspect-square h-[38%] rounded-full"
-            style={{ background: "radial-gradient(circle at 35% 30%, #939dab, #1a1f26 72%)" }}
-          />
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /**
- * The skate-shop wall. Built in layers — textured wall, overhead light
- * cones, steel bars, six independent deck cutouts with their own shadows,
- * labels — never the flattened mock-up (which would leave a dead copy of
- * each deck behind the live one).
+ * The skate-shop wall: the mock-up's real wall plate, with everything that
+ * was baked into it re-drawn live on top — heading, six independent deck
+ * cutouts (own shadows, own spotlights), labels. No deck exists in the
+ * background, so nothing static shows behind a moving one.
  *
- * Desktop/tablet: all six decks in one centred row, sized from --deck-h.
- * Mobile: the same track becomes a horizontal scroll-snap strip (one deck
- * centred, the next peeking in); vertical page scrolling is untouched and
- * nothing overflows the page horizontally.
+ * The stage keeps the plate's aspect ratio and the decks are placed in
+ * plate percentages, so they sit on the rails at every size.
+ *  - md and up: as wide as the viewport, or a little wider on tall windows
+ *    (up to 116vw — the plate has ~7% of bare wall either side of the rails
+ *    to give) so the wall fills the height; centred, sides cropped.
+ *  - phones: the stage is sized by height and becomes a horizontal
+ *    scroll-snap strip — one deck centred, its neighbours peeking in. The
+ *    page itself never overflows sideways and scrolls vertically as normal.
  */
 export function DeckWall() {
   const reduceMotion = !!useReducedMotion();
@@ -365,73 +320,59 @@ export function DeckWall() {
   return (
     <section
       aria-labelledby="skateboard-designs-heading"
-      className="relative isolate flex min-h-[100svh] w-full flex-col overflow-hidden bg-[#07090d]"
+      className="relative isolate flex min-h-[100svh] w-full flex-col overflow-clip bg-[#04060a] [--stage-h:74svh] [--stage-w:calc(var(--stage-h)*var(--plate-aspect))] md:[--stage-h:calc(var(--stage-w)/var(--plate-aspect))] md:[--stage-w:clamp(100vw,calc((100svh-44px)*var(--plate-aspect)),116vw)]"
       style={
         {
-          "--deck-h": "min(35vw, 62svh)",
-          "--pitch": `calc(var(--deck-h) * ${PITCH})`,
-          "--track-pad": "32px",
+          "--plate-aspect": PLATE_ASPECT,
+          "--deck-h": `calc(var(--stage-h) * ${DECK_HEIGHT})`,
         } as CSSProperties
       }
     >
-      {/* Wall, like the reference: an even, cold blue-grey concrete — a
-          navy base that's lighter where the ceiling lights wash the top,
-          broad soft mottling, fine grain, then a vignette. Procedural (two
-          tiny inline SVG noise tiles), so it's even edge to edge with no
-          photo streaks, and costs no image request. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{ background: "linear-gradient(180deg, #1a2535 0%, #131c2a 38%, #0c131d 72%, #070b12 100%)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-80 mix-blend-soft-light"
-        style={{ backgroundImage: `url("${MOTTLE_TILE}")`, backgroundSize: "900px 900px" }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-60 mix-blend-overlay"
-        style={{ backgroundImage: `url("${GRAIN_TILE}")`, backgroundSize: "260px 260px" }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 42% at 50% -6%, rgba(160,185,225,0.2), rgba(160,185,225,0) 100%), radial-gradient(ellipse 85% 70% at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.42) 80%, rgba(0,0,0,0.7) 100%)",
-        }}
-      />
+      {/* On phones this is the swipe strip; from md up it never scrolls. */}
+      <div className="w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] max-md:snap-x max-md:snap-mandatory md:overflow-visible [&::-webkit-scrollbar]:hidden">
+        {/* md+: centred by offset, and the section CLIPS (overflow: clip, not
+            hidden) — a hidden-overflow box is still scrollable by focus or
+            scrollIntoView, which would slide the whole wall sideways. */}
+        <div
+          className="relative md:left-1/2 md:-translate-x-1/2"
+          style={{ width: "var(--stage-w)", height: "var(--stage-h)" }}
+        >
+          <Image
+            src={wallPlate}
+            alt=""
+            fill
+            priority
+            placeholder="blur"
+            sizes="(max-width: 767px) 140svh, 116vw"
+            quality={95}
+            draggable={false}
+            className="object-cover select-none"
+          />
+          {/* the plate's bottom edge melts into the section's own dark */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[10%]"
+            style={{ background: "linear-gradient(180deg, rgba(4,6,10,0), #04060a)" }}
+          />
+          <ul className="absolute inset-0">
+            {skateDecks.map((deck, index) => (
+              <Deck key={deck.id} deck={deck} index={index} />
+            ))}
+          </ul>
+        </div>
+      </div>
 
+      {/* Heading: drawn over the wall where the mock-up's sat, but outside
+          the strip so it stays put while phones swipe the decks. */}
       <h1
         id="skateboard-designs-heading"
-        className="font-sans relative px-6 pt-[clamp(1.5rem,5svh,3.5rem)] text-center text-3xl leading-none tracking-tight text-white uppercase sm:text-4xl lg:text-5xl"
+        className="font-sans pointer-events-none absolute inset-x-0 px-6 text-center text-3xl leading-none tracking-tight text-white uppercase sm:text-4xl lg:text-5xl"
+        style={{ top: "calc(var(--stage-h) * 0.09)", transform: "translateY(-50%)" }}
       >
         Skateboard Designs
       </h1>
 
-      <div className="relative flex flex-1 items-center">
-        {/* On phones this is the swipe strip; from md up it never scrolls. */}
-        <div className="w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] max-md:snap-x max-md:snap-mandatory md:overflow-visible [&::-webkit-scrollbar]:hidden">
-          <div
-            // Phones: a bigger deck, a wider pitch, and side padding of half
-            // a viewport minus half a pitch so the first and last decks can
-            // snap to centre too.
-            className="relative mx-auto w-max max-md:px-[calc(50vw-var(--pitch)/2)] max-md:[--deck-h:min(124vw,56svh)] max-md:[--pitch:calc(var(--deck-h)*0.42)]"
-            style={{ paddingBlock: "var(--track-pad)" }}
-          >
-            {BAR_POSITIONS.map((at) => (
-              <MountingBar key={at} at={at} />
-            ))}
-
-            <ul className="relative flex">
-              {skateDecks.map((deck, index) => (
-                <Deck key={deck.id} deck={deck} index={index} />
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+      <div className="flex-1" />
 
       <div className="font-sans relative flex items-center justify-between gap-4 border-t border-off-white/15 px-4 py-3 text-[8px] tracking-[0.12em] whitespace-nowrap text-off-white uppercase sm:px-10 sm:text-[11px]">
         <p>Pick a board. Explore the artwork</p>
