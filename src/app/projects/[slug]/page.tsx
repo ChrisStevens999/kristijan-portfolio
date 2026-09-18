@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
 import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCaseStudy";
+import { SkateboardDesigns } from "@/components/case-studies/skateboard-designs/SkateboardDesigns";
 import { LxixCaseStudy } from "@/components/case-studies/LxixCaseStudy";
 import { StickerPoleDemo } from "@/components/case-studies/sticker-pole-demo/StickerPoleDemo";
 import { TagDesignsCaseStudy } from "@/components/case-studies/TagDesignsCaseStudy";
@@ -35,6 +36,10 @@ export default async function ProjectPage({
 
   if (slug === "lxix") {
     return <LxixCaseStudy nextProject={getNextProject(slug)} />;
+  }
+
+  if (slug === "dropin-skateboards") {
+    return <SkateboardDesigns category={getCategoryBySlug(project.category)} />;
   }
 
   if (slug === "sticker-archive") {
