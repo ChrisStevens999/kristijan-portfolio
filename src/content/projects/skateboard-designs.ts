@@ -26,8 +26,15 @@ export interface SkateDeck {
   /** Transparent cutout, 834x1871 — the deck itself sits in roughly the middle 58% of the canvas, with its own soft shadow baked around it. */
   src: StaticImageData;
   alt: string;
-  /** Project name, only where one was supplied (the reference labels just "Damaged Goods"); otherwise the deck shows its number. */
-  title?: string;
+  /** Deck name, taken from the supplied artwork's own file name. Shown in place of the number on hover/focus (always, on phones). */
+  title: string;
+  /**
+   * The deck's opaque bounding box inside the 834x1871 canvas (alpha > 200,
+   * so the baked soft shadow doesn't count). The cutouts were exported at
+   * slightly different sizes and offsets; the wall uses this to render
+   * every deck at exactly the same height, centred on its column.
+   */
+  bbox: { x1: number; x2: number; y1: number; y2: number };
   /** Label accent, sampled from the deck's own artwork. */
   accent: string;
   destination: DeckDestination;
@@ -43,6 +50,8 @@ export interface SkateCampaign {
 export const skateDecks: SkateDeck[] = [
   {
     id: "cobra",
+    title: "Cobra",
+    bbox: { x1: 178, x2: 638, y1: 72, y2: 1789 },
     src: cobraDeck,
     alt: "Dropin deck: red cobra and skull graphic",
     accent: "#e8442e",
@@ -50,14 +59,17 @@ export const skateDecks: SkateDeck[] = [
   },
   {
     id: "damaged-goods",
+    title: "Damaged Goods",
+    bbox: { x1: 172, x2: 653, y1: 47, y2: 1841 },
     src: damagedGoodsDeck,
     alt: "Damaged Goods deck: lime lettering around a purple portrait",
-    title: "Damaged Goods",
     accent: "#b6e61f",
     destination: { kind: "project", href: "/projects/damaged-goods" },
   },
   {
     id: "samurai",
+    title: "Samurai",
+    bbox: { x1: 175, x2: 660, y1: 30, y2: 1841 },
     src: samuraiDeck,
     alt: "Dropin deck: pink and blue samurai graphic",
     accent: "#ff3d8f",
@@ -65,6 +77,8 @@ export const skateDecks: SkateDeck[] = [
   },
   {
     id: "dobermann",
+    title: "Dobermann",
+    bbox: { x1: 171, x2: 661, y1: 19, y2: 1855 },
     src: dobermannDeck,
     alt: "Black deck: snarling dobermann wearing a gold chain",
     accent: "#d7ae57",
@@ -72,6 +86,8 @@ export const skateDecks: SkateDeck[] = [
   },
   {
     id: "golden",
+    title: "Saf Golden",
+    bbox: { x1: 179, x2: 656, y1: 30, y2: 1839 },
     src: goldenDeck,
     alt: "Gold deck with a black monogram",
     accent: "#e2c079",
@@ -79,6 +95,8 @@ export const skateDecks: SkateDeck[] = [
   },
   {
     id: "board",
+    title: "Saf Board",
+    bbox: { x1: 150, x2: 626, y1: 35, y2: 1814 },
     src: boardDeck,
     alt: "Black deck with gold mace, monogram and boot",
     accent: "#d7ae57",

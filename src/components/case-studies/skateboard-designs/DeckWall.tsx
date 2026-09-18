@@ -17,10 +17,13 @@ import { skateCampaigns, skateDecks, type SkateDeck } from "@/content/projects/s
  * so the stable hit area is that narrow column while the image (and its
  * baked shadow) overhangs it on both sides without catching the pointer.
  */
-const CANVAS_ASPECT = 834 / 1871;
-const HIT_WIDTH = 0.27; // × --deck-h
+const CANVAS_W = 834;
+const CANVAS_H = 1871;
+/** Every deck is normalised to the same height (--deck-h) from its measured bbox; real decks are ~0.268 wide per unit of height. */
+const HIT_WIDTH = 0.268; // × --deck-h
 const PITCH = 0.371; // × --deck-h (desktop/tablet)
 const BAR_POSITIONS = [0.2, 0.75];
+const BAR_HEIGHT = "max(12px, calc(var(--deck-h) * 0.042))";
 
 /** Hover feel — restrained, per the brief (6–10px, 1.025–1.04, ≤3°). */
 const LIFT_PX = 8;
@@ -30,6 +33,14 @@ const MAX_TILT_DEG = 3;
 const LIFT_SPRING = { type: "spring", stiffness: 260, damping: 27, mass: 1 } as const;
 /** Pointer tracking: soft and damped, never twitchy. */
 const TILT_SPRING = { stiffness: 140, damping: 22, mass: 0.7 } as const;
+
+/** Inline SVG fractal-noise tiles (stitched, so they repeat seamlessly) for the wall's concrete. */
+function noiseTile(size: number, baseFrequency: number, octaves: number) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='${baseFrequency}' numOctaves='${octaves}' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+const MOTTLE_TILE = noiseTile(900, 0.006, 3);
+const GRAIN_TILE = noiseTile(260, 0.9, 3);
 
 function scrollToCampaign(id: string, reduceMotion: boolean) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -63,7 +74,7 @@ function DeckShell({
     return (
       <Link
         href={deck.destination.href}
-        aria-label={`${deck.title ?? deck.alt} — explore project`}
+        aria-label={`${deck.title} — explore project`}
         className={`${className} ${focusRing}`}
         style={style}
         {...handlers}
@@ -144,24 +155,78 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
         ? "See campaign ↓"
         : null;
   const lifted = active && !reduceMotion;
+  const lit = active;
+
+  // Map the deck's measured bbox onto the column box: scale by height,
+  // pin the bbox top to the box top, centre the bbox horizontally.
+  const { x1, x2, y1, y2 } = deck.bbox;
+  const bboxH = y2 - y1 + 1;
+  const cutoutStyle: CSSProperties = {
+    height: `${(CANVAS_H / bboxH) * 100}%`,
+    width: "auto",
+    top: `${(-y1 / bboxH) * 100}%`,
+    left: "50%",
+    transform: `translateX(${(-((x1 + x2 + 1) / 2) / CANVAS_W) * 100}%)`,
+  };
+  const maskUrl = optimizedImageUrl(deck.src.src, 640);
 
   return (
     <li
       className="relative flex shrink-0 snap-center justify-center"
       style={{ width: "var(--pitch)", zIndex: active ? 20 : 1 }}
     >
-      {/* Overhead light: a soft pool on the wall behind this deck. The
-          ellipse is fully contained in its box, so it has no edge to clip. */}
+      {/* SPOTLIGHT — off (a faint glow) at rest, switched on by hover/focus;
+          always on for phones, which have no hover. Three parts: the beam
+          falling from above the row, the pool it throws on the wall, and
+          (inside the deck, below) a sheen masked to the deck's own shape. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute left-1/2 -z-10 w-[230%] -translate-x-1/2"
+        className={`pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-[0.1]"}`}
+        style={{
+          width: "calc(var(--deck-h) * 0.66)",
+          top: "calc(var(--deck-h) * -0.24)",
+          height: "calc(var(--deck-h) * 1)",
+          // Blur lives on this OUTER box and the cone shape on the inner one:
+          // a filter is applied before clip-path, so blurring the clipped
+          // element itself would leave the cone hard-edged.
+          filter: "blur(16px)",
+        }}
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            clipPath: "polygon(45% 0, 55% 0, 92% 100%, 8% 100%)",
+            background:
+              "linear-gradient(180deg, rgba(225,235,255,0.85) 0%, rgba(208,224,255,0.34) 28%, rgba(208,224,255,0.12) 62%, rgba(208,224,255,0) 100%)",
+          }}
+        />
+      </span>
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute left-1/2 -z-10 w-[240%] -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-[0.18]"}`}
         style={{
           top: 0,
           height: "calc(var(--deck-h) * 0.95)",
           background:
-            "radial-gradient(ellipse 50% 38% at 50% 38%, rgba(200,216,245,0.2), rgba(200,216,245,0.07) 50%, rgba(200,216,245,0) 100%)",
+            "radial-gradient(ellipse 50% 40% at 50% 40%, rgba(205,222,255,0.34), rgba(205,222,255,0.1) 50%, rgba(205,222,255,0) 100%)",
         }}
       />
+      {/* Rail brackets: a clamp plate behind the deck at each rail, its
+          bolted ears showing either side — like the reference's mounts. */}
+      {BAR_POSITIONS.map((at) => (
+        <span
+          key={at}
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 rounded-[3px]"
+          style={{
+            top: `calc(var(--deck-h) * ${at} - (${BAR_HEIGHT}) * 0.3)`,
+            height: `calc((${BAR_HEIGHT}) * 1.6)`,
+            width: `calc(var(--deck-h) * ${HIT_WIDTH} * 1.17)`,
+            background: "linear-gradient(180deg, #4a525e 0%, #262c35 30%, #151a20 75%, #0b0e12 100%)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.14) inset, 0 6px 10px rgba(0,0,0,0.6)",
+          }}
+        />
+      ))}
       <DeckShell
         deck={deck}
         reduceMotion={reduceMotion}
@@ -174,20 +239,18 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
           {/* Contact shadow: grows and drops as the deck leaves the wall. */}
           <motion.div
             aria-hidden
-            className="pointer-events-none absolute inset-x-[6%] top-[5%] bottom-[3%] rounded-[999px] bg-black blur-xl"
+            className="pointer-events-none absolute inset-x-[4%] top-[2%] bottom-[1%] rounded-[999px] bg-black blur-xl"
             initial={false}
             animate={{ opacity: lifted ? 0.7 : 0.45, y: lifted ? 22 : 8, scaleX: lifted ? 1.12 : 1 }}
             transition={LIFT_SPRING}
           />
+          {/* The moving layer IS the deck's box (column wide, --deck-h tall);
+              the cutout inside is scaled and offset from its measured bbox so
+              the deck itself fills that box exactly — identical size and
+              spacing for all six, whatever padding each PNG was exported with. */}
           <motion.div
-            className="pointer-events-none absolute top-0 left-1/2 h-full will-change-transform"
-            style={{
-              aspectRatio: `${CANVAS_ASPECT}`,
-              x: "-50%",
-              rotateX,
-              rotateY,
-              transformPerspective: 900,
-            }}
+            className="pointer-events-none absolute inset-0 will-change-transform"
+            style={{ rotateX, rotateY, transformPerspective: 900 }}
             initial={false}
             animate={{ y: lifted ? -LIFT_PX : 0, scale: lifted ? HOVER_SCALE : 1 }}
             transition={LIFT_SPRING}
@@ -195,41 +258,56 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
             <Image
               src={deck.src}
               alt=""
-              fill
               sizes="(max-width: 767px) 70vw, 18vw"
               quality={95}
               draggable={false}
-              className="object-contain select-none"
+              className="absolute max-w-none select-none"
+              style={cutoutStyle}
+            />
+            <span
+              aria-hidden
+              className={`absolute transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
+              style={{
+                ...cutoutStyle,
+                aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
+                background:
+                  "radial-gradient(ellipse 60% 34% at 50% 4%, rgba(255,255,255,0.5), rgba(255,255,255,0.14) 55%, rgba(255,255,255,0) 100%)",
+                mixBlendMode: "screen",
+                maskImage: `url("${maskUrl}")`,
+                WebkitMaskImage: `url("${maskUrl}")`,
+                maskSize: "100% 100%",
+                WebkitMaskSize: "100% 100%",
+              }}
             />
           </motion.div>
         </div>
 
-        {/* Label: fixed-height box, layers cross-fade — nothing reflows. */}
-        <div className="font-sans relative mt-3 h-9 text-[10px] leading-tight tracking-[0.14em] uppercase sm:text-[11px]">
+        {/* Label: fixed-height box, layers cross-fade — nothing reflows.
+            Number at rest, the deck's name on hover/focus (always the name
+            on phones), plus an action line where a destination exists. */}
+        <div className="font-sans relative mt-4 h-10 text-[11px] leading-tight tracking-[0.14em] uppercase sm:text-xs">
           <span
-            className={`absolute inset-x-[-60%] top-0 transition-opacity duration-300 ${
-              action ? `max-md:opacity-0 ${active ? "md:opacity-0" : ""}` : ""
-            } ${active ? "text-off-white" : "text-off-white/70"}`}
+            className={`absolute inset-x-[-60%] top-0 text-off-white/75 transition-opacity duration-300 max-md:opacity-0 ${active ? "md:opacity-0" : ""}`}
           >
             {number}
           </span>
-          {action ? (
-            <span
-              className={`absolute inset-x-[-60%] top-0 transition-opacity duration-300 ${active ? "" : "md:opacity-0"}`}
-            >
-              <span className="block font-medium" style={{ color: deck.accent }}>
-                {deck.title ?? number}
-              </span>
-              <span className="mt-1 block text-[8px] tracking-[0.16em] text-off-white/85 sm:text-[9px]">{action}</span>
+          <span
+            className={`absolute inset-x-[-60%] top-0 transition-opacity duration-300 ${active ? "" : "md:opacity-0"}`}
+          >
+            <span className="block font-medium" style={{ color: deck.accent }}>
+              {deck.title}
             </span>
-          ) : null}
+            {action ? (
+              <span className="mt-1 block text-[9px] tracking-[0.16em] text-off-white/85 sm:text-[10px]">{action}</span>
+            ) : null}
+          </span>
         </div>
       </DeckShell>
     </li>
   );
 }
 
-/** One steel mounting bar: CSS only — brushed gradient, top highlight, drop shadow, bolted end caps. */
+/** One steel rail: CSS only — a chunky bevelled bar (lit top edge, dark underside), hard drop shadow on the wall, capped and bolted at both ends. */
 function MountingBar({ at }: { at: number }) {
   return (
     <div
@@ -237,24 +315,34 @@ function MountingBar({ at }: { at: number }) {
       className="pointer-events-none absolute"
       style={{
         top: `calc(var(--track-pad) + var(--deck-h) * ${at})`,
-        left: "calc(var(--deck-h) * -0.02)",
-        right: "calc(var(--deck-h) * -0.02)",
-        height: "max(10px, calc(var(--deck-h) * 0.034))",
+        left: "calc(var(--deck-h) * -0.06)",
+        right: "calc(var(--deck-h) * -0.06)",
+        height: BAR_HEIGHT,
       }}
     >
       <div
         className="absolute inset-0 rounded-[2px]"
         style={{
-          background: "linear-gradient(180deg, #3a414b 0%, #1d2229 38%, #12161b 72%, #0a0d10 100%)",
-          boxShadow: "0 1px 0 rgba(255,255,255,0.10) inset, 0 10px 18px rgba(0,0,0,0.65), 0 2px 3px rgba(0,0,0,0.8)",
+          background:
+            "linear-gradient(180deg, #5a6370 0%, #3a424d 12%, #232931 40%, #161b21 70%, #0a0d11 100%)",
+          boxShadow:
+            "0 1px 0 rgba(255,255,255,0.22) inset, 0 -1px 0 rgba(0,0,0,0.7) inset, 0 14px 20px rgba(0,0,0,0.7), 0 3px 4px rgba(0,0,0,0.85)",
         }}
       />
-      {["left-[0.6%]", "right-[0.6%]"].map((side) => (
+      {["left-0", "right-0"].map((side) => (
         <span
           key={side}
-          className={`absolute top-1/2 ${side} aspect-square h-[46%] -translate-y-1/2 rounded-full`}
-          style={{ background: "radial-gradient(circle at 35% 30%, #6b7480, #161a1f 70%)" }}
-        />
+          className={`absolute -top-[22%] ${side} flex h-[144%] w-[2.2%] min-w-[14px] items-center justify-center rounded-[3px]`}
+          style={{
+            background: "linear-gradient(180deg, #4a525e 0%, #242a32 35%, #0e1216 100%)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.16) inset, 0 8px 12px rgba(0,0,0,0.65)",
+          }}
+        >
+          <span
+            className="aspect-square h-[38%] rounded-full"
+            style={{ background: "radial-gradient(circle at 35% 30%, #939dab, #1a1f26 72%)" }}
+          />
+        </span>
       ))}
     </div>
   );
@@ -280,32 +368,38 @@ export function DeckWall() {
       className="relative isolate flex min-h-[100svh] w-full flex-col overflow-hidden bg-[#07090d]"
       style={
         {
-          "--deck-h": "min(36vw, 64svh)",
+          "--deck-h": "min(35vw, 62svh)",
           "--pitch": `calc(var(--deck-h) * ${PITCH})`,
-          "--track-pad": "28px",
+          "--track-pad": "32px",
         } as CSSProperties
       }
     >
-      {/* Wall: texture pushed cold and dark, then a vignette. */}
+      {/* Wall, like the reference: an even, cold blue-grey concrete — a
+          navy base that's lighter where the ceiling lights wash the top,
+          broad soft mottling, fine grain, then a vignette. Procedural (two
+          tiny inline SVG noise tiles), so it's even edge to edge with no
+          photo streaks, and costs no image request. */}
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
-        style={{
-          // The project's weathered-zinc photo, desaturated and pulled right
-          // down: reads as a scuffed concrete shop wall once tinted cold.
-          backgroundImage: `url("${optimizedImageUrl("/textures/metal-zinc.jpg", 1920)}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "grayscale(1) brightness(0.36) contrast(1.35)",
-        }}
+        style={{ background: "linear-gradient(180deg, #1a2535 0%, #131c2a 38%, #0c131d 72%, #070b12 100%)" }}
       />
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[#1d2f49] mix-blend-color opacity-60" />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 opacity-80 mix-blend-soft-light"
+        style={{ backgroundImage: `url("${MOTTLE_TILE}")`, backgroundSize: "900px 900px" }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 opacity-60 mix-blend-overlay"
+        style={{ backgroundImage: `url("${GRAIN_TILE}")`, backgroundSize: "260px 260px" }}
+      />
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 80% 65% at 50% 36%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.5) 78%, rgba(0,0,0,0.82) 100%)",
+            "radial-gradient(ellipse 70% 42% at 50% -6%, rgba(160,185,225,0.2), rgba(160,185,225,0) 100%), radial-gradient(ellipse 85% 70% at 50% 40%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.42) 80%, rgba(0,0,0,0.7) 100%)",
         }}
       />
 
@@ -323,7 +417,7 @@ export function DeckWall() {
             // Phones: a bigger deck, a wider pitch, and side padding of half
             // a viewport minus half a pitch so the first and last decks can
             // snap to centre too.
-            className="relative mx-auto w-max max-md:px-[calc(50vw-var(--pitch)/2)] max-md:[--deck-h:min(128vw,58svh)] max-md:[--pitch:calc(var(--deck-h)*0.42)]"
+            className="relative mx-auto w-max max-md:px-[calc(50vw-var(--pitch)/2)] max-md:[--deck-h:min(124vw,56svh)] max-md:[--pitch:calc(var(--deck-h)*0.42)]"
             style={{ paddingBlock: "var(--track-pad)" }}
           >
             {BAR_POSITIONS.map((at) => (
