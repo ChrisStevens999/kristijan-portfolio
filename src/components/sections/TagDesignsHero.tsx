@@ -178,7 +178,7 @@ function openingStack(imageCount: number): Traveler[] {
  * any moment; everything else is the same artwork at an earlier or later
  * stage of the same journey (growing toward centre, shrinking away from
  * it). Illustrations enter strictly in folder order and wrap after the
- * last — a plain round-robin over `imageCounterRef`, so every image gets
+ * last — a plain round-robin derived from the queue itself, so every image gets
  * its turn at centre exactly once per full lap before any repeats, none
  * are skipped, and the sequence is fully deterministic (never random).
  *
@@ -196,8 +196,6 @@ function openingStack(imageCount: number): Traveler[] {
 export function TagDesignsHero({ images }: { images: HeroImage[] }) {
   const prefersReducedMotion = useReducedMotion();
   const stageRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef(LAST_WAYPOINT - FIRST_WAYPOINT + 1);
-  const imageCounterRef = useRef(LAST_WAYPOINT - FIRST_WAYPOINT + 1);
 
   const [travelers, setTravelers] = useState<Traveler[]>(() => openingStack(Math.max(1, images.length)));
   const [stage, setStage] = useState<StageSize>({ width: 0, height: 0 });
@@ -245,17 +243,24 @@ export function TagDesignsHero({ images }: { images: HeroImage[] }) {
     if (images.length === 0 || prefersReducedMotion) return;
 
     function advance() {
+      // A PURE updater — everything about the next arrival is derived from
+      // the previous state: the card entering at the bottom always carries
+      // the image after the one currently at the bottom, so the sequence is
+      // a strict round-robin over ALL images. (An earlier version bumped
+      // counters in refs from inside this updater; React invokes updaters
+      // twice in development to catch exactly that, and the double bump
+      // made the queue skip every other illustration.)
       setTravelers((prev) => {
         const advanced = prev
           .map((t) => ({ ...t, position: t.position + 1, preplaced: false }))
           .filter((t) => t.position <= LAST_WAYPOINT);
+        const bottom = prev.find((t) => t.position === FIRST_WAYPOINT);
         const newTraveler: Traveler = {
-          id: idRef.current++,
-          imageIndex: imageCounterRef.current % images.length,
+          id: Math.max(-1, ...prev.map((t) => t.id)) + 1,
+          imageIndex: bottom ? (bottom.imageIndex + 1) % images.length : 0,
           position: FIRST_WAYPOINT,
           preplaced: false,
         };
-        imageCounterRef.current += 1;
         return [...advanced, newTraveler];
       });
     }
