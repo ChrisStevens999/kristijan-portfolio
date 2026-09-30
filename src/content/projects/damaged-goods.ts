@@ -9,6 +9,7 @@ import brandExpressions from "../../../assets/projects/damaged goods/Expression.
 import campaignApplications from "../../../assets/projects/damaged goods/Merch Page.png";
 import apparelAndObject from "../../../assets/projects/damaged goods/Merch Page 5.png";
 import capCampaign from "../../../assets/projects/damaged goods/Merch Page 3.png";
+import toteAndSweater from "../../../assets/projects/damaged goods/DG 56.png";
 import finalJacket from "../../../assets/projects/damaged goods/Merch Page 4.png";
 
 /**
@@ -79,6 +80,12 @@ export const damagedGoodsPanels: SequencePanel[] = [
     enabled: true,
     src: capCampaign,
     alt: "Damaged Goods cap campaign image",
+  },
+  {
+    id: "tote-and-sweater",
+    enabled: true,
+    src: toteAndSweater,
+    alt: "Damaged Goods lime tote bag held against a purple door, beside a black long-sleeve with the circular Damaged Goods badge on a lime and purple backdrop",
   },
   {
     id: "final-jacket",
