@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
 import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCaseStudy";
+import { ApparelIntro } from "@/components/categories/ApparelIntro";
 import { GraphicTees } from "@/components/case-studies/graphic-tees/GraphicTees";
 import { SkateboardDesigns } from "@/components/case-studies/skateboard-designs/SkateboardDesigns";
 import { LxixCaseStudy } from "@/components/case-studies/LxixCaseStudy";
@@ -44,7 +45,12 @@ export default async function ProjectPage({
   }
 
   if (slug === "graphic-tees") {
-    return <GraphicTees category={getCategoryBySlug(project.category)} />;
+    // opens with the animated APPAREL cover, which fades to black into the page
+    return (
+      <ApparelIntro>
+        <GraphicTees category={getCategoryBySlug(project.category)} />
+      </ApparelIntro>
+    );
   }
 
   if (slug === "sticker-archive") {

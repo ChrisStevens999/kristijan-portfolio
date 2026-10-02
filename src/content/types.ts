@@ -47,6 +47,14 @@ export interface Project {
   outcome: string;
   /** Selected Works is curated, not chronological — true = eligible for the homepage. */
   featured: boolean;
+  /** Image for the homepage Selected Works when it differs from `cover`. */
+  featuredCover?: ImageAsset;
+  /** Position among the Selected Works, when it differs from `order`
+   *  (which also sorts the project within its category). */
+  featuredOrder?: number;
+  /** false = left out of its category's listing (still reachable by URL and,
+   *  if featured, still on the homepage). Defaults to listed. */
+  listedInCategory?: boolean;
   /** Manual sort order within Selected Works and within its category. */
   order: number;
   /** Disciplines this project spans. Optional — most existing entries don't set it. */

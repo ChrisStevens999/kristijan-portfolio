@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { IllustrationCategoryPage } from "@/components/categories/IllustrationCategoryPage";
+import { ExpandingCoverLink } from "@/components/ui/ExpandingCoverLink";
 import { getAllCategories, getCategoryBySlug, getProjectsByCategory } from "@/lib/content";
 
 export function generateStaticParams() {
@@ -41,9 +43,9 @@ export default async function CategoryPage({
       </div>
       <div className="flex flex-col">
         {categoryProjects.map((project, index) => (
-          <Link
+          <ProjectCoverLink
             key={project.slug}
-            href={`/projects/${project.slug}`}
+            slug={project.slug}
             className="group relative flex h-[80vh] w-full items-end overflow-hidden sm:h-screen"
           >
             <Image
@@ -62,9 +64,32 @@ export default async function CategoryPage({
               <h2 className="font-sans mt-2 text-4xl font-bold sm:text-6xl">{project.title}</h2>
               <p className="mt-3 max-w-md text-off-white/80">{project.summary}</p>
             </div>
-          </Link>
+          </ProjectCoverLink>
         ))}
       </div>
     </main>
+  );
+}
+
+/**
+ * Projects whose cover opens with a full-screen transition — the cover grows
+ * to fill the screen, dips to black, and the project's own intro takes over —
+ * instead of a plain link. Value: the full-resolution still for that frame.
+ */
+const EXPANDING_COVERS: Record<string, string> = {
+  "graphic-tees": "/apparel/hero/cover.jpg",
+};
+
+function ProjectCoverLink({ slug, className, children }: { slug: string; className: string; children: ReactNode }) {
+  const href = `/projects/${slug}`;
+  const expandTo = EXPANDING_COVERS[slug];
+  return expandTo ? (
+    <ExpandingCoverLink href={href} image={expandTo} className={className}>
+      {children}
+    </ExpandingCoverLink>
+  ) : (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }

@@ -1,10 +1,11 @@
 import type { Project } from "@/content/types";
 
 import skateboardsThumbnail from "../../../assets/projects/skateboarding/hf_20260713_144648_eab4affd-b95c-405f-97cd-3f50bb56a7cd.png";
-import project02Cover from "../../../assets/featured projects/2 Fav.png";
-import project03Cover from "../../../assets/featured projects/3 Fav.png";
+import neoTokyoCover from "../../../assets/featured projects/2 Fav.png";
+import lxixFeaturedCover from "../../../assets/featured projects/3 Fav.png";
 import hardcoreCover from "../../../assets/featured projects/4 Fav.png";
 import boyzclubCover from "../../../assets/projects/boyzclub/BZC 1.png";
+import boyzclubFeaturedCover from "../../../assets/featured projects/5 Fav.jpg";
 import lxixCover from "../../../assets/projects/lxix/Cover Page.png";
 import damagedGoodsCover from "../../../assets/projects/damaged goods/4 5.png";
 import tagDesignsCover from "../../../assets/projects/tag designs/hero/Venom.png";
@@ -13,17 +14,15 @@ import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/
 import stickerArchiveThumbnail from "../../../assets/sub categories/Stickers Thumbnail.png";
 
 /**
- * One entry per project. Titles/categories below are placeholders pending
- * confirmation — see chat for which fields are read directly off the
- * supplied artwork ("Dropin Skateboards", "Hardcore Mentality") versus
- * generic placeholders where no legible project name exists in the image
- * (02, 03). challenge/process/outcome are left empty: no project-page copy
- * has been supplied yet, and Selected Works cards don't display them.
+ * One entry per project. challenge/process/outcome are left empty: no
+ * project-page copy has been supplied yet, and Selected Works cards don't
+ * display them. The five homepage Selected Works are, in order: Drop In
+ * Skateboards, Neo Tokyo, LXIX, Hardcore Mentality and BoyzClub.
  */
 export const projects: Project[] = [
   {
     slug: "dropin-skateboards",
-    title: "Dropin Skateboards",
+    title: "Drop In Skateboards",
     category: "illustration",
     summary: "Skateboard deck illustrations and campaign photography.",
     categoryTitle: "Skateboard Designs",
@@ -40,7 +39,7 @@ export const projects: Project[] = [
     // areas (confirmed: source is clean, blockRatio 1.0 vs 16.3 optimized).
     cover: {
       src: "/featured/1-fav.png",
-      alt: "Dropin Skateboards campaign photograph",
+      alt: "Drop In Skateboards campaign photograph",
     },
     gallery: [],
     challenge: "",
@@ -50,30 +49,19 @@ export const projects: Project[] = [
     order: 1,
   },
   {
-    slug: "project-02",
-    title: "Untitled Project 02",
+    slug: "neo-tokyo",
+    title: "Neo Tokyo",
     category: "apparel-design",
     summary: "Apparel campaign photography.",
-    cover: { src: project02Cover, alt: "Apparel campaign photograph" },
+    cover: { src: neoTokyoCover, alt: "Neo Tokyo — a model in a pink printed shirt among shipping containers" },
     gallery: [],
     challenge: "",
     process: "",
     outcome: "",
     featured: true,
+    // Homepage Selected Works only — the Apparel listing shows just Graphic T's.
+    listedInCategory: false,
     order: 2,
-  },
-  {
-    slug: "project-03",
-    title: "Untitled Project 03",
-    category: "apparel-design",
-    summary: "Eyewear campaign photography.",
-    cover: { src: project03Cover, alt: "Eyewear campaign photograph" },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
-    featured: true,
-    order: 3,
   },
   {
     slug: "hardcore-mentality",
@@ -86,6 +74,8 @@ export const projects: Project[] = [
     process: "",
     outcome: "",
     featured: true,
+    // Homepage Selected Works only — the Apparel listing shows just Graphic T's.
+    listedInCategory: false,
     order: 4,
   },
   {
@@ -104,13 +94,14 @@ export const projects: Project[] = [
       "Campaign Direction",
     ],
     cover: { src: boyzclubCover, alt: "Camouflaged sports car with the BoyzClub wordmark" },
+    // Homepage Selected Works shows the BoyzClub cover art instead.
+    featuredCover: { src: boyzclubFeaturedCover, alt: "BoyzClub — a figure in a blue balaclava over a grainy crowd" },
     gallery: [],
     challenge: "",
     process: "",
     outcome: "",
-    // Not part of the curated homepage Selected Works — reachable via the
-    // Brand Direction category listing and its own project page.
-    featured: false,
+    // Fifth of the homepage Selected Works, and in the Brand Direction listing.
+    featured: true,
     order: 5,
   },
   {
@@ -129,14 +120,16 @@ export const projects: Project[] = [
       "Campaign Direction",
     ],
     cover: { src: lxixCover, alt: "A champagne bottle held to a model's lips, LXIX wordmark below" },
+    // Homepage Selected Works shows the LXIX sunglasses campaign shot instead.
+    featuredCover: { src: lxixFeaturedCover, alt: "LXIX — a model in sunglasses" },
+    featuredOrder: 3,
     gallery: [],
     challenge: "",
     process: "",
     outcome: "",
-    // Not part of the curated homepage Selected Works — reachable via the
-    // Brand Direction category listing (now a real listing — this is the
-    // second Brand Direction project) and its own project page.
-    featured: false,
+    // Third of the homepage Selected Works (see featuredCover/featuredOrder),
+    // and the second Brand Direction project in that category's listing.
+    featured: true,
     order: 6,
   },
   {
@@ -214,8 +207,9 @@ export const projects: Project[] = [
     category: "apparel-design",
     categoryTitle: "Graphic T's",
     summary: "Graphic T-shirt designs: illustration, photobashing and collage.",
-    // Demo: interactive 3D shirt display (src/content/projects/graphic-tees.ts).
-    cover: { src: "/apparel/t-shirts/flat/morality.webp", alt: "Morality Is A Missing Concept T-shirt, back print" },
+    // Still of the animated APPAREL angel cover — on the Apparel listing it
+    // expands full screen into the animated intro, then the project page.
+    cover: { src: "/apparel/hero/cover.jpg", alt: "A red-lit angel statue rising in front of the word APPAREL" },
     gallery: [],
     challenge: "",
     process: "",

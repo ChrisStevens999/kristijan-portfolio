@@ -12,7 +12,9 @@ export function getProjectBySlug(slug: string): Project | undefined {
 
 /** Curated homepage selection (04_CONTENT_ARCHITECTURE.md: quality over chronology). */
 export function getSelectedWorks(): Project[] {
-  return getAllProjects().filter((project) => project.featured);
+  return getAllProjects()
+    .filter((project) => project.featured)
+    .sort((a, b) => (a.featuredOrder ?? a.order) - (b.featuredOrder ?? b.order));
 }
 
 export function getAllCategories(): Category[] {
@@ -24,7 +26,9 @@ export function getCategoryBySlug(slug: string): Category | undefined {
 }
 
 export function getProjectsByCategory(slug: string): Project[] {
-  return getAllProjects().filter((project) => project.category === slug);
+  return getAllProjects().filter(
+    (project) => project.category === slug && project.listedInCategory !== false,
+  );
 }
 
 /** Next project in the full ordered list, wrapping around at the end. */
