@@ -208,4 +208,19 @@ export const projects: Project[] = [
     featured: false,
     order: 9,
   },
+  {
+    slug: "graphic-tees",
+    title: "Graphic T's",
+    category: "apparel-design",
+    categoryTitle: "Graphic T's",
+    summary: "Graphic T-shirt designs: illustration, photobashing and collage.",
+    // Demo: interactive 3D shirt display (src/content/projects/graphic-tees.ts).
+    cover: { src: "/apparel/t-shirts/flat/morality.webp", alt: "Morality Is A Missing Concept T-shirt, back print" },
+    gallery: [],
+    challenge: "",
+    process: "",
+    outcome: "",
+    featured: false,
+    order: 10,
+  },
 ];
