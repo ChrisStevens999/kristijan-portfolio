@@ -249,12 +249,21 @@ export function GraphicTees({ category }: { category?: Category }) {
   const scrollOn = () =>
     document.getElementById("graphic-tees-after")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
 
+  // pure #000 (not the site's #080808 `bg-black`): the exported backdrop
+  // plate ends in #000, so the page around and below it must match
   return (
-    <main className="bg-black text-off-white">
+    <main className="bg-[#000] text-off-white">
       <h1 className="sr-only">Graphic T&apos;s</h1>
 
       {isDesktop === true && (
-        <section className="flex h-[100svh] items-center justify-center overflow-clip bg-black">
+        <section
+          className="flex justify-center overflow-clip bg-[#000]"
+          // a touch of space under the artboard so scroll line → gallery
+          // matches bar → scroll line (both ≈ 23 artboard px at 3840 wide)
+          style={{ paddingBottom: `calc(min(100svh, 100vw * ${H} / ${W}) * ${18 / H})` }}
+        >
+          {/* exactly as tall as the artboard (never letterboxed top/bottom), so the
+              gallery starts right under the scroll line, not a band of empty black */}
           <div
             className="relative [container-type:inline-size]"
             style={{ aspectRatio: `${W} / ${H}`, width: `min(100vw, calc(100svh * ${W} / ${H}))` }}
@@ -375,7 +384,7 @@ export function GraphicTees({ category }: { category?: Category }) {
       )}
 
       {isDesktop === false && (
-        <section className="flex min-h-[100svh] flex-col bg-black px-4 pb-6 pt-24">
+        <section className="flex min-h-[100svh] flex-col bg-[#000] px-4 pb-6 pt-24">
           <p className="font-accent text-[2.4rem] font-extrabold uppercase leading-none" style={{ color: RED }}>
             Graphic T&rsquo;s
           </p>
@@ -419,7 +428,7 @@ export function GraphicTees({ category }: { category?: Category }) {
         </section>
       )}
 
-      <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-black">
+      <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
         <RealWorldGallery reducedMotion={reducedMotion} />
       </section>
       {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
