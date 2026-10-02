@@ -11,6 +11,8 @@
  *    texture per shirt (mostly flat black, so it compresses very small; the
  *    print only fills a corner of the UV sheet, so it stays at full 4K).
  *  - public/apparel/t-shirts/flat/<slug>.webp — the 2D cutout for the strip.
+ *  - public/apparel/t-shirts/gallery/<slug>.webp — the mockup photos for the
+ *    "real world" gallery (`--gallery-only` rebuilds just these).
  *
  * Adding a shirt: drop its GLB + PNG next to the others, add it to SHIRTS
  * below, run `node scripts/build-tshirt-assets.mjs`, then add it to
@@ -59,6 +61,37 @@ const SHIRTS = {
   "speak-up": { glb: "Speak-T-Shirt.glb", png: "Speak Up.png" },
 };
 
+/** "Shirts in the real world" gallery: the mockup photos, as web-sized WebP
+ *  (sources are ~3400x5000, 15–28 MB each). gallery/<slug>.webp */
+const GALLERY = {
+  "conformity-cinema": "1 1.png",
+  "hardcore-mentality-night": "2 2 2.png",
+  "hardcore-mentality-dusk": "2 2.png",
+  "burden-phone-box": "4 4.png",
+  "seven-deadly-sins-crossing": "77.png",
+  "nod-mami-sunglasses": "773.png",
+  "abaddon-car": "Abaddon 2.png",
+  "burden-skate": "BBV.png",
+  "conformity-ice-cream": "Conformity 1.png",
+  "seven-deadly-sins-hair": "Dead.png",
+  "essentials-concrete": "ESS 2.png",
+  "essentials-stairwell": "Essentials 34.png",
+  "eyes-studio": "Eyes 2.png",
+  "eyes-steps": "Eyes.png",
+  "ferocious-crop": "hf_20260929_152040_fd789c8e-5e46-44ac-913a-0d2d4bf9f037.png",
+  "abaddon-alley": "hf_20260929_153417_a921846f-118b-42f8-9ea0-e2d64933865f.png",
+  "nod-mami-stairs": "Nod.png",
+  "speak-up-yellow": "Speak 2.png",
+  "speak-up-tunnel": "Speak.png",
+  "ferocious-street": "TTS.png",
+  "ferocious-purple": "Tyson.png",
+  "vision-studio": "Vision S.png",
+  "vision-escalator": "Vission.png",
+  "tempest-subway": "War.png",
+  "tempest-crowd": "warrr.png",
+};
+const GALLERY_WIDTH = 1100;
+
 /** Flat cutouts: trimmed to the shirt, then centred in the same 1200² square
  *  with the same margin, so every thumbnail lines up whatever the source
  *  framing (sources are 3500–7000 px). */
@@ -84,9 +117,22 @@ const io = new NodeIO()
 
 fs.mkdirSync(path.join(OUT, "prints"), { recursive: true });
 fs.mkdirSync(path.join(OUT, "flat"), { recursive: true });
+fs.mkdirSync(path.join(OUT, "gallery"), { recursive: true });
 
 const baseColorOf = (doc) => doc.getRoot().listMaterials()[0].getBaseColorTexture();
 const kb = (f) => `${(fs.statSync(f).size / 1024).toFixed(0)} KB`;
+
+// --- gallery photos -----------------------------------------------------------
+for (const [slug, file] of Object.entries(GALLERY)) {
+  const out = path.join(OUT, "gallery", `${slug}.webp`);
+  await sharp(path.join(SRC, file))
+    .flatten({ background: "#000" })
+    .resize({ width: GALLERY_WIDTH })
+    .webp({ quality: 82, effort: 6 })
+    .toFile(out);
+  console.log(`gallery/${slug}.webp  ${kb(out)}`);
+}
+if (process.argv.includes("--gallery-only")) process.exit(0);
 
 // --- per-shirt print textures + flat cutouts -----------------------------------
 for (const [slug, { glb, png }] of Object.entries(SHIRTS)) {

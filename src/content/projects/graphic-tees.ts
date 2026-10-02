@@ -21,8 +21,54 @@ const print = (slug: string) => `/apparel/t-shirts/prints/${slug}.webp`;
 
 export const TSHIRT_MODEL = "/apparel/t-shirts/tshirt.glb";
 
+/** "Shirts in the real world" — mockup photos for the gallery under the
+ *  display (public/apparel/t-shirts/gallery, built by the same script). */
+const photo = (
+  slug: string,
+  shirt: string,
+  alt = `Wearing the ${shirt} T-shirt`,
+) => ({
+  src: `/apparel/t-shirts/gallery/${slug}.webp`,
+  alt,
+  /** which print it shows — the gallery never puts two of the same shirt side by side */
+  shirt,
+});
+
+export const realWorldPhotos = [
+  photo("conformity-cinema", "Conformity"),
+  photo("hardcore-mentality-night", "Hardcore Mentality"),
+  photo("hardcore-mentality-dusk", "Hardcore Mentality"),
+  photo("burden-phone-box", "Burden of Intellect"),
+  photo("seven-deadly-sins-crossing", "7 Deadly Sins"),
+  photo("nod-mami-sunglasses", "Nod Mami"),
+  photo("abaddon-car", "Abaddon", "The Abaddon T-shirt laid on a red car"),
+  photo("burden-skate", "Burden of Intellect"),
+  photo("conformity-ice-cream", "Conformity"),
+  photo("seven-deadly-sins-hair", "7 Deadly Sins"),
+  photo("essentials-concrete", "Essentials"),
+  photo("essentials-stairwell", "Essentials"),
+  photo("eyes-studio", "The Eyes Chico"),
+  photo("eyes-steps", "The Eyes Chico"),
+  photo("ferocious-crop", "Ferocious"),
+  photo("abaddon-alley", "Abaddon"),
+  photo("nod-mami-stairs", "Nod Mami"),
+  photo("speak-up-yellow", "Speak Up"),
+  photo("speak-up-tunnel", "Speak Up"),
+  photo("ferocious-street", "Ferocious"),
+  photo("ferocious-purple", "Ferocious"),
+  photo("vision-studio", "Vision"),
+  photo("vision-escalator", "Vision"),
+  photo("tempest-subway", "The Tempest of Iron"),
+  photo("tempest-crowd", "The Tempest of Iron"),
+];
+
 /** A shirt with both a flat cutout and a 3D print (same slug for both). */
-const tee = (slug: string, name: string): GraphicTee => ({ slug, name, flat: flat(slug), print: print(slug) });
+const tee = (slug: string, name: string): GraphicTee => ({
+  slug,
+  name,
+  flat: flat(slug),
+  print: print(slug),
+});
 
 export const graphicTees: GraphicTee[] = [
   tee("morality", "Morality"),

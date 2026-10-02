@@ -10,6 +10,8 @@ import { NextProjectNav } from "@/components/ui/NextProjectNav";
 import { graphicTees } from "@/content/projects/graphic-tees";
 import type { Category } from "@/content/types";
 
+import { RealWorldGallery } from "./RealWorldGallery";
+
 // WebGL — client-only.
 const TeeScene = dynamic(() => import("./TeeScene").then((m) => m.TeeScene), { ssr: false });
 
@@ -417,7 +419,9 @@ export function GraphicTees({ category }: { category?: Category }) {
         </section>
       )}
 
-      <div id="graphic-tees-after" />
+      <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-black">
+        <RealWorldGallery reducedMotion={reducedMotion} />
+      </section>
       {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
     </main>
   );
