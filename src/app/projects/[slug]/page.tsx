@@ -14,6 +14,7 @@ import {
   getNextProject,
   getProjectBySlug,
 } from "@/lib/content";
+import { graphicTees, TSHIRT_MODEL } from "@/content/projects/graphic-tees";
 import { getHeroImages } from "@/lib/hero-images";
 
 export function generateStaticParams() {
@@ -47,7 +48,12 @@ export default async function ProjectPage({
   if (slug === "graphic-tees") {
     // opens with the animated APPAREL cover, which fades to black into the page
     return (
-      <ApparelIntro>
+      <ApparelIntro
+        // cached during the intro, so the 3D display is ready when it ends
+        preload={[TSHIRT_MODEL, graphicTees[0].print, "/apparel/t-shirts/display-bg.jpg"].filter(
+          (url): url is string => Boolean(url),
+        )}
+      >
         <GraphicTees category={getCategoryBySlug(project.category)} />
       </ApparelIntro>
     );

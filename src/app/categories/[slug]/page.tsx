@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { APPAREL_HERO_LAYERS } from "@/components/categories/apparelHeroLayers";
 import { IllustrationCategoryPage } from "@/components/categories/IllustrationCategoryPage";
 import { ExpandingCoverLink } from "@/components/ui/ExpandingCoverLink";
 import { getAllCategories, getCategoryBySlug, getProjectsByCategory } from "@/lib/content";
@@ -76,15 +77,16 @@ export default async function CategoryPage({
  * to fill the screen, dips to black, and the project's own intro takes over —
  * instead of a plain link. Value: the full-resolution still for that frame.
  */
-const EXPANDING_COVERS: Record<string, string> = {
-  "graphic-tees": "/apparel/hero/cover.jpg",
+const EXPANDING_COVERS: Record<string, { still: string; preload?: string[] }> = {
+  // preload: the layers of the animated intro the project page opens with
+  "graphic-tees": { still: "/apparel/hero/cover.jpg", preload: APPAREL_HERO_LAYERS },
 };
 
 function ProjectCoverLink({ slug, className, children }: { slug: string; className: string; children: ReactNode }) {
   const href = `/projects/${slug}`;
   const expandTo = EXPANDING_COVERS[slug];
   return expandTo ? (
-    <ExpandingCoverLink href={href} image={expandTo} className={className}>
+    <ExpandingCoverLink href={href} image={expandTo.still} preload={expandTo.preload} className={className}>
       {children}
     </ExpandingCoverLink>
   ) : (

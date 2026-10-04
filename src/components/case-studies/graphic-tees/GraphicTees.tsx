@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Anton } from "next/font/google";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import { useIntroSettled } from "@/components/categories/ApparelIntro";
 import { NextProjectNav } from "@/components/ui/NextProjectNav";
 import { graphicTees } from "@/content/projects/graphic-tees";
 import type { Category } from "@/content/types";
@@ -56,6 +57,7 @@ function Stage({ index, reducedMotion }: { index: number; reducedMotion: boolean
   const [lastPrint, setLastPrint] = useState(() => graphicTees.find((t) => t.print)!.print!);
   if (tee.print && tee.print !== lastPrint) setLastPrint(tee.print);
   const is3d = Boolean(tee.print);
+  const settled = useIntroSettled();
   return (
     <>
       <motion.div
@@ -65,7 +67,9 @@ function Stage({ index, reducedMotion }: { index: number; reducedMotion: boolean
         style={{ pointerEvents: is3d ? "auto" : "none" }}
         aria-hidden={!is3d}
       >
-        <TeeScene print={lastPrint} reducedMotion={reducedMotion} />
+        {/* held back while the page's intro animation plays: WebGL
+            setup would stall it (see useIntroSettled) */}
+        {settled && <TeeScene print={lastPrint} reducedMotion={reducedMotion} />}
       </motion.div>
       <AnimatePresence>
         {!is3d && (
@@ -239,6 +243,7 @@ function Strip({
 
 export function GraphicTees({ category }: { category?: Category }) {
   const reducedMotion = Boolean(useReducedMotion());
+  const settled = useIntroSettled();
   const isDesktop = useIsDesktop();
   const [index, setIndex] = useState(0);
   const tee = graphicTees[index];
@@ -429,7 +434,7 @@ export function GraphicTees({ category }: { category?: Category }) {
       )}
 
       <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
-        <RealWorldGallery reducedMotion={reducedMotion} />
+        {settled && <RealWorldGallery reducedMotion={reducedMotion} />}
       </section>
       {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
     </main>

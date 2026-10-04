@@ -11,6 +11,8 @@ import {
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
+import { APPAREL_HERO_SRC } from "./apparelHeroLayers";
+
 /**
  * Animated Apparel cover (E:\GENERATIONAL LOCK IN\Apperal\WF\Cover 2), split
  * into three layers on the 3840x2160 artboard:
@@ -25,6 +27,10 @@ import { useEffect, useRef, useState } from "react";
  * hovers, the light behind her breathes, red embers drift up, the letters
  * glitch now and then, and the three layers part with the pointer (depth
  * parallax) and with scroll.
+ *
+ * Kept cheap on purpose: everything that moves is a transform or an opacity
+ * (no animated blurs, no blend modes, no per-frame filters), so it stays
+ * smooth on modest GPUs.
  */
 const W = 3840;
 const H = 2160;
@@ -32,7 +38,7 @@ const TEXT = { l: 428, t: 223, w: 2984, h: 804 };
 const ANGEL = { l: 1400, t: 367, w: 1047, h: 1793 };
 /** letter boundaries inside text.webp (midpoints of the gaps) */
 const LETTER_CUTS = [0, 454, 899, 1327, 1791, 2239, 2629, 2984];
-const SRC = "/apparel/hero/";
+const SRC = APPAREL_HERO_SRC;
 
 const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 const EXPO = [0.16, 1, 0.3, 1] as const;
@@ -47,13 +53,26 @@ function Embers({ active }: { active: boolean }) {
     let raf = 0;
     let w = 0;
     let h = 0;
+    // one soft red dot, drawn once — stamping it is far cheaper than a
+    // shadowBlur per particle per frame
+    const sprite = document.createElement("canvas");
+    sprite.width = sprite.height = 32;
+    const sctx = sprite.getContext("2d")!;
+    const glow = sctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    glow.addColorStop(0, "rgba(255,90,70,1)");
+    glow.addColorStop(0.25, "rgba(255,40,40,0.55)");
+    glow.addColorStop(1, "rgba(255,26,26,0)");
+    sctx.fillStyle = glow;
+    sctx.fillRect(0, 0, 32, 32);
     const resize = () => {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      // embers are soft: 1.5x is plenty, and keeps the canvas small on 4K
+      const dpr = Math.min(1.5, window.devicePixelRatio || 1);
       w = canvas.clientWidth;
       h = canvas.clientHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = "lighter"; // reset by the resize above
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -86,12 +105,8 @@ function Embers({ active }: { active: boolean }) {
         }
         const fade = Math.min(1, p.t / 1.2, (p.life - p.t) / 1.5);
         ctx.globalAlpha = p.a * fade;
-        ctx.fillStyle = "#ff3b3b";
-        ctx.shadowColor = "#ff1a1a";
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        ctx.arc(p.x * w, p.y * h, p.r, 0, Math.PI * 2);
-        ctx.fill();
+        const d = p.r * 9;
+        ctx.drawImage(sprite, p.x * w - d / 2, p.y * h - d / 2, d, d);
       }
       raf = requestAnimationFrame(frame);
     };
@@ -101,11 +116,11 @@ function Embers({ active }: { active: boolean }) {
       ro.disconnect();
     };
   }, [active]);
-  return <canvas ref={ref} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full mix-blend-screen" />;
+  return <canvas ref={ref} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />;
 }
 
 /** One letter of APPAREL: a window onto text.webp, punched up from its baseline. */
-function Letter({ i, reduced, glitch }: { i: number; reduced: boolean; glitch: boolean }) {
+function Letter({ i, reduced }: { i: number; reduced: boolean }) {
   const x0 = LETTER_CUTS[i];
   const x1 = LETTER_CUTS[i + 1];
   const style = {
@@ -118,18 +133,52 @@ function Letter({ i, reduced, glitch }: { i: number; reduced: boolean; glitch: b
       <motion.div
         className="absolute inset-0"
         style={style}
-        initial={reduced ? false : { y: "105%", filter: "blur(6px)" }}
-        animate={{ y: "0%", filter: "blur(0px)" }}
+        // transform only (no animated blur): stays on the compositor
+        initial={reduced ? false : { y: "105%" }}
+        animate={{ y: "0%" }}
         transition={{ duration: 1.1, ease: EXPO, delay: 0.55 + i * 0.07 }}
       />
-      {/* glitch: offset red / cyan ghosts for a beat */}
-      {glitch && (
-        <>
-          <div className="absolute inset-0 mix-blend-screen" style={{ ...style, transform: "translateX(-0.6%)", filter: "sepia(1) saturate(8) hue-rotate(-50deg)", opacity: 0.7 }} />
-          <div className="absolute inset-0 mix-blend-screen" style={{ ...style, transform: "translateX(0.6%)", filter: "sepia(1) saturate(6) hue-rotate(140deg)", opacity: 0.5 }} />
-        </>
-      )}
     </div>
+  );
+}
+
+/**
+ * Glitch: every few seconds, red and cyan copies of the word flash a hair
+ * to either side for a beat. They sit BEHIND the letters, so only the
+ * offset fringes show. Flat colour through the lettering as a mask — no
+ * filters or blend modes — always mounted and toggled by opacity, and with
+ * its own state so a flash never re-renders the rest of the scene.
+ */
+function GlitchGhosts({ enabled }: { enabled: boolean }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    let off: ReturnType<typeof setTimeout>;
+    let next: ReturnType<typeof setTimeout>;
+    const schedule = (wait: number) => {
+      next = setTimeout(() => {
+        setOn(true);
+        off = setTimeout(() => setOn(false), 140);
+        schedule(4500 + Math.random() * 4000);
+      }, wait);
+    };
+    schedule(3200); // after the intro has landed
+    return () => {
+      clearTimeout(off);
+      clearTimeout(next);
+    };
+  }, [enabled]);
+  const mask = {
+    maskImage: `url(${SRC}text.webp)`,
+    WebkitMaskImage: `url(${SRC}text.webp)`,
+    maskSize: "100% 100%",
+    WebkitMaskSize: "100% 100%",
+  };
+  return (
+    <>
+      <div className="absolute inset-0" style={{ ...mask, background: "#ff2436", transform: "translateX(-0.6%)", opacity: on ? 0.9 : 0 }} />
+      <div className="absolute inset-0" style={{ ...mask, background: "#19e6ff", transform: "translateX(0.6%)", opacity: on ? 0.75 : 0 }} />
+    </>
   );
 }
 
@@ -176,26 +225,6 @@ export function ApparelHero({ fit = "banner" }: { fit?: "banner" | "screen" }) {
   const textScale = useTransform(scrollYProgress, [0, 1], [1, still ? 1 : 1.06]);
   const dim = useTransform(scrollYProgress, [0, 1], [0, screen ? 0 : 0.6]);
 
-  // a short glitch on the letters every few seconds once the intro is done
-  const [glitch, setGlitch] = useState(false);
-  useEffect(() => {
-    if (reduced) return;
-    let off: ReturnType<typeof setTimeout>;
-    let next: ReturnType<typeof setTimeout>;
-    const schedule = (wait: number) => {
-      next = setTimeout(() => {
-        setGlitch(true);
-        off = setTimeout(() => setGlitch(false), 140);
-        schedule(4500 + Math.random() * 4000);
-      }, wait);
-    };
-    schedule(3200);
-    return () => {
-      clearTimeout(off);
-      clearTimeout(next);
-    };
-  }, [reduced]);
-
   return (
     <section
       ref={sectionRef}
@@ -229,14 +258,15 @@ export function ApparelHero({ fit = "banner" }: { fit?: "banner" | "screen" }) {
 
         {/* breathing red light behind the angel */}
         <motion.div
-          className="absolute rounded-full mix-blend-screen"
+          className="absolute"
           style={{
-            left: "36%",
-            top: "14%",
-            width: "28%",
-            height: "62%",
-            background: "radial-gradient(closest-side, rgba(200,24,40,0.45), rgba(200,24,40,0) 100%)",
-            filter: "blur(40px)",
+            left: "32%",
+            top: "8%",
+            width: "36%",
+            height: "74%",
+            // already soft — no blur filter or blend mode needed
+            background:
+              "radial-gradient(closest-side, rgba(200,24,40,0.36), rgba(200,24,40,0.14) 55%, rgba(200,24,40,0) 100%)",
           }}
           initial={reduced ? false : { opacity: 0 }}
           animate={reduced ? { opacity: 0.6 } : { opacity: [0.35, 0.8, 0.35] }}
@@ -257,8 +287,9 @@ export function ApparelHero({ fit = "banner" }: { fit?: "banner" | "screen" }) {
           }}
         >
           <motion.div className="absolute inset-0" style={{ y: textP.y }}>
+            <GlitchGhosts enabled={!reduced} />
             {LETTER_CUTS.slice(0, -1).map((_, i) => (
-              <Letter key={i} i={i} reduced={reduced} glitch={glitch} />
+              <Letter key={i} i={i} reduced={reduced} />
             ))}
           </motion.div>
         </motion.div>
@@ -279,8 +310,8 @@ export function ApparelHero({ fit = "banner" }: { fit?: "banner" | "screen" }) {
             {/* rise (once) … */}
             <motion.div
               className="h-full w-full"
-              initial={reduced ? false : { opacity: 0, y: "18%", scale: 1.04, filter: "brightness(2.2) blur(8px)" }}
-              animate={{ opacity: 1, y: "0%", scale: 1, filter: "brightness(1) blur(0px)" }}
+              initial={reduced ? false : { opacity: 0, y: "18%", scale: 1.04, filter: "brightness(2.2)" }}
+              animate={{ opacity: 1, y: "0%", scale: 1, filter: "brightness(1)" }}
               transition={{
                 opacity: { duration: 1.2, delay: 1.0 },
                 y: { duration: 1.9, ease: EXPO, delay: 1.0 },
