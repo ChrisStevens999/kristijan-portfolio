@@ -40,7 +40,7 @@ export function IllustrationCategoryPage({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-6 pb-24 sm:grid-cols-2 sm:px-10 lg:grid-cols-3 lg:px-16">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-16 px-6 pb-24 sm:grid-cols-2 sm:px-10 lg:px-16">
         {projects.map((project, index) => {
           const thumbnail = project.categoryThumbnail ?? project.cover;
           const desktopPosition = project.categoryThumbnail?.desktopObjectPosition ?? "50% 50%";
@@ -57,7 +57,7 @@ export function IllustrationCategoryPage({
                   src={thumbnail.src}
                   alt={thumbnail.alt}
                   fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 640px) 50vw, 100vw"
                   quality={95}
                   style={{ objectPosition: mobilePosition }}
                   className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] sm:hidden"
@@ -66,7 +66,7 @@ export function IllustrationCategoryPage({
                   src={thumbnail.src}
                   alt={thumbnail.alt}
                   fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 640px) 50vw, 100vw"
                   quality={95}
                   style={{ objectPosition: desktopPosition }}
                   className="hidden object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] sm:block"
