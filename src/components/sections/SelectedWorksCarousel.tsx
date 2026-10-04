@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type CarouselWork = {
   slug: string;
@@ -58,12 +58,16 @@ function geometry(stageW: number, stageH: number) {
   return { w, h, slot };
 }
 
-function Cover({ work, sizes }: { work: CarouselWork; sizes: string }) {
+/** One photo. Mounted once and never rebuilt, so it is downloaded and
+ *  decoded a single time; `loading="eager"` so a photo waiting off to the
+ *  side is ready before it slides in. The same `sizes` in every slot, so the
+ *  browser never swaps the file as a card grows or shrinks. */
+function Cover({ work }: { work: CarouselWork }) {
   return typeof work.cover.src === "string" ? (
     // eslint-disable-next-line @next/next/no-img-element -- deliberate next/image bypass, see content/projects
-    <img src={work.cover.src} alt={work.cover.alt} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+    <img src={work.cover.src} alt={work.cover.alt} loading="eager" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
   ) : (
-    <Image src={work.cover.src} alt={work.cover.alt} fill sizes={sizes} className="object-cover" draggable={false} />
+    <Image src={work.cover.src} alt={work.cover.alt} fill sizes="80vw" loading="eager" className="object-cover" draggable={false} />
   );
 }
 
@@ -71,9 +75,26 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
   const reduced = useReducedMotion();
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-  const [current, setCurrent] = useState(0); // grows forever; photo = current mod n
+  // `current` grows forever (photo = current mod n); `prev` is where it was
+  // one step ago, to tell a card that is sliding from one that is wrapping
+  const [pos, setPos] = useState({ current: 0, prev: 0 });
   const [visible, setVisible] = useState(false);
   const n = works.length;
+  const { current, prev } = pos;
+  const go = (delta: number) => setPos((p) => ({ current: p.current + delta, prev: p.current }));
+
+  // The ring needs at least 5 cards (2 hidden, 3 on stage) to loop without a
+  // card being in two places at once — repeat the list if there are fewer.
+  const cards = useMemo(() => {
+    const times = Math.max(1, Math.ceil(5 / Math.max(1, n)));
+    return Array.from({ length: n * times }, (_, i) => ({ work: works[i % n], id: `${works[i % n].slug}-${Math.floor(i / n)}` }));
+  }, [works, n]);
+  const ring = cards.length;
+  /** signed distance of card i from the card in the centre, wrapped round the ring */
+  const rel = (i: number, centre: number) => {
+    const r = (((i - centre) % ring) + ring) % ring;
+    return r > ring / 2 ? r - ring : r;
+  };
 
   useEffect(() => {
     const el = stageRef.current;
@@ -93,7 +114,7 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
   // autoplay while on screen: hold, move, hold, move…
   useEffect(() => {
     if (!visible || reduced || n < 2) return;
-    const t = setTimeout(() => setCurrent((c) => c + 1), HOLD_MS + MOVE_S * 1000);
+    const t = setTimeout(() => setPos((p) => ({ current: p.current + 1, prev: p.current })), HOLD_MS + MOVE_S * 1000);
     return () => clearTimeout(t);
   }, [current, visible, reduced, n]);
 
@@ -116,36 +137,45 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
 
       <div ref={stageRef} className="relative min-h-0 flex-1">
         {geo &&
-          [-2, -1, 0, 1, 2].map((offset) => {
-            const k = current + offset;
-            const item = works[((k % n) + n) % n];
-            const box = geo.slot(offset);
-            const isCenter = offset === 0;
+          // Every card stays mounted and is only ever MOVED (transform +
+          // opacity), keyed by its own id — nothing is rebuilt as the ring
+          // turns, so there is no image reload or decode mid-animation.
+          cards.map(({ work: item, id }, i) => {
+            const r = rel(i, current);
+            const was = rel(i, prev);
+            const box = geo.slot(Math.max(-2, Math.min(2, r)));
+            const isCenter = r === 0;
+            // a card passing round the back of the ring (far left → far
+            // right, both hidden) must jump, not sweep across the stage
+            const wraps = Math.abs(r - was) > 1;
             return (
               <motion.div
-                key={k}
-                className="absolute left-0 top-0 origin-top-left overflow-hidden"
+                key={id}
+                className="absolute left-0 top-0 origin-top-left overflow-hidden will-change-transform"
                 style={{ width: geo.w, height: geo.h, zIndex: isCenter ? 2 : 1 }}
                 initial={false}
-                animate={{ x: box.x, y: box.y, scale: box.s, opacity: box.o }}
-                transition={{ duration: reduced ? 0 : MOVE_S, ease: EASE }}
+                animate={{ x: box.x, y: box.y, scale: box.s, opacity: Math.abs(r) > 2 ? 0 : box.o }}
+                transition={{ duration: reduced || wraps ? 0 : MOVE_S, ease: EASE }}
               >
-                {isCenter ? (
-                  <Link href={`/projects/${item.slug}`} className="group absolute inset-0 block" aria-label={`Open ${item.title}`}>
-                    <Cover work={item} sizes="80vw" />
-                    <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/15" />
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    aria-hidden
-                    className="absolute inset-0 block cursor-pointer"
-                    onClick={() => setCurrent((c) => c + offset)}
-                  >
-                    <Cover work={item} sizes="40vw" />
-                  </button>
-                )}
+                {/* the same element in every slot: in the centre it is the
+                    link to the project, at the sides a click brings that
+                    photo to the centre instead */}
+                <Link
+                  href={`/projects/${item.slug}`}
+                  className="group absolute inset-0 block"
+                  aria-label={`Open ${item.title}`}
+                  aria-hidden={!isCenter}
+                  tabIndex={isCenter ? 0 : -1}
+                  draggable={false}
+                  onClick={(e) => {
+                    if (isCenter || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                    e.preventDefault();
+                    go(r);
+                  }}
+                >
+                  <Cover work={item} />
+                  <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/15" />
+                </Link>
               </motion.div>
             );
           })}

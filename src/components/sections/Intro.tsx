@@ -49,7 +49,7 @@ const FRAMES: Frame[] = [
   { kind: "image", src: heroPhoto, alt: "", hold: 2600 },
   {
     kind: "text",
-    lines: ["Christian Stevkovski"],
+    lines: ["Chris Stevens"],
     hold: 1900,
     texture: "/textures/black-page.png",
     className: "text-off-white",
