@@ -4,11 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Anton } from "next/font/google";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { useIntroSettled } from "@/components/categories/ApparelIntro";
 import { NextProjectNav } from "@/components/ui/NextProjectNav";
-import { graphicTees } from "@/content/projects/graphic-tees";
+import { apparelCollections, type Garment, type GarmentCollection } from "@/content/projects/apparel-display";
 import type { Category } from "@/content/types";
 
 import { RealWorldGallery } from "./RealWorldGallery";
@@ -21,6 +21,8 @@ const TeeScene = dynamic(() => import("./TeeScene").then((m) => m.TeeScene), { s
 const anton = Anton({ weight: "400", subsets: ["latin"], display: "swap" });
 
 const RED = "#99181c";
+/** the active tab: a brighter red than the bar's, so it reads over the dark wall */
+const TAB_RED = "#c8202a";
 const BG = "/apparel/t-shirts/display-bg.jpg";
 const TAG = "/apparel/t-shirts/name-tag.webp";
 
@@ -48,16 +50,44 @@ function useIsDesktop() {
   );
 }
 
-/** One shirt: the 3D tee if it has a print, otherwise its flat cutout floating
- *  in the same spot above the floor shadow. */
-function Stage({ index, reducedMotion }: { index: number; reducedMotion: boolean }) {
-  const tee = graphicTees[index];
-  // keep the last 3D print so the canvas stays mounted (and keeps its loaded
-  // model) while a flat-only shirt is shown
-  const [lastPrint, setLastPrint] = useState(() => graphicTees.find((t) => t.print)!.print!);
-  if (tee.print && tee.print !== lastPrint) setLastPrint(tee.print);
-  const is3d = Boolean(tee.print);
+/**
+ * The stage for the open tab: the selected garment in 3D when the collection
+ * has a model and the garment a print, otherwise its flat cutout floating in
+ * the same spot above the floor shadow. A collection with nothing in it yet
+ * shows "coming soon".
+ */
+function Stage({
+  collection,
+  index,
+  reducedMotion,
+}: {
+  collection: GarmentCollection;
+  index: number;
+  reducedMotion: boolean;
+}) {
+  const item: Garment | undefined = collection.items[index];
   const settled = useIntroSettled();
+  // a garment with its own model is shown as authored; otherwise its print
+  // goes on the collection's shared model
+  const model = item?.model ?? (item?.print ? collection.model : undefined);
+  const print = item?.model ? undefined : item?.print;
+  const is3d = Boolean(model);
+
+  // What the 3D canvas shows. It keeps the last 3D view while a flat-only
+  // garment (or an empty tab) is up, so the canvas — and its loaded models —
+  // stay mounted instead of being rebuilt on the way back.
+  const prefetch = useMemo(
+    // the T-shirts' prints are small: fetch the rest once the first is up
+    () => (collection.model ? collection.items.flatMap((g) => (g.print ? [g.print] : [])) : []),
+    [collection],
+  );
+  const current = useMemo(
+    () => (model ? { model, print, prefetch, faceBack: collection.faceBack } : null),
+    [model, print, prefetch, collection.faceBack],
+  );
+  const [view, setView] = useState(current);
+  if (current && current !== view) setView(current);
+
   return (
     <>
       <motion.div
@@ -69,12 +99,12 @@ function Stage({ index, reducedMotion }: { index: number; reducedMotion: boolean
       >
         {/* held back while the page's intro animation plays: WebGL
             setup would stall it (see useIntroSettled) */}
-        {settled && <TeeScene print={lastPrint} reducedMotion={reducedMotion} />}
+        {settled && view && <TeeScene view={view} reducedMotion={reducedMotion} />}
       </motion.div>
       <AnimatePresence>
-        {!is3d && (
+        {!is3d && item && (
           <motion.div
-            key={tee.slug}
+            key={item.slug}
             className="pointer-events-none absolute left-1/2 aspect-square -translate-x-1/2"
             style={{ top: "12%", height: "77%", maxWidth: "88%" }}
             initial={{ opacity: 0, y: reducedMotion ? 0 : 14 }}
@@ -87,16 +117,89 @@ function Stage({ index, reducedMotion }: { index: number; reducedMotion: boolean
               animate={reducedMotion ? undefined : { y: ["-1.2%", "1.2%", "-1.2%"] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Image src={tee.flat} alt={`${tee.name} T-shirt, back print`} fill sizes="50vw" className="object-contain" />
+              <Image src={item.flat} alt={`${item.name} ${collection.noun}`} fill sizes="50vw" className="object-contain" />
             </motion.div>
           </motion.div>
+        )}
+        {!item && (
+          <motion.p
+            key={`${collection.id}-soon`}
+            className="pointer-events-none absolute inset-0 grid place-items-center font-accent font-extrabold uppercase text-white/85"
+            style={{ fontSize: "clamp(1rem, 2.6cqw, 3.5rem)", letterSpacing: "0.04em" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.4 }}
+          >
+            Coming soon
+          </motion.p>
         )}
       </AnimatePresence>
     </>
   );
 }
 
-function NameTag({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) {
+/** The tabs that switch between collections (Graphic T's / Pattern AOPs / Hoodies). */
+function Tabs({
+  active,
+  onSelect,
+  className,
+  style,
+  gap,
+}: {
+  active: number;
+  onSelect: (i: number) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  gap: string;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Apparel collections"
+      className={`flex font-accent font-extrabold uppercase leading-none ${className ?? ""}`}
+      style={{ ...style, columnGap: gap }}
+      onKeyDown={(e) => {
+        const n = apparelCollections.length;
+        if (e.key === "ArrowRight") onSelect((active + 1) % n);
+        else if (e.key === "ArrowLeft") onSelect((active - 1 + n) % n);
+        else return;
+        e.preventDefault();
+        // focus follows selection, as tabs should
+        const tabs = e.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]");
+        tabs[e.key === "ArrowRight" ? (active + 1) % n : (active - 1 + n) % n]?.focus();
+      }}
+    >
+      {apparelCollections.map((c, i) => (
+        <button
+          key={c.id}
+          type="button"
+          role="tab"
+          id={`apparel-tab-${c.id}`}
+          aria-selected={i === active}
+          tabIndex={i === active ? 0 : -1}
+          onClick={() => onSelect(i)}
+          className="whitespace-nowrap uppercase transition-colors duration-200 [text-shadow:0_0.08em_0.35em_rgba(0,0,0,0.7)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid"
+          style={{ color: i === active ? TAB_RED : "#ffffff" }}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function NameTag({
+  name,
+  label,
+  className,
+  style,
+}: {
+  name: string;
+  label: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   // single line; long names shrink to fit the tag
   const fit = Math.min(1, 9.5 / Math.max(name.length, 1));
   return (
@@ -107,7 +210,7 @@ function NameTag({ name, className, style }: { name: string; className?: string;
         className="absolute font-accent font-semibold uppercase leading-none text-black"
         style={{ right: "15.8%", top: "31.5%", fontSize: "0.42em", letterSpacing: "0.02em" }}
       >
-        Shirt name
+        {label}
       </p>
       <AnimatePresence mode="wait" initial={false}>
         <motion.p
@@ -143,7 +246,7 @@ function Arrow({
       type="button"
       onClick={onClick}
       style={style}
-      aria-label={dir === "prev" ? "Previous shirt" : "Next shirt"}
+      aria-label={dir === "prev" ? "Previous" : "Next"}
       className={`grid place-items-center text-white transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid ${className ?? ""}`}
     >
       <svg viewBox="0 0 62 72" className="h-full w-full" aria-hidden>
@@ -156,18 +259,21 @@ function Arrow({
 /** Horizontal shirt picker. `itemBasis` is the width of one slot as a CSS
  *  length (6 slots fill the window on desktop). */
 function Strip({
+  collection,
   index,
   onSelect,
   itemBasis,
   className,
   style,
 }: {
+  collection: GarmentCollection;
   index: number;
   onSelect: (i: number) => void;
   itemBasis: string;
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const garments = collection.items;
   const ref = useRef<HTMLDivElement>(null);
   const items = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -183,28 +289,38 @@ function Strip({
       strip.scrollTo({ left: right - strip.clientWidth, behavior: "smooth" });
   }, [index]);
 
+  if (garments.length === 0) {
+    return (
+      <div className={`grid place-items-center ${className ?? ""}`} style={style}>
+        <p className="font-accent font-bold uppercase text-white/80" style={{ fontSize: "1.6em", letterSpacing: "0.06em" }}>
+          {collection.label} are on the way
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={ref}
       role="listbox"
-      aria-label="T-shirts"
-      aria-activedescendant={`tee-${graphicTees[index].slug}`}
+      aria-label={collection.label}
+      aria-activedescendant={`garment-${garments[index].slug}`}
       tabIndex={0}
       style={style}
       onKeyDown={(e) => {
-        if (e.key === "ArrowRight") onSelect((index + 1) % graphicTees.length);
-        else if (e.key === "ArrowLeft") onSelect((index - 1 + graphicTees.length) % graphicTees.length);
+        if (e.key === "ArrowRight") onSelect((index + 1) % garments.length);
+        else if (e.key === "ArrowLeft") onSelect((index - 1 + garments.length) % garments.length);
         else return;
         e.preventDefault();
       }}
       className={`flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white focus-visible:outline-solid [&::-webkit-scrollbar]:hidden ${className ?? ""}`}
     >
-      {graphicTees.map((tee, i) => {
+      {garments.map((tee, i) => {
         const selected = i === index;
         return (
           <button
             key={tee.slug}
-            id={`tee-${tee.slug}`}
+            id={`garment-${tee.slug}`}
             ref={(el) => {
               items.current[i] = el;
             }}
@@ -245,11 +361,19 @@ export function GraphicTees({ category }: { category?: Category }) {
   const reducedMotion = Boolean(useReducedMotion());
   const settled = useIntroSettled();
   const isDesktop = useIsDesktop();
-  const [index, setIndex] = useState(0);
-  const tee = graphicTees[index];
+  // which tab is open, and the selected garment in each (remembered per tab)
+  const [tab, setTab] = useState(0);
+  const [selected, setSelected] = useState<number[]>(() => apparelCollections.map(() => 0));
+  const collection = apparelCollections[tab];
+  const count = collection.items.length;
+  const index = Math.min(selected[tab], Math.max(0, count - 1));
+  const garment: Garment | undefined = collection.items[index];
+  const setIndex = useCallback((i: number) => setSelected((s) => s.map((v, t) => (t === tab ? i : v))), [tab]);
   const step = useCallback(
-    (d: number) => setIndex((i) => (i + d + graphicTees.length) % graphicTees.length),
-    [],
+    (d: number) => {
+      if (count > 0) setSelected((s) => s.map((v, t) => (t === tab ? (v + d + count) % count : v)));
+    },
+    [tab, count],
   );
   const scrollOn = () =>
     document.getElementById("graphic-tees-after")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
@@ -258,7 +382,7 @@ export function GraphicTees({ category }: { category?: Category }) {
   // plate ends in #000, so the page around and below it must match
   return (
     <main className="bg-[#000] text-off-white">
-      <h1 className="sr-only">Graphic T&apos;s</h1>
+      <h1 className="sr-only">Apparel: {collection.title}</h1>
 
       {isDesktop === true && (
         <section
@@ -285,16 +409,16 @@ export function GraphicTees({ category }: { category?: Category }) {
                 height: px(FRAME.b - FRAME.t, H),
               }}
             >
-              <Stage index={index} reducedMotion={reducedMotion} />
+              <Stage collection={collection} index={index} reducedMotion={reducedMotion} />
             </div>
 
             <div className="pointer-events-none absolute" style={{ left: px(178, W), top: px(146, H) }}>
               <p
                 aria-hidden
-                className="font-accent font-extrabold uppercase leading-none"
+                className="whitespace-nowrap font-accent font-extrabold uppercase leading-none"
                 style={{ color: RED, fontSize: cq(128), letterSpacing: "-0.01em" }}
               >
-                Graphic T&rsquo;s
+                {collection.title}
               </p>
               <p
                 className="font-accent font-medium uppercase text-white"
@@ -317,10 +441,22 @@ export function GraphicTees({ category }: { category?: Category }) {
               Stevens
             </p>
 
-            <NameTag
-              name={tee.name}
-              style={{ left: px(3015, W), top: px(1191, H), width: px(640, W), fontSize: cq(48) }}
+            {/* the collections, bottom-left of the frame (as in the approved mockup) */}
+            <Tabs
+              active={tab}
+              onSelect={setTab}
+              className="absolute"
+              gap={cq(86)}
+              style={{ left: px(204, W), top: px(1430, H), fontSize: cq(38) }}
             />
+
+            {garment && (
+              <NameTag
+                name={garment.name}
+                label={collection.nameLabel}
+                style={{ left: px(3015, W), top: px(1191, H), width: px(640, W), fontSize: cq(48) }}
+              />
+            )}
 
             <div
               className="absolute overflow-hidden"
@@ -357,6 +493,9 @@ export function GraphicTees({ category }: { category?: Category }) {
                 }}
               />
               <Strip
+                // a fresh strip per tab: scroll position and item refs start clean
+                key={collection.id}
+                collection={collection}
                 index={index}
                 onSelect={setIndex}
                 itemBasis={`calc(100% / ${VISIBLE})`}
@@ -373,17 +512,19 @@ export function GraphicTees({ category }: { category?: Category }) {
               />
             </div>
 
-            <button
-              type="button"
-              onClick={scrollOn}
-              className="absolute flex -translate-x-1/2 items-center font-accent font-bold uppercase"
-              style={{ left: "50%", top: px(2114, H), color: RED, fontSize: cq(27), gap: cq(22) }}
-            >
-              Scroll down to check out the shirts in the real world
-              <svg viewBox="0 0 34 22" style={{ width: cq(34) }} aria-hidden>
-                <path d="M0 0h34L17 22z" fill="currentColor" />
-              </svg>
-            </button>
+            {collection.hasGallery && (
+              <button
+                type="button"
+                onClick={scrollOn}
+                className="absolute flex -translate-x-1/2 items-center font-accent font-bold uppercase"
+                style={{ left: "50%", top: px(2114, H), color: RED, fontSize: cq(27), gap: cq(22) }}
+              >
+                Scroll down to check out the shirts in the real world
+                <svg viewBox="0 0 34 22" style={{ width: cq(34) }} aria-hidden>
+                  <path d="M0 0h34L17 22z" fill="currentColor" />
+                </svg>
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -391,7 +532,7 @@ export function GraphicTees({ category }: { category?: Category }) {
       {isDesktop === false && (
         <section className="flex min-h-[100svh] flex-col bg-[#000] px-4 pb-6 pt-24">
           <p className="font-accent text-[2.4rem] font-extrabold uppercase leading-none" style={{ color: RED }}>
-            Graphic T&rsquo;s
+            {collection.title}
           </p>
           <p className="mt-3 max-w-[22rem] font-accent text-[0.65rem] font-medium uppercase leading-snug text-white">
             All designs created by me through illustration, photobashing, collage design and other techniques
@@ -412,16 +553,29 @@ export function GraphicTees({ category }: { category?: Category }) {
                 transform: `translateX(-${(1926 / W) * 100}%)`,
               }}
             />
-            <Stage index={index} reducedMotion={reducedMotion} />
+            <Stage collection={collection} index={index} reducedMotion={reducedMotion} />
           </div>
 
+          {/* sized so all three fit on one line on a narrow phone */}
+          <Tabs
+            active={tab}
+            onSelect={setTab}
+            className="mt-4 justify-between"
+            gap="0.5rem"
+            style={{ fontSize: "clamp(0.5rem, 2.7vw, 0.85rem)" }}
+          />
+
           <div className="relative mt-3 ml-auto aspect-[640/303] w-[62%]">
-            <NameTag name={tee.name} className="inset-0" style={{ fontSize: "0.75rem" }} />
+            {garment && (
+              <NameTag name={garment.name} label={collection.nameLabel} className="inset-0" style={{ fontSize: "0.75rem" }} />
+            )}
           </div>
 
           <div className="mt-4 flex h-28 items-center gap-1 rounded-[1.4rem] px-2" style={{ background: RED }}>
             <Arrow dir="prev" onClick={() => step(-1)} className="h-6 w-5 shrink-0" />
             <Strip
+              key={collection.id}
+              collection={collection}
               index={index}
               onSelect={setIndex}
               itemBasis="28%"
@@ -433,9 +587,12 @@ export function GraphicTees({ category }: { category?: Category }) {
         </section>
       )}
 
-      <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
-        {settled && <RealWorldGallery reducedMotion={reducedMotion} />}
-      </section>
+      {/* the "real world" photos belong to the T-shirts: only under that tab */}
+      {collection.hasGallery && (
+        <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
+          {settled && <RealWorldGallery reducedMotion={reducedMotion} />}
+        </section>
+      )}
       {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
     </main>
   );
