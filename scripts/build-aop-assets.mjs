@@ -3,7 +3,8 @@
  * assets/projects/apperal/pattern AOPs/ into what the Apparel display's
  * "Pattern AOPs" tab ships.
  *
- *   node scripts/build-aop-assets.mjs
+ *   node scripts/build-aop-assets.mjs                  # every shirt
+ *   node scripts/build-aop-assets.mjs fourth-of-july   # just the named one(s)
  *
  * Each shirt is a pair in that folder: a preview PNG (a transparent cutout —
  * its FILE NAME is the shirt's display name) and a GLB.
@@ -63,7 +64,7 @@ const SHIRTS = {
   "synth-tiger": { png: "Synth Tiger.png", glb: "Synth-Tiger-Button-Down.glb" },
   marbloro: { png: "Marbloro.png", glb: "Marlboro-Pattern-5-Button-Down.glb" },
   "forest-stripes": { png: "Forest Stripes.png", glb: "Floral-Tiger-1-Button-Down.glb" },
-  "fourth-of-july": { png: "4th Of July.png", glb: "4th-of-July-Button-Down (1).glb" },
+  "fourth-of-july": { png: "4th Of July.png", glb: "4th-of-July-Button-Down.glb" },
   "purple-haze": { png: "Purple Haze.png", glb: "DCUPurpleHazeDarkReverse-Button-Down.glb" },
   "sex-ism": { png: "Sex.Ism.png", glb: "Sexism1-Button-Down.glb" },
   "black-naja": { png: "Black Naja.png", glb: "Black-Naja-Button-Down.glb" },
@@ -92,11 +93,14 @@ async function writeFlat(src, out) {
     .toFile(out);
 }
 
-// start clean, so a renamed or removed shirt leaves nothing behind
-fs.rmSync(OUT, { recursive: true, force: true });
+const only = process.argv.slice(2);
+for (const slug of only) if (!SHIRTS[slug]) throw new Error(`unknown shirt "${slug}"`);
+// a full build starts clean, so a renamed or removed shirt leaves nothing behind
+if (only.length === 0) fs.rmSync(OUT, { recursive: true, force: true });
 for (const dir of ["models", "flat"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
 
 for (const [slug, { png, glb }] of Object.entries(SHIRTS)) {
+  if (only.length && !only.includes(slug)) continue;
   const doc = await io.read(path.join(SRC, glb));
   await doc.transform(
     dedup(),
