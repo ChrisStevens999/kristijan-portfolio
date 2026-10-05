@@ -5,7 +5,8 @@ import Image, { type StaticImageData } from "next/image";
 import { useEffect, useState } from "react";
 
 import heroPhoto from "../../../assets/Intro/1.png";
-import finalePhoto from "../../../assets/Intro/5.png";
+// The blue-sky regrade of the finale (the grey original is still at assets/Intro/5.png).
+import finalePhoto from "../../../assets/Intro/5 blue.webp";
 
 const SESSION_KEY = "intro-played";
 
