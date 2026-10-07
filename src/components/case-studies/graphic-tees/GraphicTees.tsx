@@ -81,9 +81,10 @@ function Stage({
     () => (collection.model ? collection.items.flatMap((g) => (g.print ? [g.print] : [])) : []),
     [collection],
   );
+  const faceBack = item?.faceBack ?? collection.faceBack;
   const current = useMemo(
-    () => (model ? { model, print, prefetch, faceBack: collection.faceBack } : null),
-    [model, print, prefetch, collection.faceBack],
+    () => (model ? { model, print, prefetch, faceBack } : null),
+    [model, print, prefetch, faceBack],
   );
   const [view, setView] = useState(current);
   if (current && current !== view) setView(current);

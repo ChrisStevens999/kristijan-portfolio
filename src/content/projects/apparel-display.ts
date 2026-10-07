@@ -12,8 +12,13 @@ import { graphicTees, TSHIRT_MODEL } from "./graphic-tees";
  *                    assets/projects/apperal/pattern AOPs/. Each shirt is
  *                    its own model: the GLBs map their pattern at their own
  *                    scale, so they are shown exactly as authored.
- *  - Hoodies       — no garments yet: the tab shows a "coming soon" state
- *                    until models are supplied
+ *  - Hoodies       — built by scripts/build-hoodie-assets.mjs from
+ *                    assets/projects/apperal/hoodies/. Back-print hoodies
+ *                    are like the T-shirts: one shared hoodie model, each
+ *                    hoodie is its print (the original 4096² PNG from its
+ *                    GLB) on it. A pattern hoodie (its own UVs) or an
+ *                    off-white one (its own trim colours) is its own model,
+ *                    as authored.
  */
 export type Garment = {
   slug: string;
@@ -24,6 +29,8 @@ export type Garment = {
   model?: string;
   /** or: a base-colour texture for the collection's shared 3D model */
   print?: string;
+  /** which side to show first, when it differs from the collection's */
+  faceBack?: boolean;
 };
 
 export type GarmentCollection = {
@@ -71,6 +78,41 @@ export const patternShirts: Garment[] = [
   aop("black-naja", "Black Naja"),
 ];
 
+export const HOODIE_MODEL = "/apparel/hoodies/hoodie.glb";
+
+/** Names are the preview PNGs' file names (see the build script for the pairs). */
+const hoodie = (slug: string, name: string, opts: Pick<Garment, "faceBack"> = {}): Garment => ({
+  slug,
+  name,
+  flat: `/apparel/hoodies/flat/${slug}.webp`,
+  print: `/apparel/hoodies/prints/${slug}.png`,
+  ...opts,
+});
+/** shown as its own model, as authored: an all-over pattern (its own UVs,
+ *  i.e. pattern scale) or a hoodie whose trim isn't the shared model's black */
+const ownHoodie = (slug: string, name: string, opts: Pick<Garment, "faceBack"> = {}): Garment => ({
+  slug,
+  name,
+  flat: `/apparel/hoodies/flat/${slug}.webp`,
+  model: `/apparel/hoodies/models/${slug}.glb`,
+  ...opts,
+});
+
+export const hoodies: Garment[] = [
+  hoodie("bushido", "Bushido"),
+  hoodie("deviant", "Deviant"),
+  hoodie("error-404", "Error 404"),
+  ownHoodie("la-leakers", "LA Leakers"),
+  // the print is on the front
+  hoodie("swimmin", "Swimmin", { faceBack: false }),
+  ownHoodie("concrete-memories", "Concrete Memories"),
+  // off-white, print on the front
+  ownHoodie("purgatory", "Purgatory", { faceBack: false }),
+  ownHoodie("brush-like-camo", "Brush Like Camo"),
+  hoodie("operator", "Operator"),
+  hoodie("vision", "Vision"),
+];
+
 export const apparelCollections: GarmentCollection[] = [
   {
     id: "graphic-tees",
@@ -99,8 +141,10 @@ export const apparelCollections: GarmentCollection[] = [
     title: "Hoodies",
     nameLabel: "Hoodie name",
     noun: "hoodie",
+    model: HOODIE_MODEL,
+    // the prints are on the back (a garment can say otherwise)
     faceBack: true,
     hasGallery: false,
-    items: [],
+    items: hoodies,
   },
 ];

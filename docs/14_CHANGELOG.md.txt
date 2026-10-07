@@ -131,6 +131,158 @@ Establish the visual identity and first impression before any other homepage sec
 
 ---
 
+# 2026-07-24
+
+## Phase 2 — Homepage & Routes
+
+### Changes
+
+- First full build of the homepage: Intro, Selected Works, Explore by Category, About.
+- Category routes (/categories/[slug]) and project routes (/projects/[slug]) with content files per project and category.
+- First case study: BoyzClub.
+
+### Reason
+
+Get every homepage section and route standing before refining each one.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-08-30
+
+## Phase 3 — Case Studies & Category Pages
+
+### Changes
+
+- BoyzClub reworked to its full reference board.
+- Sticker Archive rebuilt around a real three.js cylinder: galvanized pole, art-directed sticker placement, scroll-driven "slap-on" animation, static showcase section.
+- LXIX added as the second Brand Direction project.
+- Illustration category page given its designed "Projects" grid listing, with dedicated category thumbnails and titles per project.
+
+### Reason
+
+Each project tells its story in its own way, built to its supplied reference board.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-09-10
+
+## Phase 2/3 — Homepage Pacing & Showcases
+
+### Changes
+
+- About removed from the homepage by request (component deleted).
+- Scroll snapping: one gesture per homepage section and per Selected Work image; the chapter card is a real stop.
+- Sticker Archive: the scroll-driven pole replaced by an autoplaying demo matched to the reference post.
+- Tag Designs: card-stack hero rebuilt to the reference clip, running on arrival (45 MB → ~1 MB), later cycling every illustration endlessly (2026-09-18).
+
+### Reason
+
+Pace the homepage like an exhibition walk, and make the showcases play without asking the visitor to drive them.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-09-19
+
+## Phase 3 — Skateboard Designs
+
+### Changes
+
+- Interactive deck wall with hover spotlights, names and rails on the reference's real wall, plus campaign panels.
+- Listed under the Illustration category.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-09-29
+
+## Phase 4 — Image Optimization
+
+### Changes
+
+- Shipped source images shrunk from 794 MB to 266 MB with no visual change (downscaled to the largest size Next serves, losslessly recompressed).
+- scripts/optimize-site-images.js reproduces the pass.
+
+### Reason
+
+Fast loading is essential (07_DEVELOPMENT_RULES.md); the build was copying full-size originals it could never serve.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-02
+
+## Phase 2/3 — Selected Work Carousel & Apparel Display
+
+### Changes
+
+- Selected Works: one full-screen stop with an endless carousel of the five curated projects (Drop In Skateboards, Neo Tokyo, LXIX, Hardcore Mentality, BoyzClub), timed from the reference clip.
+- Apparel: the listing shows only Graphic T's; its cover expands full screen into the animated APPAREL intro (letters, rising angel, embers), fading into the display.
+- Graphic T's: interactive 3D T-shirt display built from the approved Shirt Display artboard (one shared compressed tee model + a print per shirt, ~11 MB vs ~290 MB of sources), a red strip of 15 shirts, torn name tag, and a "real world" photo gallery beneath.
+
+### Reason
+
+Show the garments as objects, and let the homepage present the strongest work as a continuous reel.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-05
+
+## Phase 3 — Apparel Collections, Category Tiles, Lab
+
+### Changes
+
+- Apparel display: tabs for Graphic T's, Pattern AOPs (15 all-over-print button-downs, each its own compressed model) and Hoodies (no garments yet; "coming soon").
+- Explore by Category tiles keep their covers' 3:4 shape with names always visible.
+- Intro: blue-sky finale frame; name frame reads "Chris Stevens".
+- Lab: 3D statue showcase at /lab/statue (unlinked, noindex) with visor bloom and pointer-following light.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-07
+
+## Phase 3 — Hoodies
+
+### Changes
+
+- Apparel display: the Hoodies tab shows ten hoodies in 3D (Bushido, Deviant, Error 404, LA Leakers, Swimmin, Concrete Memories, Purgatory, Brush Like Camo, Operator, Vision). All share one mesh and knit normal map. The black print hoodies (Bushido, Deviant, Error 404, Operator and Vision on the back; Swimmin on the front) share one compressed model (4.8 MB), each placing its original 4096² print PNG on it, untouched. The all-over patterns (LA Leakers, Concrete Memories, Brush Like Camo) map with their own UVs, and Purgatory is off-white with off-white drawstrings, so each of those ships as its own model with its texture byte-for-byte as authored. A garment can choose which side it shows first. Built by scripts/build-hoodie-assets.mjs.
+- Viewer: a print goes only on the cloth materials; parts with their own plain colour (the drawstrings) keep it.
+
+### Reason
+
+Same approach as the T-shirts: the garments are shown as objects at the authored print size, without shipping 110 MB of duplicate geometry.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 Only record changes that affect:

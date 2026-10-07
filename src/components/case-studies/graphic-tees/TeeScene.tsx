@@ -89,6 +89,17 @@ function loadGarment(view: GarmentView, anisotropy: number) {
     p = Promise.all([loadModel(view.model), view.print ? loadPrint(view.print, anisotropy) : null]).then(
       ([gltf, print]) => {
         const scene = gltf.scene.clone(true);
+        // Which materials the print goes on. A shared model ships with its
+        // cloth materials' base colour stripped, so every material is cloth
+        // (the tee)... unless some part has its own plain colour and never
+        // had a texture (the hoodie's drawstrings): those keep it.
+        const materials = new Set<THREE.MeshStandardMaterial>();
+        scene.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (mesh.isMesh) materials.add(mesh.material as THREE.MeshStandardMaterial);
+        });
+        const isPlain = (m: THREE.MeshStandardMaterial) => !m.map && m.color.getHex() !== 0xffffff;
+        const printed = new Set([...materials].filter((m) => !isPlain(m)));
         const clones = new Map<THREE.Material, THREE.MeshStandardMaterial>();
         scene.traverse((o) => {
           const mesh = o as THREE.Mesh;
@@ -96,7 +107,7 @@ function loadGarment(view: GarmentView, anisotropy: number) {
           const source = mesh.material as THREE.MeshStandardMaterial;
           if (!clones.has(source)) {
             const mat = source.clone();
-            if (print) mat.map = print;
+            if (print && printed.has(source)) mat.map = print;
             if (mat.map) mat.map.anisotropy = anisotropy;
             clones.set(source, mat);
           }
