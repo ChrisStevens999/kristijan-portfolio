@@ -5,7 +5,7 @@ import Image, { type StaticImageData } from "next/image";
 import { useEffect, useState } from "react";
 
 import heroPhoto from "../../../assets/Intro/1.png";
-// The blue-sky regrade of the finale (the grey original is still at assets/Intro/5.png).
+// The blue-sky regrade of the supplied finale frame.
 import finalePhoto from "../../../assets/Intro/5 blue.webp";
 
 const SESSION_KEY = "intro-played";
@@ -30,8 +30,8 @@ function textureStyle(url: string): React.CSSProperties {
 /**
  * 05_COMPONENT_LIBRARY.md: full screen, cinematic, plays once.
  * Frames 1 and 5 are the provided photographic/illustrative assets.
- * Frames 2-4 reproduce the copy from assets/Intro/2-4.png as live HTML
- * text rather than baked-in images, per the Decision Log
+ * Frames 2-4 reproduce the copy of the supplied intro frames 2-4 as live
+ * HTML text rather than baked-in images, per the Decision Log
  * ("Typography remains HTML rather than being embedded inside imagery").
  * Text-frame backgrounds are the supplied paper textures, per
  * 11_VISUAL_ASSETS.md's Background Surface Mapping — never flat colors.

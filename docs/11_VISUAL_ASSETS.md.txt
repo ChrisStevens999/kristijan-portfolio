@@ -74,13 +74,10 @@ Never overuse it.
 
 ---
 
-### White Page.png
-
-Editorial background texture.
-
-Use for lighter sections when hierarchy benefits from an off-white surface.
-
----
+These textures ship as public/textures/black-page.png, red-page.png and
+textured-page.png (the only copies kept in the repo). A white editorial
+texture was supplied but never used; it was dropped in the 2026-10-07
+clean-up and can be re-added if a lighter surface is ever designed.
 
 These textures are reusable UI surfaces.
 

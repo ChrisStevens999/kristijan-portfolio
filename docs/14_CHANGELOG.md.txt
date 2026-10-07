@@ -323,6 +323,24 @@ The patterns are made to be worn; the photos show them on people, as the T-shirt
 
 ---
 
+# 2026-10-07
+
+## Clean-up — unused files out of the repo
+
+### Changes
+
+- Removed 44 files (≈300 MB) nothing uses: the Next.js boilerplate SVGs in public/; raw source films for BoyzClub and LXIX (the encoded ones in public/ are what plays); hero PNG sources for Tag Designs that public/tag-designs-hero already carries optimised; layout-reference boards and reference pages for BoyzClub, Damaged Goods, Tag Designs and the intro; the old Skateboard Designs mock-up; byte-identical copies of the three shipped textures plus a white texture and an illustration-gallery texture never used; a duplicate of the featured photo; an unused sticker and an unused thumbnail. Every photo, print, model and texture the site shows is untouched.
+
+### Reason
+
+The repo is what Vercel clones for every deployment; a third of it was reference material and duplicates.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
