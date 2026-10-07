@@ -78,3 +78,28 @@ body {
   color: var(--color-off-white);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Custom cursor (public/cursor): the red arrow with an off-white edge for
+ * the pointer, a ring with a red dot over anything clickable. The system
+ * cursors stay as the fallback, and the images are only loaded where there
+ * is a pointer at all — a phone never sees them. Elements that set their
+ * own cursor (the gallery's zoom-in) keep it.
+ */
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body {
+    cursor: url("/cursor/arrow.svg") 4 3, auto;
+  }
+  a,
+  button,
+  [role="button"],
+  label,
+  select,
+  summary,
+  input[type="submit"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: url("/cursor/pointer.svg") 16 16, pointer;
+  }
+}
