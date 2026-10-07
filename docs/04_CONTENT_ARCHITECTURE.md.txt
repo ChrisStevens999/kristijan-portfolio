@@ -21,8 +21,9 @@ Visitors should discover the portfolio in the following order:
 1. Intro
 2. Selected Works
 3. Explore by Category
-4. About
-5. Contact
+4. Contact (planned, not built yet)
+
+About was removed from the homepage by request on 2026-09-10 (see 10_DECISION_LOG.md). The About section below is kept for reference should it return elsewhere.
 
 Each section has a single purpose.
 

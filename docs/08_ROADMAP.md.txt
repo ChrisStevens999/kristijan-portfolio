@@ -28,23 +28,33 @@ Status: Complete
 
 # Phase 2 — Homepage
 
-- [ ] Build homepage framework
-- [ ] Intro sequence
-- [ ] Selected Works
-- [ ] Explore by Category
-- [ ] About
+- [x] Build homepage framework (Next.js App Router, scroll-snapped sections)
+- [x] Intro sequence (approved 2026-07-16; blue-sky finale and "Chris Stevens" name frame 2026-10-05)
+- [x] Selected Works (chapter card + endless carousel of the five curated projects, 2026-10-02)
+- [x] Explore by Category (2x2 chapter covers, 3:4 tiles with names always shown, 2026-10-05)
+- [-] About — removed from the homepage by request, 2026-09-10 (see 10_DECISION_LOG.md)
 - [ ] Contact
-- [ ] Responsive adjustments
+- [x] Responsive adjustments (done per section as each is built; mobile layouts exist for every shipped section)
 - [ ] Accessibility review
-- [ ] Performance optimization
+- [x] Performance optimization — shipped images 794 MB → 266 MB with no visual change (2026-09-29); 3D assets compressed per project
+
+Status: Complete except Contact and the accessibility review
 
 ---
 
 # Phase 3 — Project Pages
 
-- [ ] Create reusable project template
-- [ ] Build first case study
-- [ ] Build remaining case studies
+- [-] Create reusable project template — not pursued: case studies are bespoke, each built to its own reference board (see 10_DECISION_LOG.md, 2026-08-30). The generic route still renders a title-only placeholder for projects without a case study.
+- [x] Build first case study (BoyzClub, 2026-08-24)
+- [x] Build remaining case studies:
+  - [x] LXIX (2026-08-30)
+  - [x] Sticker Archive — autoplaying sticker pole + showcase (2026-08-26 → 2026-09-10)
+  - [x] Tag Designs — endless card-stack hero (2026-09-10 → 2026-09-18)
+  - [x] Damaged Goods (2026-09-30)
+  - [x] Skateboard Designs — interactive deck wall + campaign panels (2026-09-19)
+  - [x] Apparel display — animated APPAREL intro, 3D Graphic T's, Pattern AOPs and Hoodies tabs (2026-10-02 → 2026-10-07)
+  - [ ] Neo Tokyo, Hardcore Mentality — homepage Selected Works only; their project routes are still the placeholder
+- [x] Category pages: Illustration has its designed "Projects" grid (2026-08-30); Brand Direction, Apparel Design and Creative Exploration keep the minimal listing until designed
 - [ ] Test navigation between projects
 
 ---
@@ -54,7 +64,7 @@ Status: Complete
 - [ ] Motion refinement
 - [ ] Typography review
 - [ ] Spacing review
-- [ ] Image optimization
+- [x] Image optimization (2026-09-29, scripts/optimize-site-images.js)
 - [ ] Final responsive testing
 - [ ] Browser testing
 
@@ -75,3 +85,5 @@ Status: Complete
 Ideas belong here before becoming features.
 
 Only implement ideas after evaluating whether they improve the overall experience.
+
+- Lab: 3D statue showcase at /lab/statue (built 2026-10-05, unlinked and noindex). A candidate opening for a future page; not part of the site until placed.

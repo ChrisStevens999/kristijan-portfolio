@@ -37,8 +37,9 @@ The homepage always follows this order:
 1. Intro
 2. Selected Works
 3. Explore by Category
-4. About
-5. Contact
+4. Contact (planned, not built yet)
+
+About was removed from the homepage by request on 2026-09-10 (see docs/10_DECISION_LOG.md).
 
 Do not change this structure without approval.
 

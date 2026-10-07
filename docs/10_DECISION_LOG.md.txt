@@ -124,6 +124,94 @@ The documentation becomes the project's source of truth.
 
 ---
 
+# 2026-08-26
+
+## Decision
+
+three.js (via react-three-fiber) is an accepted dependency for object-based showcases: the Sticker Archive pole, and later the Apparel garments and the Lab statue.
+
+### Reason
+
+Some work is best shown as a physical object the visitor can turn, not as a flat image. Models are compressed offline by scripts in /scripts and loaded only on the pages that need them, so the rest of the site stays light.
+
+---
+
+# 2026-08-30
+
+## Decision
+
+Project pages are bespoke. Each case study is its own component, built to the reference board supplied for that project, instead of one generic Hero → Challenge → Process → Outcome → Gallery template.
+
+### Reason
+
+The supplied boards differ in structure per project; a single template would have flattened them. 05_COMPONENT_LIBRARY.md allows departing from the standard structure for a compelling reason, and this is it.
+
+### Result
+
+The generic project route renders only a title-only placeholder for projects without a case study (currently Neo Tokyo and Hardcore Mentality). Every project page still ends with navigation to the next project or back to its category.
+
+---
+
+# 2026-08-30
+
+## Decision
+
+The Illustration category page has its own designed listing (off-white ground, "Projects" grid, red "Chris Stevens" mark). The other three categories keep the minimal full-bleed listing until each has its own design.
+
+### Reason
+
+Explicit instruction, scoped to Illustration only.
+
+---
+
+# 2026-08-30
+
+## Decision
+
+The site presents the designer as "Chris Stevens" (Illustration category mark, Tag Designs footer, Apparel display; the Intro name frame since 2026-10-05). The project, repository and page <title> keep "Kristijan Stevkovski".
+
+### Reason
+
+Applied on instruction; the reasoning was not recorded at the time.
+
+---
+
+# 2026-09-10
+
+## Decision
+
+The About section was removed from the homepage. The homepage now runs Intro → Selected Works → Explore by Category, with Contact still planned.
+
+### Reason
+
+Removed by request. The About component (bio, car reveal, free-time page) was deleted rather than hidden.
+
+---
+
+# 2026-09-10
+
+## Decision
+
+The homepage snaps one gesture per section: the document snaps to the top of every section, and each Selected Work stop is mandatory. The "Selected Work" chapter card is a real stop and no longer auto-advances.
+
+### Reason
+
+Each featured image should be seen on its own, the way the reference site (poison.studio) paces its work. The chapter card was barely seen when it scrolled itself away.
+
+---
+
+# 2026-10-02
+
+## Decision
+
+Selected Works is five projects: Drop In Skateboards, Neo Tokyo, LXIX, Hardcore Mentality and BoyzClub, shown as an endless carousel on one full-screen stop. The Apparel Design category lists only Graphic T's; Neo Tokyo and Hardcore Mentality remain homepage-only.
+
+### Reason
+
+The homepage shows the strongest images; the Apparel chapter opens directly into the interactive garment display rather than a list of near-duplicate covers.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.
