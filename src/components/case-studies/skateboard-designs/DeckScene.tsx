@@ -4,29 +4,24 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useSpring, type MotionValue } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { DECK_MODEL, type SkateDeck } from "@/content/projects/skateboard-designs";
+import type { SkateDeck } from "@/content/projects/skateboard-designs";
+
+import { CAMERA_DISTANCE, DeckLights, dressDeck, FOV, loadModel, loadPrint, setOpacity, shadowTexture, type DressedDeck } from "./deckModel";
 
 /**
  * The decks, in 3D, over the wall. One canvas the size of the stage; world
- * units are stage HEIGHTS (the camera's vertical field of view spans exactly
- * 1 at the wall plane, z = 0), so a deck placed in the plate's fractions
- * lands on the rails exactly where the wall's DOM hit areas and labels are.
+ * units are stage heights (see deckModel), so a deck placed in the plate's
+ * fractions lands on the rails exactly where the wall's DOM hit areas and
+ * labels are.
  *
- * Every deck is the shared model (public/skateboarding/deck.glb) wearing its
- * own print and edge colour. Hover (from the DOM, which owns the pointer):
- * the deck comes off the wall towards the camera, grows a touch and tilts
- * after the pointer — real depth now, so the wood grain and the edge catch
- * the light as it turns.
+ * Every deck is the shared model wearing its own print and edge colour.
+ * Hover (from the DOM, which owns the pointer): the deck comes off the wall
+ * towards the camera, grows a touch and tilts after the pointer — real
+ * depth, so the wood grain and the edge catch the light as it turns. A deck
+ * picked for the close-up (DeckInspect) is hidden here while it is away.
  */
-
-/** the model: X across, Y through (the graphic underneath, -Y), Z along */
-const MODEL_LENGTH = 0.797;
-const FOV = 20;
-const CAMERA_DISTANCE = 0.5 / Math.tan(THREE.MathUtils.degToRad(FOV / 2));
 
 /** Hover feel: lift off the wall (world units = stage heights) and growth; the tilt (degrees) comes from the DOM. */
 const LIFT = 0.06;
@@ -36,10 +31,6 @@ const LIFT_SPRING = { stiffness: 260, damping: 27, mass: 1 } as const;
 /** Pointer tracking: soft and damped, never twitchy. */
 const TILT_SPRING = { stiffness: 140, damping: 22, mass: 0.7 } as const;
 const FADE_S = 0.5;
-
-const ENV_INTENSITY = 0.35;
-/** the wood-grain normal map at its authored strength × this */
-const GRAIN_BOOST = 1.2;
 
 export type DeckLayout = {
   /** stage width / height */
@@ -57,104 +48,12 @@ export type DeckLayout = {
 export type DeckSlot = {
   deck: SkateDeck;
   active: boolean;
+  /** away in the close-up: not drawn here */
+  hidden: boolean;
   /** degrees, from the DOM pointer handlers (see DeckWall) */
   tiltX: MotionValue<number>;
   tiltY: MotionValue<number>;
 };
-
-let modelPromise: Promise<GLTF> | null = null;
-function loadModel() {
-  if (!modelPromise) {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-    modelPromise = loader.loadAsync(DECK_MODEL);
-  }
-  return modelPromise;
-}
-
-const printCache = new Map<string, Promise<THREE.Texture>>();
-function loadPrint(url: string, anisotropy: number) {
-  let p = printCache.get(url);
-  if (!p) {
-    p = new THREE.TextureLoader().loadAsync(url).then((tex) => {
-      // glTF UV convention + colour texture
-      tex.flipY = false;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = anisotropy;
-      tex.needsUpdate = true;
-      return tex;
-    });
-    printCache.set(url, p);
-  }
-  return p;
-}
-
-/**
- * A deck ready to hang: the shared model's scene cloned, its two printed
- * faces wearing this deck's print, its edge in this deck's colour. The
- * model is turned so the graphic faces the camera with the nose up, and
- * scaled so its length is 1 (the wall scales it to the deck height).
- * three.js objects are mutable by design: kept out of the components.
- */
-function dressDeck(gltf: GLTF, deck: SkateDeck, print: THREE.Texture, anisotropy: number) {
-  const scene = gltf.scene.clone(true);
-  const materials: THREE.MeshStandardMaterial[] = [];
-  scene.traverse((o) => {
-    const mesh = o as THREE.Mesh;
-    if (!mesh.isMesh) return;
-    const source = mesh.material as THREE.MeshStandardMaterial;
-    const mat = source.clone();
-    if (/edge/i.test(source.name)) {
-      mat.color.set(deck.edge);
-    } else {
-      mat.map = print;
-      mat.map.anisotropy = anisotropy;
-      if (mat.normalMap) mat.normalScale.multiplyScalar(GRAIN_BOOST);
-    }
-    mat.envMapIntensity = 0.8;
-    mat.transparent = true;
-    mat.opacity = 0;
-    mesh.material = mat;
-    materials.push(mat);
-  });
-  scene.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(scene);
-  scene.position.sub(box.getCenter(new THREE.Vector3()));
-  // -Y (the graphic) -> +Z (towards the camera); +Z (the nose) -> +Y (up)
-  const turn = new THREE.Group();
-  turn.rotation.x = -Math.PI / 2;
-  turn.add(scene);
-  const fit = new THREE.Group();
-  fit.scale.setScalar(1 / MODEL_LENGTH);
-  fit.add(turn);
-  return { object: fit, materials };
-}
-
-/** Fade-in as a deck's print arrives (materials are mutable by design;
- *  kept out of the component). */
-function setOpacity(materials: THREE.MeshStandardMaterial[], opacity: number) {
-  for (const m of materials) {
-    m.opacity = opacity;
-    if (opacity >= 1) m.transparent = false;
-  }
-}
-
-/** A soft dark pool on the wall behind each deck (radial gradient sprite). */
-function shadowTexture() {
-  const size = 256;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, "rgba(0,0,0,0.9)");
-  g.addColorStop(0.45, "rgba(0,0,0,0.55)");
-  g.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
 
 function Deck3D({
   slot,
@@ -172,9 +71,10 @@ function Deck3D({
   reducedMotion: boolean;
 }) {
   const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
   const group = useRef<THREE.Group>(null);
   const shadowRef = useRef<THREE.Mesh>(null);
-  const [dressed, setDressed] = useState<ReturnType<typeof dressDeck> | null>(null);
+  const [dressed, setDressed] = useState<DressedDeck | null>(null);
   const fade = useRef(0);
 
   useEffect(() => {
@@ -193,6 +93,13 @@ function Deck3D({
   useEffect(() => {
     lift.set(slot.active && !reducedMotion ? 1 : 0);
   }, [lift, slot.active, reducedMotion]);
+
+  // shown/hidden outside the frame loop, so it holds even while the loop is stopped
+  useEffect(() => {
+    if (group.current) group.current.visible = !slot.hidden;
+    if (shadowRef.current) shadowRef.current.visible = !slot.hidden;
+    invalidate();
+  }, [slot.hidden, invalidate]);
 
   const x = (layout.centre0 + layout.pitch * index - 0.5) * layout.aspect;
   const y = 0.5 - (layout.top + layout.height / 2);
@@ -229,25 +136,6 @@ function Deck3D({
   );
 }
 
-/** The wall's cool overhead spotlights, as the decks see them. */
-function Studio() {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  useEffect(() => lightWithRoom(scene, gl), [gl, scene]);
-  return null;
-}
-function lightWithRoom(scene: THREE.Scene, gl: THREE.WebGLRenderer) {
-  const pmrem = new THREE.PMREMGenerator(gl);
-  const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environment = env;
-  scene.environmentIntensity = ENV_INTENSITY;
-  pmrem.dispose();
-  return () => {
-    scene.environment = null;
-    env.dispose();
-  };
-}
-
 export function DeckScene({
   slots,
   layout,
@@ -257,7 +145,7 @@ export function DeckScene({
   slots: DeckSlot[];
   layout: DeckLayout;
   reducedMotion: boolean;
-  /** false while the wall is off screen: the frame loop stops */
+  /** false while the wall is off screen or behind the close-up: the frame loop stops */
   running: boolean;
 }) {
   const [gltf, setGltf] = useState<GLTF | null>(null);
@@ -278,13 +166,7 @@ export function DeckScene({
       frameloop={running ? "always" : "never"}
       style={{ background: "transparent", pointerEvents: "none" }}
     >
-      {/* the ceiling spots: cool key from above and in front, a soft fill,
-          a faint rim so the edges separate from the wall */}
-      <hemisphereLight args={["#dfe8ff", "#0a0d14", 0.5]} />
-      <directionalLight position={[0.2, 3, 2]} intensity={2.2} color="#e6eeff" />
-      <directionalLight position={[-2, 0.5, 2.5]} intensity={0.5} />
-      <directionalLight position={[2.5, 1.5, -1.5]} intensity={0.6} color="#cfe0ff" />
-      <Studio />
+      <DeckLights />
       {gltf
         ? slots.map((slot, i) => (
             <Deck3D

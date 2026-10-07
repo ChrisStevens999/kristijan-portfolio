@@ -3,15 +3,16 @@
 import { motionValue, useInView, useReducedMotion, type MotionValue } from "framer-motion";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import Link from "next/link";
-import { useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 import wall from "../../../../assets/projects/skateboarding/wall-rails.webp";
 import { skateCampaigns, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
 
+import type { InspectRequest } from "./DeckInspect";
 import type { DeckLayout, DeckSlot } from "./DeckScene";
 
 const DeckScene = dynamic(() => import("./DeckScene").then((m) => m.DeckScene), { ssr: false });
+const DeckInspect = dynamic(() => import("./DeckInspect").then((m) => m.DeckInspect), { ssr: false });
 
 /**
  * Geometry. The wall is the supplied plate (assets/.../wall-rails.webp,
@@ -44,70 +45,11 @@ const LAYOUT: DeckLayout = {
 
 /** Tilt after the pointer, degrees (the scene springs it). */
 const MAX_TILT_DEG = 6;
+/** A hovered deck is lifted and a touch larger on screen than its hit column (DeckScene's lift and scale, seen in perspective). */
+const LIFTED_SCALE = 1.05;
 
 function scrollToCampaign(id: string, reduceMotion: boolean) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-}
-
-/** Link, button or plain figure depending on whether the deck has a real destination — same box, same children. */
-function DeckShell({
-  deck,
-  reduceMotion,
-  className,
-  style,
-  handlers,
-  children,
-}: {
-  deck: SkateDeck;
-  reduceMotion: boolean;
-  className: string;
-  style: CSSProperties;
-  handlers: {
-    onPointerEnter: (e: PointerEvent<HTMLElement>) => void;
-    onPointerMove: (e: PointerEvent<HTMLElement>) => void;
-    onPointerLeave: () => void;
-    onFocus: (e: React.FocusEvent<HTMLElement>) => void;
-    onBlur: () => void;
-  };
-  children: ReactNode;
-}) {
-  const focusRing =
-    "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid";
-  if (deck.destination.kind === "project") {
-    return (
-      <Link
-        href={deck.destination.href}
-        aria-label={`${deck.title} — explore project`}
-        className={`${className} ${focusRing}`}
-        style={style}
-        {...handlers}
-      >
-        {children}
-      </Link>
-    );
-  }
-  if (deck.destination.kind === "campaign") {
-    const { campaignId } = deck.destination;
-    return (
-      <button
-        type="button"
-        aria-label={`${deck.alt} — see campaign`}
-        onClick={() => scrollToCampaign(campaignId, reduceMotion)}
-        className={`${className} ${focusRing} cursor-pointer`}
-        style={style}
-        {...handlers}
-      >
-        {children}
-      </button>
-    );
-  }
-  // No destination exists for this deck yet: not a control, but still
-  // focusable so keyboard users get the same emphasis as hover.
-  return (
-    <div role="img" aria-label={deck.alt} tabIndex={0} className={`${className} ${focusRing}`} style={style} {...handlers}>
-      {children}
-    </div>
-  );
 }
 
 /** A deck's column, in plate fractions: where its lamp, hit area and label go. */
@@ -167,13 +109,15 @@ function Lamp({ index, lit }: { index: number; lit: boolean }) {
 /**
  * A deck's hit area and label, OVER the 3D decks. The DOM owns the pointer:
  * hover/focus and the pointer's position in the column go to the scene
- * (which lifts and tilts the deck) and switch the lamp on.
+ * (which lifts and tilts the deck) and switch the lamp on; a click picks
+ * the deck up for the close-up (DeckInspect), where its destination lives.
  */
 function Deck({
   deck,
   index,
   active,
   onActive,
+  onPick,
   tiltX,
   tiltY,
 }: {
@@ -181,6 +125,7 @@ function Deck({
   index: number;
   active: boolean;
   onActive: (on: boolean) => void;
+  onPick: (from: DOMRect) => void;
   tiltX: MotionValue<number>;
   tiltY: MotionValue<number>;
 }) {
@@ -193,52 +138,57 @@ function Deck({
     tiltY.set(0);
   };
 
-  const handlers = {
-    // Touch never "hovers": on phones the labels are always visible and a
-    // tap just follows the link, so nothing sticks in a lifted state.
-    onPointerEnter: (e: PointerEvent<HTMLElement>) => {
-      if (e.pointerType !== "touch") onActive(true);
-    },
-    onPointerMove: (e: PointerEvent<HTMLElement>) => {
-      if (reduceMotion || e.pointerType === "touch") return;
-      const rect = deckAreaRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      // the side of the deck under the pointer comes towards the viewer
-      const px = Math.max(-0.5, Math.min(0.5, (e.clientX - rect.left) / rect.width - 0.5));
-      const py = Math.max(-0.5, Math.min(0.5, (e.clientY - rect.top) / rect.height - 0.5));
-      tiltY.set(px * 2 * MAX_TILT_DEG);
-      tiltX.set(-py * 2 * MAX_TILT_DEG);
-    },
-    onPointerLeave: rest,
-    onFocus: (e: React.FocusEvent<HTMLElement>) => {
-      if (e.currentTarget.matches(":focus-visible")) onActive(true);
-    },
-    onBlur: rest,
+  const pick = () => {
+    const el = deckAreaRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    // the deck as drawn right now: lifted and a touch larger while hovered
+    const s = active && !reduceMotion ? LIFTED_SCALE : 1;
+    const w = r.width * s;
+    const h = r.height * s;
+    onPick(new DOMRect(r.left + (r.width - w) / 2, r.top + (r.height - h) / 2, w, h));
+    tiltX.set(0);
+    tiltY.set(0);
   };
 
   const number = String(index + 1).padStart(2, "0");
-  const action =
-    deck.destination.kind === "project"
-      ? "Explore project ↗"
-      : deck.destination.kind === "campaign"
-        ? "See campaign ↓"
-        : null;
 
   return (
     <li className="absolute flex snap-center justify-center" style={{ ...columnStyle(index), zIndex: active ? 20 : 1 }}>
-      <DeckShell
-        deck={deck}
-        reduceMotion={reduceMotion}
-        className="relative block text-center"
+      <button
+        type="button"
+        id={`deck-${deck.id}`}
+        aria-label={`${deck.title} — see it in 3D`}
+        onClick={pick}
+        className="relative block cursor-pointer text-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid"
         style={{ width: `calc(var(--deck-h) * ${HIT_WIDTH})` }}
-        handlers={handlers}
+        // Touch never "hovers": on phones the labels are always visible and a
+        // tap just picks the deck up, so nothing sticks in a lifted state.
+        onPointerEnter={(e: PointerEvent<HTMLElement>) => {
+          if (e.pointerType !== "touch") onActive(true);
+        }}
+        onPointerMove={(e: PointerEvent<HTMLElement>) => {
+          if (reduceMotion || e.pointerType === "touch") return;
+          const rect = deckAreaRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          // the side of the deck under the pointer comes towards the viewer
+          const px = Math.max(-0.5, Math.min(0.5, (e.clientX - rect.left) / rect.width - 0.5));
+          const py = Math.max(-0.5, Math.min(0.5, (e.clientY - rect.top) / rect.height - 0.5));
+          tiltY.set(px * 2 * MAX_TILT_DEG);
+          tiltX.set(-py * 2 * MAX_TILT_DEG);
+        }}
+        onPointerLeave={rest}
+        onFocus={(e) => {
+          if (e.currentTarget.matches(":focus-visible")) onActive(true);
+        }}
+        onBlur={rest}
       >
         {/* the hit column: the deck itself is drawn by the scene underneath */}
         <div ref={deckAreaRef} className="relative" style={{ height: "var(--deck-h)" }} />
 
         {/* Label: fixed-height box, layers cross-fade — nothing reflows.
             Number at rest, the deck's name on hover/focus (always the name
-            on phones), plus an action line where a destination exists. */}
+            on phones), plus the invitation to pick it up. */}
         <div className="font-sans relative mt-4 h-10 text-[11px] leading-tight tracking-[0.14em] uppercase sm:text-xs">
           <span
             className={`absolute inset-x-[-60%] top-0 text-off-white/75 transition-opacity duration-300 max-md:opacity-0 ${active ? "md:opacity-0" : ""}`}
@@ -251,12 +201,10 @@ function Deck({
             <span className="block font-medium" style={{ color: deck.accent }}>
               {deck.title}
             </span>
-            {action ? (
-              <span className="mt-1 block text-[9px] tracking-[0.16em] text-off-white/85 sm:text-[10px]">{action}</span>
-            ) : null}
+            <span className="mt-1 block text-[9px] tracking-[0.16em] text-off-white/85 sm:text-[10px]">See it in 3D</span>
           </span>
         </div>
-      </DeckShell>
+      </button>
     </li>
   );
 }
@@ -264,7 +212,9 @@ function Deck({
 /**
  * The skate-shop wall: the supplied wall plate, the six decks in 3D on its
  * rails (one canvas, DeckScene), each deck's lamp under them and its hit
- * area and label over them.
+ * area and label over them. Picking a deck sends it to the close-up
+ * (DeckInspect): it flies to the middle of the screen over the blurred
+ * wall, turns in 3D, and flies back when put down.
  *
  * The stage keeps the plate's aspect ratio and everything is placed in
  * plate percentages, so the decks sit on the rails at every size.
@@ -282,9 +232,42 @@ export function DeckWall() {
   const [active, setActive] = useState<number | null>(null);
   // one pair of tilt values per deck: written by the DOM, read by the scene
   const tilts = useMemo(() => skateDecks.map(() => ({ x: motionValue(0), y: motionValue(0) })), []);
+
+  // the close-up: what it is asked to show, and which deck is away from the
+  // wall meanwhile (it stays away until the close-up has flown it back)
+  const [inspect, setInspect] = useState<InspectRequest | null>(null);
+  const [away, setAway] = useState<number | null>(null);
+  const afterReturn = useRef<string | null>(null); // a campaign to scroll to once the deck is back
+
+  const pick = (index: number, from: DOMRect) => {
+    setActive(null);
+    setAway(index);
+    setInspect({ deck: skateDecks[index], index, from });
+  };
+  const putBack = useCallback(() => setInspect(null), []);
+  // that deck has landed back on its rail (unless a newer pick has it away again)
+  const settled = useCallback(
+    (index: number) => {
+      setAway((i) => {
+        if (i !== index) return i;
+        document.getElementById(`deck-${skateDecks[index].id}`)?.focus({ preventScroll: true });
+        return null;
+      });
+      const campaign = afterReturn.current;
+      afterReturn.current = null;
+      if (campaign) scrollToCampaign(campaign, reduceMotion);
+    },
+    [reduceMotion],
+  );
+  const toCampaign = useCallback((id: string) => {
+    afterReturn.current = id;
+    setInspect(null);
+  }, []);
+
   const slots: DeckSlot[] = skateDecks.map((deck, i) => ({
     deck,
     active: active === i,
+    hidden: away === i,
     tiltX: tilts[i].x,
     tiltY: tilts[i].y,
   }));
@@ -333,7 +316,7 @@ export function DeckWall() {
             ))}
           </ul>
           <div className="absolute inset-0">
-            <DeckScene slots={slots} layout={LAYOUT} reducedMotion={reduceMotion} running={inView} />
+            <DeckScene slots={slots} layout={LAYOUT} reducedMotion={reduceMotion} running={inView && away === null} />
           </div>
           <ul className="absolute inset-0">
             {skateDecks.map((deck, i) => (
@@ -343,6 +326,7 @@ export function DeckWall() {
                 index={i}
                 active={active === i}
                 onActive={(on) => setActive((cur) => (on ? i : cur === i ? null : cur))}
+                onPick={(from) => pick(i, from)}
                 tiltX={tilts[i].x}
                 tiltY={tilts[i].y}
               />
@@ -364,7 +348,7 @@ export function DeckWall() {
       <div className="flex-1" />
 
       <div className="font-sans relative flex items-center justify-between gap-4 border-t border-off-white/15 px-4 py-3 text-[8px] tracking-[0.12em] whitespace-nowrap text-off-white uppercase sm:px-10 sm:text-[11px]">
-        <p>Pick a board. Explore the artwork</p>
+        <p>Pick a board. See it in 3D</p>
         <button
           type="button"
           onClick={() => scrollToCampaign(skateCampaigns[0].id, reduceMotion)}
@@ -373,6 +357,14 @@ export function DeckWall() {
           Scroll for campaigns ↓
         </button>
       </div>
+
+      <DeckInspect
+        request={inspect}
+        onClose={putBack}
+        onSettled={settled}
+        onCampaign={toCampaign}
+        reducedMotion={reduceMotion}
+      />
     </section>
   );
 }
