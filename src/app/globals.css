@@ -73,6 +73,29 @@ html:has(main[data-scroll-snap]) {
   scroll-snap-type: y mandatory;
 }
 
+/*
+ * About boards (src/app/about/page.tsx). Landscape: each board is one full
+ * screen, cropped to cover. Portrait (a phone): the portrait export at its
+ * own proportions, full width, so nothing of it is cut off whatever the
+ * phone's height — the boards stack, each a snap stop, and one taller than
+ * the screen scrolls on inside.
+ */
+.about-board {
+  height: 100svh;
+}
+@media (orientation: portrait) {
+  .about-board {
+    height: auto;
+  }
+  .about-board picture,
+  .about-board img {
+    display: block;
+    position: static;
+    width: 100%;
+    height: auto;
+  }
+}
+
 body {
   background: var(--color-black);
   color: var(--color-off-white);

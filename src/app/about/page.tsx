@@ -8,12 +8,14 @@ export const metadata: Metadata = { title: "About" };
 /**
  * About — the page the homepage's "Click to find out about me" opens.
  *
- * Five full-screen boards in the supplied order, each the designed artwork
- * (assets/about/boards, shipped by scripts/build-about-boards.mjs) filling
- * the screen edge to edge, and each a snap stop, so the page reads one
- * screen at a time. On a portrait screen a board uses its portrait export
- * when one has been supplied (assets/about/boards/portrait), otherwise the
- * landscape board cropped to its middle.
+ * Five boards in the supplied order, each the designed artwork
+ * (assets/about/boards, shipped by scripts/build-about-boards.mjs), each a
+ * snap stop. On a landscape screen a board fills the screen edge to edge,
+ * so the page reads one screen at a time. On a portrait screen (a phone) a
+ * board uses its portrait export (assets/about/boards/portrait) at its own
+ * proportions, full width, so nothing of it is cut off whatever the
+ * phone's height: the boards stack, and one taller than the screen scrolls
+ * on inside (the .about-board rules in globals.css).
  *
  * The copy is baked into the artwork, so each board repeats it for screen
  * readers and search; 12_TYPOGRAPHY.md wants it live HTML eventually — a
@@ -83,8 +85,8 @@ export default function AboutPage() {
           key={board.id}
           id={board.id}
           aria-label={board.text[0]}
-          className="relative overflow-hidden bg-[#000]"
-          style={{ height: "100svh", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+          className="about-board relative overflow-hidden bg-[#000]"
+          style={{ scrollSnapAlign: "start", scrollSnapStop: "always" }}
         >
           <picture>
             {hasPortrait(board.file) ? (
