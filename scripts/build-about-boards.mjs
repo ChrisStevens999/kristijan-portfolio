@@ -3,9 +3,10 @@
  *
  *  - assets/about/boards/<n>-<name>.png (3840x2160, landscape) ship as
  *    public/about/boards/<n>-<name>.webp at 2560 wide;
- *  - assets/about/boards/portrait/<n>-<name>.png (9:16, for phones) ship as
- *    public/about/boards/portrait/<n>-<name>.webp at 1440 wide. Optional:
- *    a board without one shows the landscape version cropped to the middle.
+ *  - assets/about/boards/portrait/<n>-<name>.png|webp|jpg (phone portrait,
+ *    923x2000 as supplied) ship as public/about/boards/portrait/<n>-<name>.webp
+ *    at up to 1440 wide. Optional: a board without one shows the landscape
+ *    version cropped to the middle.
  *
  *   node scripts/build-about-boards.mjs
  */
@@ -27,8 +28,8 @@ const OUT = path.join(root, "public/about/boards");
 async function build(srcDir, outDir, width) {
   if (!fs.existsSync(srcDir)) return;
   fs.mkdirSync(outDir, { recursive: true });
-  for (const f of fs.readdirSync(srcDir).filter((f) => /\.png$/i.test(f)).sort()) {
-    const out = path.join(outDir, f.replace(/\.png$/i, ".webp"));
+  for (const f of fs.readdirSync(srcDir).filter((f) => /\.(png|webp|jpe?g)$/i.test(f)).sort()) {
+    const out = path.join(outDir, f.replace(/\.(png|webp|jpe?g)$/i, ".webp"));
     await sharp(path.join(srcDir, f)).resize({ width, withoutEnlargement: true }).webp({ quality: 86, effort: 6 }).toFile(out);
     console.log(`${path.relative(root, out).padEnd(44)} ${(fs.statSync(out).size / 1024).toFixed(0)} KB`);
   }
