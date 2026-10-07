@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { realWorldPhotos } from "@/content/projects/graphic-tees";
+import type { RealWorldPhoto } from "@/content/projects/graphic-tees";
 
 import {
   CARD_ASPECT,
@@ -17,7 +17,7 @@ import {
 } from "./galleryMotion";
 import { Lightbox, type OpenPhoto } from "./Lightbox";
 
-type Photo = (typeof realWorldPhotos)[number];
+type Photo = RealWorldPhoto;
 
 const RECENT = 5; // a column never repeats a photo within this many cards
 
@@ -142,8 +142,10 @@ function rowWindow(centre: number, l: Layout) {
  * staggered left to right — forever, in random order.
  */
 export function RealWorldGallery({
+  photos,
   reducedMotion,
 }: {
+  photos: Photo[];
   reducedMotion: boolean;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -161,10 +163,10 @@ export function RealWorldGallery({
 
   const columns = layout ? 2 * layout.side + 1 : 0;
   const middle = layout ? layout.side : 0;
-  // fresh random sequences whenever the column count changes
+  // fresh random sequences whenever the column count (or the set) changes
   const sequences = useMemo(
-    () => new Sequences(realWorldPhotos, middle),
-    [middle],
+    () => new Sequences(photos, middle),
+    [photos, middle],
   );
 
   // Which cycle each column is on. Starts at 1 so the row window never

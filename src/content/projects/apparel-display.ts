@@ -1,4 +1,4 @@
-import { graphicTees, TSHIRT_MODEL } from "./graphic-tees";
+import { graphicTees, type RealWorldPhoto, realWorldPhotos, TSHIRT_MODEL } from "./graphic-tees";
 
 /**
  * The Apparel display's tabs. Each collection is one tab: its own heading
@@ -47,8 +47,8 @@ export type GarmentCollection = {
   model?: string;
   /** show the back first (T-shirt prints are on the back) */
   faceBack: boolean;
-  /** has "in the real world" photos under the display */
-  hasGallery: boolean;
+  /** "in the real world" photos for the gallery under the display, if any */
+  gallery?: RealWorldPhoto[];
   items: Garment[];
 };
 
@@ -76,7 +76,21 @@ export const patternShirts: Garment[] = [
   aop("purple-haze", "Purple Haze"),
   aop("sex-ism", "Sex.Ism"),
   aop("black-naja", "Black Naja"),
+  aop("mag-cut", "Mag Cut"),
 ];
+
+/** "Shirts in the real world" — two mockup photos per pattern, in
+ *  public/apparel/aop/gallery (built by the same script). Ordered so no two
+ *  of the same shirt are neighbours. */
+const patternPhoto = (slug: string, n: 1 | 2, shirt: string): RealWorldPhoto => ({
+  src: `/apparel/aop/gallery/${slug}-${n}.webp`,
+  alt: `Wearing the ${shirt} shirt`,
+  shirt,
+});
+
+export const patternPhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
+  patternShirts.map((s) => patternPhoto(s.slug, n, s.name)),
+);
 
 export const HOODIE_MODEL = "/apparel/hoodies/hoodie.glb";
 
@@ -122,7 +136,7 @@ export const apparelCollections: GarmentCollection[] = [
     noun: "T-shirt",
     model: TSHIRT_MODEL,
     faceBack: true,
-    hasGallery: true,
+    gallery: realWorldPhotos,
     items: graphicTees,
   },
   {
@@ -132,7 +146,7 @@ export const apparelCollections: GarmentCollection[] = [
     nameLabel: "Pattern name",
     noun: "shirt",
     faceBack: false,
-    hasGallery: false,
+    gallery: patternPhotos,
     items: patternShirts,
   },
   {
@@ -144,7 +158,6 @@ export const apparelCollections: GarmentCollection[] = [
     model: HOODIE_MODEL,
     // the prints are on the back (a garment can say otherwise)
     faceBack: true,
-    hasGallery: false,
     items: hoodies,
   },
 ];

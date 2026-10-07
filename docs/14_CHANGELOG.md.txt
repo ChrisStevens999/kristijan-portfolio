@@ -304,6 +304,25 @@ Introduce the person after the strongest work and before the chapters, as a mome
 
 ---
 
+# 2026-10-07
+
+## Phase 3 — Pattern AOPs gallery
+
+### Changes
+
+- Apparel display: the Pattern AOPs tab gets Mag Cut (its own GLB, as authored), sixteen shirts in all.
+- Apparel display: the Pattern AOPs tab has its own "shirts in the real world" gallery under the display — the same gliding columns and click-to-enlarge as the Graphic T's, fed two mockup photos per pattern (32, from assets/projects/apperal/pattern AOPs/"<Name> 1.png" and "<Name> 2.png", shipped at 1100 wide by scripts/build-aop-assets.mjs). A collection now carries its gallery photos (`gallery`) instead of a flag, and the gallery component takes the open tab's set.
+
+### Reason
+
+The patterns are made to be worn; the photos show them on people, as the T-shirts' do.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 Only record changes that affect:

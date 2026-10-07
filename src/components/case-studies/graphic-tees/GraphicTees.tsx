@@ -513,7 +513,7 @@ export function GraphicTees({ category }: { category?: Category }) {
               />
             </div>
 
-            {collection.hasGallery && (
+            {collection.gallery && (
               <button
                 type="button"
                 onClick={scrollOn}
@@ -588,10 +588,10 @@ export function GraphicTees({ category }: { category?: Category }) {
         </section>
       )}
 
-      {/* the "real world" photos belong to the T-shirts: only under that tab */}
-      {collection.hasGallery && (
+      {/* the "real world" photos of the open tab's garments (the T-shirts and the pattern shirts have them) */}
+      {collection.gallery && (
         <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
-          {settled && <RealWorldGallery reducedMotion={reducedMotion} />}
+          {settled && <RealWorldGallery key={collection.id} photos={collection.gallery} reducedMotion={reducedMotion} />}
         </section>
       )}
       {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}

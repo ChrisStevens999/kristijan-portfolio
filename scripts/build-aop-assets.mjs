@@ -21,9 +21,14 @@
  *    full-precision floats.
  *  - public/apparel/aop/flat/<slug>.webp — the preview PNG, trimmed and
  *    centred in a 1200² square, for the strip.
+ *  - public/apparel/aop/gallery/<slug>-<n>.webp — the "in the real world"
+ *    mockup photos ("<Name> 1.png", "<Name> 2.png" in the folder) for the
+ *    gallery under the display, web-sized (`--gallery-only` rebuilds just
+ *    these).
  *
- * Adding a shirt: put its PNG + GLB in the folder, add it to SHIRTS below,
- * run this script, then add it to src/content/projects/apparel-display.ts.
+ * Adding a shirt: put its PNG + GLB (and its two photos) in the folder, add
+ * it to SHIRTS (and GALLERY) below, run this script, then add it to
+ * src/content/projects/apparel-display.ts.
  */
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -68,7 +73,29 @@ const SHIRTS = {
   "purple-haze": { png: "Purple Haze.png", glb: "DCUPurpleHazeDarkReverse-Button-Down.glb" },
   "sex-ism": { png: "Sex.Ism.png", glb: "Sexism1-Button-Down.glb" },
   "black-naja": { png: "Black Naja.png", glb: "Black-Naja-Button-Down.glb" },
+  "mag-cut": { png: "Mug Cut Pattern Preview.png", glb: "MagCut-Button-Down.glb" },
 };
+
+/** slug -> its two mockup photos (sources are 3392x5056, 11–31 MB each) */
+const GALLERY = {
+  ronin: ["Ronin 1.png", "Ronin 2.png"],
+  "neo-tokyo": ["Neo Tokyo 1.png", "Neo Tokyo 2.png"],
+  "midnight-blossom": ["Midnight Blossom 1.png", "Midnight Blossom 2.png"],
+  "miami-brushstroke": ["Miami Brushstroke 1.png", "Miami Brushstroke 2.png"],
+  "nods-aop": ["Nods 1.png", "Nods 2.png"],
+  "conspiracy-theory": ["Conspiracy 1.png", "Conspiracy 2.png"],
+  "arcade-night": ["Arcade 1.png", "Arcade 2.png"],
+  "x-ray": ["X-Ray 1.png", "X-Ray 2.png"],
+  "synth-tiger": ["Synth Tiger 1.png", "Synth Tiger 2.png"],
+  marbloro: ["Marlboro Man 1.png", "Marlboro Man 2.png"],
+  "forest-stripes": ["Forest Stripes 1.png", "Forest Stripes 2.png"],
+  "fourth-of-july": ["4th Of July 1.png", "4th Of July 2.png"],
+  "purple-haze": ["Purple Haze 1.png", "Purple Haze 2.png"],
+  "sex-ism": ["Sex.Ism 1.png", "Sex.ism 2.png"],
+  "black-naja": ["Black Naja 1.png", "Black Naja 2.png"],
+  "mag-cut": ["Mag Cut 1.png", "Mag Cut 2.png"],
+};
+const GALLERY_WIDTH = 1100; // as the T-shirt gallery
 
 await MeshoptDecoder.ready;
 await MeshoptEncoder.ready;
@@ -93,11 +120,29 @@ async function writeFlat(src, out) {
     .toFile(out);
 }
 
-const only = process.argv.slice(2);
+const galleryOnly = process.argv.includes("--gallery-only");
+const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 for (const slug of only) if (!SHIRTS[slug]) throw new Error(`unknown shirt "${slug}"`);
 // a full build starts clean, so a renamed or removed shirt leaves nothing behind
-if (only.length === 0) fs.rmSync(OUT, { recursive: true, force: true });
-for (const dir of ["models", "flat"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
+if (only.length === 0 && !galleryOnly) fs.rmSync(OUT, { recursive: true, force: true });
+for (const dir of ["models", "flat", "gallery"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
+
+// --- gallery photos -----------------------------------------------------------
+for (const [slug, files] of Object.entries(GALLERY)) {
+  if (only.length && !only.includes(slug)) continue;
+  for (const [i, file] of files.entries()) {
+    const out = path.join(OUT, "gallery", `${slug}-${i + 1}.webp`);
+    await sharp(path.join(SRC, file))
+      .flatten({ background: "#000" })
+      .resize({ width: GALLERY_WIDTH })
+      .webp({ quality: 82, effort: 6 })
+      .toFile(out);
+    console.log(`gallery/${slug}-${i + 1}.webp  ${kb(out)}`);
+  }
+}
+if (galleryOnly) process.exit(0);
+
+// --- per-shirt models + flat cutouts -------------------------------------------
 
 for (const [slug, { png, glb }] of Object.entries(SHIRTS)) {
   if (only.length && !only.includes(slug)) continue;

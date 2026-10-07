@@ -23,18 +23,24 @@ export const TSHIRT_MODEL = "/apparel/t-shirts/tshirt.glb";
 
 /** "Shirts in the real world" — mockup photos for the gallery under the
  *  display (public/apparel/t-shirts/gallery, built by the same script). */
+export type RealWorldPhoto = {
+  src: string;
+  alt: string;
+  /** which garment it shows — the gallery never puts two of the same side by side */
+  shirt: string;
+};
+
 const photo = (
   slug: string,
   shirt: string,
   alt = `Wearing the ${shirt} T-shirt`,
-) => ({
+): RealWorldPhoto => ({
   src: `/apparel/t-shirts/gallery/${slug}.webp`,
   alt,
-  /** which print it shows — the gallery never puts two of the same shirt side by side */
   shirt,
 });
 
-export const realWorldPhotos = [
+export const realWorldPhotos: RealWorldPhoto[] = [
   photo("conformity-cinema", "Conformity"),
   photo("hardcore-mentality-night", "Hardcore Mentality"),
   photo("hardcore-mentality-dusk", "Hardcore Mentality"),
