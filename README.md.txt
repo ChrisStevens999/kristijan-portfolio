@@ -36,10 +36,11 @@ The homepage always follows this order:
 
 1. Intro
 2. Selected Works
-3. Explore by Category
-4. Contact (planned, not built yet)
+3. About (the deck of photographs that collides into the portrait video)
+4. Explore by Category
+5. Contact (planned, not built yet)
 
-About was removed from the homepage by request on 2026-09-10 (see docs/10_DECISION_LOG.md).
+About was removed from the homepage on 2026-09-10 and returned, in this new position and form, on 2026-10-07 (see docs/10_DECISION_LOG.md).
 
 Do not change this structure without approval.
 

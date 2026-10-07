@@ -1,4 +1,5 @@
 allowBuilds:
+  ffmpeg-static: true # downloads its binary on install (asset tooling only)
   sharp: true
   unrs-resolver: true
 ignoredBuiltDependencies:

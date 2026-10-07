@@ -32,7 +32,10 @@ Status: Complete
 - [x] Intro sequence (approved 2026-07-16; blue-sky finale and "Chris Stevens" name frame 2026-10-05)
 - [x] Selected Works (chapter card + endless carousel of the five curated projects, 2026-10-02)
 - [x] Explore by Category (2x2 chapter covers, 3:4 tiles with names always shown, 2026-10-05)
-- [-] About — removed from the homepage by request, 2026-09-10 (see 10_DECISION_LOG.md)
+- [x] About — removed 2026-09-10, returned 2026-10-07 as a wordless stop between Selected Works and Explore by Category: a deck of ten photographs plays the reference clip’s motion and collides into the looping portrait video, with a “Click to find out about me” line
+- [x] About page — /about shows the five supplied boards (about me, work history title and list, free time title and board) as full-screen artwork, one snap stop each, 2026-10-07
+- [ ] About boards for phones — portrait (9:16) exports of the five boards into assets/about/boards/portrait; until then phones see the landscape boards cropped to the middle
+- [ ] About page as live HTML — the copy is baked into the boards; rebuild them as components with live text (12_TYPOGRAPHY.md)
 - [ ] Contact
 - [x] Responsive adjustments (done per section as each is built; mobile layouts exist for every shipped section)
 - [ ] Accessibility review

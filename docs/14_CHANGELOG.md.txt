@@ -272,10 +272,31 @@ Show the garments as objects, and let the homepage present the strongest work as
 
 - Apparel display: the Hoodies tab shows ten hoodies in 3D (Bushido, Deviant, Error 404, LA Leakers, Swimmin, Concrete Memories, Purgatory, Brush Like Camo, Operator, Vision). All share one mesh and knit normal map. The black print hoodies (Bushido, Deviant, Error 404, Operator and Vision on the back; Swimmin on the front) share one compressed model (4.8 MB), each placing its original 4096² print PNG on it, untouched. The all-over patterns (LA Leakers, Concrete Memories, Brush Like Camo) map with their own UVs, and Purgatory is off-white with off-white drawstrings, so each of those ships as its own model with its texture byte-for-byte as authored. A garment can choose which side it shows first. Built by scripts/build-hoodie-assets.mjs.
 - Viewer: a print goes only on the cloth materials; parts with their own plain colour (the drawstrings) keep it.
+- Viewer fabric shading: a procedural studio environment lights the garment (nothing downloaded), the cloth materials get a fleece sheen and their knit normal map is boosted, and the lamps are rebalanced with two rims from behind. Black cotton now shows its folds instead of rendering as a silhouette; the backdrop plate is untouched.
 
 ### Reason
 
 Same approach as the T-shirts: the garments are shown as objects at the authored print size, without shipping 110 MB of duplicate geometry.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-07
+
+## Phase 2 — About Teaser
+
+### Changes
+
+- About returns to the homepage between Selected Works and Explore by Category as a wordless stop built to the supplied reference clip, played by the scroll through a four-screen section with a sticky stage, every screen a snap stop (three play the scene a third at a time, the fourth holds on the video and the line so nobody scrolls past it): a deck of ten black-and-white photographs — a single card, the deck swings out of edge-on and fans into a tilted cluster, holds with a slow drift, gathers and swings back to edge-on — and what swings back out is the portrait video, which grows and loops, with “Click to find out about me” (Inter Bold) over its corner, linking to /about. The scene runs forward and back with the visitor, never on its own. Reduced motion shows the end. The cards ship as 1080-wide WebP from assets/about/cards via scripts/build-about-cards.mjs.
+- The clip ships as a 2.3 MB web copy (1080 wide, index at the front, poster frame) built by scripts/build-about-video.mjs from the 15 MB source in assets/about; ffmpeg-static added as a dev dependency for it.
+- /about is five full-screen boards in the supplied order — About me; My work history (title); the work history; How I spend my free time (title); the free-time board — each the designed artwork (assets/about/boards, shipped at 2560 wide by scripts/build-about-boards.mjs) filling the screen edge to edge, each a snap stop, and each repeating its copy for screen readers. Phones use a portrait export of each board when one is supplied in assets/about/boards/portrait, otherwise the landscape board cropped to its middle. Rebuilding them as live text is a later pass.
+
+### Reason
+
+Introduce the person after the strongest work and before the chapters, as a moment rather than a bio block.
 
 ### Status
 

@@ -60,6 +60,20 @@ Never use Benzin for long paragraphs.
 
 ---
 
+# Inter
+
+Text face for calls to action (added 2026-10-07).
+
+Weight: Bold.
+
+Used for:
+
+- The About stop’s call to action (“Click to find out about me”)
+
+Loaded through next/font/google, like Anton. Not for headings or long copy.
+
+---
+
 # Rules
 
 Typography should remain HTML.

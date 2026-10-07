@@ -212,6 +212,22 @@ The homepage shows the strongest images; the Apparel chapter opens directly into
 
 ---
 
+# 2026-10-07
+
+## Decision
+
+About returns to the homepage as a wordless stop between Selected Works and Explore by Category: a deck of ten black-and-white photographs plays the supplied reference clip’s motion as the visitor scrolls through a four-screen section, one snap stop per screen, the last holding on the video and the line (a single card, the deck swings open into a tilted cluster, holds, gathers and swings back to edge-on) and what swings back out is the portrait video, which grows and loops. One line over the video’s corner — “Click to find out about me”, Inter Bold — opens the About page.
+
+### Reason
+
+Requested with supplied photographs and a reference clip. The person behind the work is introduced after the strongest work and before the chapters, as a moment rather than a bio block.
+
+### Result
+
+The homepage order is Intro → Selected Works → About → Explore by Category (→ Contact, planned). /about shows the five supplied boards as artwork for now, one snap stop each; their text becomes live HTML when the page is built out.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.
