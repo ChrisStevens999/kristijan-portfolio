@@ -228,6 +228,27 @@ The homepage order is Intro → Selected Works → About → Explore by Category
 
 ---
 
+## 2026-10-07 — About opening refinement
+
+Refine the supplied-reference opening into a compact, upright photographic
+cluster: one centered card turns nearly edge-on, the layers separate in depth,
+then spread as the whole deck turns back toward the viewer. Keep individual
+cards parallel, balance depth around the scene center, and size the complete
+composition to retain black space on phones and desktops. Use subtle shared
+rotation rather than independently tilted and bobbing photographs. Preserve
+the scroll-controlled gather, red video reveal, CTA, and homepage order.
+
+Reason: the previous large, tilted foreground cards obscured the other images
+and read as a scattered pile rather than the reference's spatial arrangement.
+
+Follow-up: the user requested the entire sequence follow scrolling. Start
+with one image and no automatic opening. The first scroll screen unfolds
+the cards; the next turns the floating cluster; two screens slowly gather
+the cards into the video, grow it, and reveal the text last. One final screen
+holds the result. All stages reverse with scrolling. There are six stops.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

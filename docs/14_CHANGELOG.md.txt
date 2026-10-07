@@ -325,6 +325,18 @@ The patterns are made to be worn; the photos show them on people, as the T-shirt
 
 # Future Entries
 
+## 2026-10-07 — About teaser refinement
+
+- Replaced the oversized tilted pile with a compact upright cluster, centered
+  depth, and a staged edge-on opening inspired by the supplied reference.
+- Made the full sequence scroll-controlled: one image, unfolding cards,
+  floating turn, slow gather into the video, then text. Scrolling backward
+  reverses every stage; there is no automatic opening or idle drift.
+- Kept the composition proportional on phones instead of compressing card
+  offsets. The section now contains six snap stops.
+
+Status: visual direction approved; production publishing requested.
+
 Only record changes that affect:
 
 - Architecture
