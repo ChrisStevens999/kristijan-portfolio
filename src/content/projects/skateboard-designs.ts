@@ -1,11 +1,5 @@
 import type { StaticImageData } from "next/image";
 
-import cobraDeck from "../../../assets/projects/skateboarding/Cobra.png";
-import damagedGoodsDeck from "../../../assets/projects/skateboarding/Damaged Goods.png";
-import samuraiDeck from "../../../assets/projects/skateboarding/Samurai Design.png";
-import dobermannDeck from "../../../assets/projects/skateboarding/Dobermann Design.png";
-import goldenDeck from "../../../assets/projects/skateboarding/Saf-Golden Design.png";
-import boardDeck from "../../../assets/projects/skateboarding/Saf-Board Design.png";
 import dobermannCampaign from "../../../assets/projects/skateboarding/1 Fav.png";
 import samuraiCampaign from "../../../assets/projects/skateboarding/hf_20260713_144648_eab4affd-b95c-405f-97cd-3f50bb56a7cd.png";
 import damagedGoodsCampaign from "../../../assets/projects/skateboarding/4 5.png";
@@ -21,21 +15,22 @@ export type DeckDestination =
   | { kind: "campaign"; campaignId: string }
   | { kind: "none" };
 
+/**
+ * A deck on the wall, in 3D: the shared deck model
+ * (public/skateboarding/deck.glb) wearing this deck's print and edge colour,
+ * both taken from its GLB by scripts/build-skate-deck-assets.mjs. The print
+ * is the original 2048x4096 PNG, untouched.
+ */
 export interface SkateDeck {
   id: string;
-  /** Transparent cutout, 834x1871 — the deck itself sits in roughly the middle 58% of the canvas, with its own soft shadow baked around it. */
-  src: StaticImageData;
-  alt: string;
-  /** Deck name, taken from the supplied artwork's own file name. Shown in place of the number on hover/focus (always, on phones). */
+  /** Deck name, from the GLB's own file name. Shown in place of the number on hover/focus (always, on phones). */
   title: string;
-  /**
-   * The deck's opaque bounding box inside the 834x1871 canvas (alpha > 200,
-   * so the baked soft shadow doesn't count). The cutouts were exported at
-   * slightly different sizes and offsets; the wall uses this to render
-   * every deck at exactly the same height, centred on its column.
-   */
-  bbox: { x1: number; x2: number; y1: number; y2: number };
-  /** Label accent, sampled from the deck's own artwork. */
+  alt: string;
+  /** the print both faces wear (the graphic underneath, the logo on the smooth top) */
+  print: string;
+  /** the deck's edge, as authored in its GLB */
+  edge: string;
+  /** Label accent: the edge colour where it reads on the dark wall, otherwise a colour from the print. */
   accent: string;
   destination: DeckDestination;
 }
@@ -46,62 +41,39 @@ export interface SkateCampaign {
   alt: string;
 }
 
-/** Left to right, exactly as mounted in the approved reference. */
+export const DECK_MODEL = "/skateboarding/deck.glb";
+
+const deck = (id: string, title: string, alt: string, edge: string, accent: string, destination: DeckDestination): SkateDeck => ({
+  id,
+  title,
+  alt,
+  print: `/skateboarding/prints/${id}.png`,
+  edge,
+  accent,
+  destination,
+});
+
+/** Left to right on the wall. */
 export const skateDecks: SkateDeck[] = [
-  {
-    id: "cobra",
-    title: "Cobra",
-    bbox: { x1: 178, x2: 638, y1: 72, y2: 1789 },
-    src: cobraDeck,
-    alt: "Drop In deck: red cobra and skull graphic",
-    accent: "#e8442e",
-    destination: { kind: "none" },
-  },
-  {
-    id: "damaged-goods",
-    title: "Damaged Goods",
-    bbox: { x1: 172, x2: 653, y1: 47, y2: 1841 },
-    src: damagedGoodsDeck,
-    alt: "Damaged Goods deck: lime lettering around a purple portrait",
-    accent: "#b6e61f",
-    destination: { kind: "project", href: "/projects/damaged-goods" },
-  },
-  {
-    id: "samurai",
-    title: "Samurai",
-    bbox: { x1: 175, x2: 660, y1: 30, y2: 1841 },
-    src: samuraiDeck,
-    alt: "Drop In deck: pink and blue samurai graphic",
-    accent: "#ff3d8f",
-    destination: { kind: "campaign", campaignId: "campaign-samurai" },
-  },
-  {
-    id: "dobermann",
-    title: "Dobermann",
-    bbox: { x1: 171, x2: 661, y1: 19, y2: 1855 },
-    src: dobermannDeck,
-    alt: "Black deck: snarling dobermann wearing a gold chain",
-    accent: "#d7ae57",
-    destination: { kind: "campaign", campaignId: "campaign-dobermann" },
-  },
-  {
-    id: "golden",
-    title: "Saf Golden",
-    bbox: { x1: 179, x2: 656, y1: 30, y2: 1839 },
-    src: goldenDeck,
-    alt: "Gold deck with a black monogram",
-    accent: "#e2c079",
-    destination: { kind: "none" },
-  },
-  {
-    id: "board",
-    title: "Saf Board",
-    bbox: { x1: 150, x2: 626, y1: 35, y2: 1814 },
-    src: boardDeck,
-    alt: "Black deck with gold mace, monogram and boot",
-    accent: "#d7ae57",
-    destination: { kind: "none" },
-  },
+  deck("ronin", "Ronin", "Drop In deck: pink and blue samurai graphic", "#db1464", "#ff3d8f", {
+    kind: "campaign",
+    campaignId: "campaign-samurai",
+  }),
+  deck("cobra", "Cobra", "Drop In deck: red cobra and skull graphic", "#cf2314", "#e8442e", { kind: "none" }),
+  deck("corruption", "Corruption", "Drop In deck: pink figure before a teal Statue of Liberty", "#0e9ca5", "#19b8c2", {
+    kind: "none",
+  }),
+  deck("damaged-goods", "Damaged Goods", "Damaged Goods deck: lime lettering around a purple portrait", "#a9d114", "#b6e61f", {
+    kind: "project",
+    href: "/projects/damaged-goods",
+  }),
+  deck("dobermann", "Dobermann", "Black deck: snarling dobermann wearing a gold chain", "#111111", "#d7ae57", {
+    kind: "campaign",
+    campaignId: "campaign-dobermann",
+  }),
+  deck("error-404", "Error 404", "Drop In deck: a masked face with an error pop-up, blue top", "#165298", "#ff5a3c", {
+    kind: "none",
+  }),
 ];
 
 /** Top to bottom, in the approved order. */

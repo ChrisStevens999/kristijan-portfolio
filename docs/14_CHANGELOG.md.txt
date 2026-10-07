@@ -341,6 +341,27 @@ The repo is what Vercel clones for every deployment; a third of it was reference
 
 ---
 
+# 2026-10-07
+
+## Phase 3 — Skateboard Designs in 3D
+
+### Changes
+
+- Skateboard Designs: the six decks are now 3D models on the wall — Ronin, Cobra, Corruption, Damaged Goods, Dobermann and Error 404, from the supplied deck GLBs. They share one deck mesh with a wood-grain normal map, so one compressed model ships (0.24 MB) and each deck is its original 2048x4096 print PNG on it, untouched, with its edge in the colour its GLB authored (scripts/build-skate-deck-assets.mjs). One canvas the size of the stage draws them, placed in the wall's fractions so they hang across both rails exactly where the hit areas and labels are. Hover lifts a deck off the wall towards the camera and tilts it after the pointer in real depth; its lamp still comes on underneath. Ronin opens the samurai campaign photograph, Dobermann its own, Damaged Goods its project.
+- Skateboard Designs: the wall is the newly supplied plate (lit concrete, two steel rails) used as is; the old mock-up plate and the script that cleaned it are gone, as are the six 2D deck cutouts.
+- Site icon: the Chris Stevens roundel as the tab icon, Apple touch icon and favicon.ico (scripts/build-brand-icons.mjs).
+- Cursor: the red pointing hand replaces the system pointer on pointer devices, hotspot on the fingertip, 1x and 2x (scripts/build-cursor.mjs).
+
+### Reason
+
+The decks are objects; showing the authored models lets the grain, the edge and the print catch the wall's light as they turn, and the same shared-mesh approach as the apparel keeps the page light.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

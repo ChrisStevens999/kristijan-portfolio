@@ -1,44 +1,49 @@
 "use client";
 
-import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { motionValue, useInView, useReducedMotion, type MotionValue } from "framer-motion";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
-import { optimizedImageUrl } from "@/lib/optimizedImageUrl";
-
-import wallPlate from "../../../../assets/projects/skateboarding/wall-plate.jpg";
+import wall from "../../../../assets/projects/skateboarding/wall-rails.webp";
 import { skateCampaigns, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
 
-/**
- * Geometry. The wall is the approved mock-up's own wall — a clean plate
- * (assets/.../wall-plate.jpg, built by scripts/build-skate-wall-plate.js:
- * the real concrete, ceiling spotlights and steel rails with the baked-in
- * decks, heading and labels removed). Everything live is positioned in that
- * plate's coordinates (3840 x 2036) so the decks hang on its rails exactly
- * where the mock-up's did: same height, centres on one equal pitch fitted
- * to the mock-up's six (its own spacing wandered by ~50px).
- */
-const PLATE_W = 3840;
-const PLATE_H = 2036;
-const PLATE_ASPECT = PLATE_W / PLATE_H;
-const DECK_TOP = 428 / PLATE_H; // × stage height
-const DECK_HEIGHT = 1393 / PLATE_H; // × stage height
-const DECK_CENTRE_0 = 664 / PLATE_W; // × stage width (keep in step with the plate script's screws)
-const DECK_PITCH = 513.4 / PLATE_W; // × stage width
-const CANVAS_W = 834;
-const CANVAS_H = 1871;
-/** Every deck is normalised to the same height from its measured bbox; real decks are ~0.268 wide per unit of height. */
-const HIT_WIDTH = 0.268; // × --deck-h
+import type { DeckLayout, DeckSlot } from "./DeckScene";
 
-/** Hover feel — restrained, per the brief (6–10px, 1.025–1.04, ≤3°). */
-const LIFT_PX = 8;
-const HOVER_SCALE = 1.032;
-const MAX_TILT_DEG = 3;
-/** Settles in ≈300ms with no visible bounce (slightly under critical damping). */
-const LIFT_SPRING = { type: "spring", stiffness: 260, damping: 27, mass: 1 } as const;
-/** Pointer tracking: soft and damped, never twitchy. */
-const TILT_SPRING = { stiffness: 140, damping: 22, mass: 0.7 } as const;
+const DeckScene = dynamic(() => import("./DeckScene").then((m) => m.DeckScene), { ssr: false });
+
+/**
+ * Geometry. The wall is the supplied plate (assets/.../wall-rails.webp,
+ * 2000 x 1116: lit concrete, ceiling spotlights, two steel rails). The decks
+ * hang across both rails, six on one equal pitch centred on the rails, with
+ * the top rail a fifth of the way down each deck and the bottom rail about
+ * three quarters — the way the earlier mock-up mounted them. Everything live
+ * (the 3D decks, their lamps, hit areas and labels) is placed in the plate's
+ * fractions, so it all sits on the rails at every size.
+ */
+const PLATE_W = 2000;
+const PLATE_H = 1116;
+const PLATE_ASPECT = PLATE_W / PLATE_H;
+const RAILS = [400, 792]; // rail centres, plate px
+const DECK_HEIGHT_PX = (RAILS[1] - RAILS[0]) / 0.54;
+const DECK_TOP = (RAILS[0] - 0.19 * DECK_HEIGHT_PX) / PLATE_H; // × stage height
+const DECK_HEIGHT = DECK_HEIGHT_PX / PLATE_H; // × stage height
+const DECK_PITCH = 280 / PLATE_W; // × stage width
+const DECK_CENTRE_0 = (997.5 - 2.5 * 280) / PLATE_W; // × stage width (the six centred on the rails)
+/** The deck model is 0.214 wide per 0.797 of length. */
+const HIT_WIDTH = 0.2686; // × --deck-h
+
+const LAYOUT: DeckLayout = {
+  aspect: PLATE_ASPECT,
+  centre0: DECK_CENTRE_0,
+  pitch: DECK_PITCH,
+  top: DECK_TOP,
+  height: DECK_HEIGHT,
+};
+
+/** Tilt after the pointer, degrees (the scene springs it). */
+const MAX_TILT_DEG = 6;
 
 function scrollToCampaign(id: string, reduceMotion: boolean) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -105,88 +110,27 @@ function DeckShell({
   );
 }
 
-function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
-  const reduceMotion = !!useReducedMotion();
-  const deckAreaRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(false);
-
-  const tiltX = useMotionValue(0);
-  const tiltY = useMotionValue(0);
-  const rotateX = useSpring(tiltX, TILT_SPRING);
-  const rotateY = useSpring(tiltY, TILT_SPRING);
-
-  const rest = () => {
-    setActive(false);
-    tiltX.set(0);
-    tiltY.set(0);
+/** A deck's column, in plate fractions: where its lamp, hit area and label go. */
+function columnStyle(index: number): CSSProperties {
+  return {
+    left: `${(DECK_CENTRE_0 + DECK_PITCH * index) * 100}%`,
+    top: `${DECK_TOP * 100}%`,
+    width: `${DECK_PITCH * 100}%`,
+    transform: "translateX(-50%)",
   };
+}
 
-  const handlers = {
-    // Touch never "hovers": on phones the labels are always visible and a
-    // tap just follows the link, so nothing sticks in a lifted state.
-    onPointerEnter: (e: PointerEvent<HTMLElement>) => {
-      if (e.pointerType !== "touch") setActive(true);
-    },
-    onPointerMove: (e: PointerEvent<HTMLElement>) => {
-      if (reduceMotion || e.pointerType === "touch") return;
-      const rect = deckAreaRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      // Measured against the STABLE deck column (not the moving image), so
-      // the tilt can't feed back into itself.
-      const px = Math.max(-0.5, Math.min(0.5, (e.clientX - rect.left) / rect.width - 0.5));
-      const py = Math.max(-0.5, Math.min(0.5, (e.clientY - rect.top) / rect.height - 0.5));
-      tiltY.set(px * 2 * MAX_TILT_DEG);
-      tiltX.set(-py * 2 * MAX_TILT_DEG);
-    },
-    onPointerLeave: rest,
-    onFocus: (e: React.FocusEvent<HTMLElement>) => {
-      if (e.currentTarget.matches(":focus-visible")) setActive(true);
-    },
-    onBlur: rest,
-  };
-
-  const number = String(index + 1).padStart(2, "0");
-  const action =
-    deck.destination.kind === "project"
-      ? "Explore project ↗"
-      : deck.destination.kind === "campaign"
-        ? "See campaign ↓"
-        : null;
-  const lifted = active && !reduceMotion;
-  const lit = active;
-
-  // Map the deck's measured bbox onto the column box: scale by height,
-  // pin the bbox top to the box top, centre the bbox horizontally.
-  const { x1, x2, y1, y2 } = deck.bbox;
-  const bboxH = y2 - y1 + 1;
-  const cutoutStyle: CSSProperties = {
-    height: `${(CANVAS_H / bboxH) * 100}%`,
-    width: "auto",
-    top: `${(-y1 / bboxH) * 100}%`,
-    left: "50%",
-    transform: `translateX(${(-((x1 + x2 + 1) / 2) / CANVAS_W) * 100}%)`,
-  };
-  const maskUrl = optimizedImageUrl(deck.src.src, 640);
-
+/**
+ * SPOTLIGHT — the wall carries the dim resting ceiling lights; this is the
+ * deck's own lamp switching ON with hover/focus (always on for phones,
+ * which have no hover): the beam from the ceiling and the pool it throws
+ * on the wall. Drawn UNDER the 3D decks.
+ */
+function Lamp({ index, lit }: { index: number; lit: boolean }) {
   return (
-    <li
-      className="absolute flex snap-center justify-center"
-      style={{
-        left: `${(DECK_CENTRE_0 + DECK_PITCH * index) * 100}%`,
-        top: `${DECK_TOP * 100}%`,
-        width: `${DECK_PITCH * 100}%`,
-        transform: "translateX(-50%)",
-        zIndex: active ? 20 : 1,
-      }}
-    >
-      {/* SPOTLIGHT — the wall plate carries the dim resting ceiling lights;
-          this is the deck's own lamp switching ON with hover/focus (always
-          on for phones, which have no hover). Three parts: the beam from
-          the ceiling, the pool it throws on the wall, and (inside the deck,
-          below) a sheen masked to the deck's own shape. */}
+    <li aria-hidden className="absolute flex justify-center" style={columnStyle(index)}>
       <span
-        aria-hidden
-        className={`pointer-events-none absolute left-1/2 -z-10 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
+        className={`pointer-events-none absolute left-1/2 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
         style={{
           width: "calc(var(--deck-h) * 0.66)",
           // from the very top of the wall (the ceiling) down onto the deck
@@ -208,8 +152,7 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
         />
       </span>
       <span
-        aria-hidden
-        className={`pointer-events-none absolute left-1/2 -z-10 w-[240%] -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
+        className={`pointer-events-none absolute left-1/2 w-[240%] -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
         style={{
           top: 0,
           height: "calc(var(--deck-h) * 0.95)",
@@ -217,6 +160,72 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
             "radial-gradient(ellipse 50% 40% at 50% 40%, rgba(205,222,255,0.34), rgba(205,222,255,0.1) 50%, rgba(205,222,255,0) 100%)",
         }}
       />
+    </li>
+  );
+}
+
+/**
+ * A deck's hit area and label, OVER the 3D decks. The DOM owns the pointer:
+ * hover/focus and the pointer's position in the column go to the scene
+ * (which lifts and tilts the deck) and switch the lamp on.
+ */
+function Deck({
+  deck,
+  index,
+  active,
+  onActive,
+  tiltX,
+  tiltY,
+}: {
+  deck: SkateDeck;
+  index: number;
+  active: boolean;
+  onActive: (on: boolean) => void;
+  tiltX: MotionValue<number>;
+  tiltY: MotionValue<number>;
+}) {
+  const reduceMotion = !!useReducedMotion();
+  const deckAreaRef = useRef<HTMLDivElement>(null);
+
+  const rest = () => {
+    onActive(false);
+    tiltX.set(0);
+    tiltY.set(0);
+  };
+
+  const handlers = {
+    // Touch never "hovers": on phones the labels are always visible and a
+    // tap just follows the link, so nothing sticks in a lifted state.
+    onPointerEnter: (e: PointerEvent<HTMLElement>) => {
+      if (e.pointerType !== "touch") onActive(true);
+    },
+    onPointerMove: (e: PointerEvent<HTMLElement>) => {
+      if (reduceMotion || e.pointerType === "touch") return;
+      const rect = deckAreaRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      // the side of the deck under the pointer comes towards the viewer
+      const px = Math.max(-0.5, Math.min(0.5, (e.clientX - rect.left) / rect.width - 0.5));
+      const py = Math.max(-0.5, Math.min(0.5, (e.clientY - rect.top) / rect.height - 0.5));
+      tiltY.set(px * 2 * MAX_TILT_DEG);
+      tiltX.set(-py * 2 * MAX_TILT_DEG);
+    },
+    onPointerLeave: rest,
+    onFocus: (e: React.FocusEvent<HTMLElement>) => {
+      if (e.currentTarget.matches(":focus-visible")) onActive(true);
+    },
+    onBlur: rest,
+  };
+
+  const number = String(index + 1).padStart(2, "0");
+  const action =
+    deck.destination.kind === "project"
+      ? "Explore project ↗"
+      : deck.destination.kind === "campaign"
+        ? "See campaign ↓"
+        : null;
+
+  return (
+    <li className="absolute flex snap-center justify-center" style={{ ...columnStyle(index), zIndex: active ? 20 : 1 }}>
       <DeckShell
         deck={deck}
         reduceMotion={reduceMotion}
@@ -224,55 +233,8 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
         style={{ width: `calc(var(--deck-h) * ${HIT_WIDTH})` }}
         handlers={handlers}
       >
-        {/* Stable hit column; everything that moves lives INSIDE it. */}
-        <div ref={deckAreaRef} className="relative" style={{ height: "var(--deck-h)" }}>
-          {/* Contact shadow: grows and drops as the deck leaves the wall. */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-[4%] top-[2%] bottom-[1%] rounded-[999px] bg-black blur-xl"
-            initial={false}
-            animate={{ opacity: lifted ? 0.7 : 0.45, y: lifted ? 22 : 8, scaleX: lifted ? 1.12 : 1 }}
-            transition={LIFT_SPRING}
-          />
-          {/* The moving layer IS the deck's box (column wide, --deck-h tall);
-              the cutout inside is scaled and offset from its measured bbox so
-              the deck itself fills that box exactly — identical size and
-              spacing for all six, whatever padding each PNG was exported with. */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 will-change-transform"
-            style={{ rotateX, rotateY, transformPerspective: 900 }}
-            initial={false}
-            animate={{ y: lifted ? -LIFT_PX : 0, scale: lifted ? HOVER_SCALE : 1 }}
-            transition={LIFT_SPRING}
-          >
-            <Image
-              src={deck.src}
-              alt=""
-              // the cutout canvas is ~1.8x the deck column, and tall windows widen the stage
-              sizes="(max-width: 767px) 80vw, 28vw"
-              loading="eager"
-              quality={95}
-              draggable={false}
-              className="absolute max-w-none select-none"
-              style={cutoutStyle}
-            />
-            <span
-              aria-hidden
-              className={`absolute transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
-              style={{
-                ...cutoutStyle,
-                aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-                background:
-                  "radial-gradient(ellipse 60% 34% at 50% 4%, rgba(255,255,255,0.5), rgba(255,255,255,0.14) 55%, rgba(255,255,255,0) 100%)",
-                mixBlendMode: "screen",
-                maskImage: `url("${maskUrl}")`,
-                WebkitMaskImage: `url("${maskUrl}")`,
-                maskSize: "100% 100%",
-                WebkitMaskSize: "100% 100%",
-              }}
-            />
-          </motion.div>
-        </div>
+        {/* the hit column: the deck itself is drawn by the scene underneath */}
+        <div ref={deckAreaRef} className="relative" style={{ height: "var(--deck-h)" }} />
 
         {/* Label: fixed-height box, layers cross-fade — nothing reflows.
             Number at rest, the deck's name on hover/focus (always the name
@@ -300,13 +262,12 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
 }
 
 /**
- * The skate-shop wall: the mock-up's real wall plate, with everything that
- * was baked into it re-drawn live on top — heading, six independent deck
- * cutouts (own shadows, own spotlights), labels. No deck exists in the
- * background, so nothing static shows behind a moving one.
+ * The skate-shop wall: the supplied wall plate, the six decks in 3D on its
+ * rails (one canvas, DeckScene), each deck's lamp under them and its hit
+ * area and label over them.
  *
- * The stage keeps the plate's aspect ratio and the decks are placed in
- * plate percentages, so they sit on the rails at every size.
+ * The stage keeps the plate's aspect ratio and everything is placed in
+ * plate percentages, so the decks sit on the rails at every size.
  *  - md and up: as wide as the viewport, or a little wider on tall windows
  *    (up to 116vw — the plate has ~7% of bare wall either side of the rails
  *    to give) so the wall fills the height; centred, sides cropped.
@@ -316,9 +277,21 @@ function Deck({ deck, index }: { deck: SkateDeck; index: number }) {
  */
 export function DeckWall() {
   const reduceMotion = !!useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { margin: "20% 0px" });
+  const [active, setActive] = useState<number | null>(null);
+  // one pair of tilt values per deck: written by the DOM, read by the scene
+  const tilts = useMemo(() => skateDecks.map(() => ({ x: motionValue(0), y: motionValue(0) })), []);
+  const slots: DeckSlot[] = skateDecks.map((deck, i) => ({
+    deck,
+    active: active === i,
+    tiltX: tilts[i].x,
+    tiltY: tilts[i].y,
+  }));
 
   return (
     <section
+      ref={sectionRef}
       aria-labelledby="skateboard-designs-heading"
       className="relative isolate flex min-h-[100svh] w-full flex-col overflow-clip bg-[#04060a] [--stage-h:74svh] [--stage-w:calc(var(--stage-h)*var(--plate-aspect))] md:[--stage-h:calc(var(--stage-w)/var(--plate-aspect))] md:[--stage-w:clamp(100vw,calc((100svh-44px)*var(--plate-aspect)),116vw)]"
       style={
@@ -338,13 +311,13 @@ export function DeckWall() {
           style={{ width: "var(--stage-w)", height: "var(--stage-h)" }}
         >
           <Image
-            src={wallPlate}
+            src={wall}
             alt=""
             fill
             priority
             placeholder="blur"
             sizes="(max-width: 767px) 140svh, 116vw"
-            quality={95}
+            quality={90}
             draggable={false}
             className="object-cover select-none"
           />
@@ -354,9 +327,25 @@ export function DeckWall() {
             className="pointer-events-none absolute inset-x-0 bottom-0 h-[10%]"
             style={{ background: "linear-gradient(180deg, rgba(4,6,10,0), #04060a)" }}
           />
+          <ul aria-hidden className="absolute inset-0">
+            {skateDecks.map((deck, i) => (
+              <Lamp key={deck.id} index={i} lit={active === i} />
+            ))}
+          </ul>
+          <div className="absolute inset-0">
+            <DeckScene slots={slots} layout={LAYOUT} reducedMotion={reduceMotion} running={inView} />
+          </div>
           <ul className="absolute inset-0">
-            {skateDecks.map((deck, index) => (
-              <Deck key={deck.id} deck={deck} index={index} />
+            {skateDecks.map((deck, i) => (
+              <Deck
+                key={deck.id}
+                deck={deck}
+                index={i}
+                active={active === i}
+                onActive={(on) => setActive((cur) => (on ? i : cur === i ? null : cur))}
+                tiltX={tilts[i].x}
+                tiltY={tilts[i].y}
+              />
             ))}
           </ul>
         </div>
