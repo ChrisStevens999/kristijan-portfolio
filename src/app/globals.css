@@ -80,17 +80,16 @@ body {
 }
 
 /*
- * Custom cursor (public/cursor): the red arrow with an off-white edge for
- * the pointer, a ring with a red dot over anything clickable. The system
- * cursors stay as the fallback, and the images are only loaded where there
- * is a pointer at all — a phone never sees them. Elements that set their
- * own cursor (the gallery's zoom-in) keep it.
+ * Custom cursor: the red pointing hand (public/cursor, built from
+ * assets/brand/cursor-hand.webp by scripts/build-cursor.mjs), hotspot on the
+ * fingertip, sharp on 2x screens. The system cursors stay as the fallback,
+ * and the image is only used where there is a pointer at all — a phone
+ * never sees it. Elements that set their own cursor (the gallery's zoom-in)
+ * keep it.
  */
 @media (hover: hover) and (pointer: fine) {
   html,
-  body {
-    cursor: url("/cursor/arrow.svg") 4 3, auto;
-  }
+  body,
   a,
   button,
   [role="button"],
@@ -100,6 +99,7 @@ body {
   input[type="submit"],
   input[type="checkbox"],
   input[type="radio"] {
-    cursor: url("/cursor/pointer.svg") 16 16, pointer;
+    cursor: url("/cursor/hand.png") 14 1, auto;
+    cursor: image-set(url("/cursor/hand.png") 1x, url("/cursor/hand@2x.png") 2x) 14 1, auto;
   }
 }
