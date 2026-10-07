@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -21,6 +22,37 @@ const CENTER_DROP = 0.012 * VIEW_HEIGHT; // garment centre sits 1.2% below stage
 
 const AUTO_ROTATE_SPEED = 0.35; // rad/s while idle
 const SWAP_S = 0.7; // full spin when switching garments
+
+/**
+ * Fabric look. The garments come in as glTF PBR (black cotton, roughness
+ * 0.92, a knit normal map) and under plain lights black cloth renders as a
+ * silhouette. What makes it read as fleece: soft environment light along the
+ * folds, a sheen lobe (the way fibres catch light at grazing angles) and the
+ * knit texture pushed a little so it survives the viewing distance.
+ */
+const ENV_INTENSITY = 0.3;
+const CLOTH = { sheen: 0.28, sheenRoughness: 0.72, sheenColor: new THREE.Color("#c4c4c4"), normalBoost: 2, envMapIntensity: 0.7 };
+
+/** The shared tee ships as a plain standard material (no sheen). The same
+ *  cloth as a physical material, copying only what it actually uses. */
+function toPhysical(m: THREE.MeshStandardMaterial) {
+  const p = new THREE.MeshPhysicalMaterial({
+    color: m.color,
+    map: m.map,
+    normalMap: m.normalMap,
+    normalScale: m.normalScale,
+    roughness: m.roughness,
+    roughnessMap: m.roughnessMap,
+    metalness: m.metalness,
+    metalnessMap: m.metalnessMap,
+    side: m.side,
+    transparent: m.transparent,
+    opacity: m.opacity,
+    alphaTest: m.alphaTest,
+  });
+  p.name = m.name;
+  return p;
+}
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -106,9 +138,24 @@ function loadGarment(view: GarmentView, anisotropy: number) {
           if (!mesh.isMesh) return;
           const source = mesh.material as THREE.MeshStandardMaterial;
           if (!clones.has(source)) {
-            const mat = source.clone();
-            if (print && printed.has(source)) mat.map = print;
+            const cloth = printed.has(source);
+            // the shared cloth models (tee, hoodie) get the fleece sheen; a
+            // garment shown as authored keeps its own material type
+            const mat =
+              cloth && print && !(source instanceof THREE.MeshPhysicalMaterial) ? toPhysical(source) : source.clone();
+            if (print && cloth) mat.map = print;
             if (mat.map) mat.map.anisotropy = anisotropy;
+            if (cloth) {
+              // the knit normal map, at the authored strength × a boost so
+              // it survives the viewing distance
+              if (mat.normalMap) mat.normalScale.multiplyScalar(CLOTH.normalBoost);
+              mat.envMapIntensity = CLOTH.envMapIntensity;
+              if (mat instanceof THREE.MeshPhysicalMaterial) {
+                mat.sheen = CLOTH.sheen;
+                mat.sheenRoughness = CLOTH.sheenRoughness;
+                mat.sheenColor.copy(CLOTH.sheenColor);
+              }
+            }
             clones.set(source, mat);
           }
           mesh.material = clones.get(source)!;
@@ -191,6 +238,31 @@ function Garment({ view, reducedMotion }: { view: GarmentView; reducedMotion: bo
   );
 }
 
+/** A neutral studio environment (procedural, nothing to download) so the
+ *  fabric gets soft reflected light along its folds, not just the three
+ *  lamps. The backdrop plate stays a plain image: the environment lights the
+ *  garment only. */
+function Studio() {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  useEffect(() => lightWithRoom(scene, gl), [gl, scene]);
+  return null;
+}
+
+/** three.js objects are mutable by design; kept out of the component (see
+ *  `show`). Returns the cleanup. */
+function lightWithRoom(scene: THREE.Scene, gl: THREE.WebGLRenderer) {
+  const pmrem = new THREE.PMREMGenerator(gl);
+  const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = env;
+  scene.environmentIntensity = ENV_INTENSITY;
+  pmrem.dispose();
+  return () => {
+    scene.environment = null;
+    env.dispose();
+  };
+}
+
 /** On narrow stages (phones) the height-based framing would push the
  *  sleeves out of frame — pull the camera back until the garment (≈0.9 of
  *  its height wide) fits in 80% of the stage width. */
@@ -214,12 +286,15 @@ export function TeeScene({ view, reducedMotion }: { view: GarmentView; reducedMo
       dpr={[1, 2]}
       style={{ background: "transparent" }}
     >
-      {/* Overhead spot, like the light pool on the reference wall, plus a
-          soft fill and two rims so the fabric keeps its folds. */}
-      <hemisphereLight args={["#ffffff", "#202020", 0.9]} />
-      <directionalLight position={[0.5, 3, 3]} intensity={2.2} />
-      <directionalLight position={[-3, 1, -2]} intensity={1.1} />
-      <directionalLight position={[3, 0.5, -1]} intensity={0.8} />
+      {/* Overhead key, like the light pool on the reference wall, a soft fill
+          and two rims from behind so the edges of the folds separate from the
+          dark wall. The Studio environment does the rest. */}
+      <hemisphereLight args={["#ffffff", "#202020", 0.35]} />
+      <directionalLight position={[0.6, 3, 2.5]} intensity={2.0} />
+      <directionalLight position={[-3, 1, -2]} intensity={0.5} />
+      <directionalLight position={[-2.5, 2.5, -3]} intensity={1.4} />
+      <directionalLight position={[3, 0.5, -2]} intensity={1.1} />
+      <Studio />
       <CameraFit />
       <Garment view={view} reducedMotion={reducedMotion} />
       <OrbitControls
