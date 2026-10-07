@@ -20,7 +20,7 @@ const sharp = createRequire(
 
 const SRC = path.join(root, "assets/about/cards");
 const OUT = path.join(root, "public/about/cards");
-const WIDTH = 1080;
+const WIDTH = 900; // the cards show at ~48% of the screen height: 900 wide covers a 4K screen at 1x and a laptop at 2x
 
 fs.mkdirSync(OUT, { recursive: true });
 const files = fs

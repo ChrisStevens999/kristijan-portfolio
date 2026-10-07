@@ -216,7 +216,7 @@ The homepage shows the strongest images; the Apparel chapter opens directly into
 
 ## Decision
 
-About returns to the homepage as a wordless stop between Selected Works and Explore by Category: a deck of ten black-and-white photographs plays the supplied reference clip’s motion as the visitor scrolls through a four-screen section, one snap stop per screen, the last holding on the video and the line (a single card, the deck swings open into a tilted cluster, holds, gathers and swings back to edge-on) and what swings back out is the portrait video, which grows and loops. One line over the video’s corner — “Click to find out about me”, Inter Bold — opens the About page.
+About returns to the homepage as a wordless stop between Selected Works and Explore by Category: a deck of ten black-and-white photographs swings open from one card into a floating cluster on arrival and, as the visitor scrolls through a five-screen section (one snap stop per screen, the last two holding on the video and the line), gathers and swings through edge-on and what swings back out is the portrait video, which grows and loops. One line over the video’s corner — “Click to find out about me”, Inter Bold — opens the About page.
 
 ### Reason
 
