@@ -9,7 +9,7 @@ import { useCallback, useState } from "react";
 const StatueScene = dynamic(() => import("./StatueScene").then((m) => m.StatueScene), { ssr: false });
 
 /**
- * Lab demo: one 3D object on pure black. It opens in the dark, close on
+ * Cyclops Sculpture (Creative Exploration): one 3D object on pure black. It opens in the dark, close on
  * the visor as it flickers on in red; then the lights come up and the
  * camera pulls back to the whole statue. The pointer is the light: the
  * statue is lit from wherever the pointer is and turns to follow it. With
@@ -45,7 +45,7 @@ export function StatueShowcase() {
       </AnimatePresence>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-5 pt-24 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/45 sm:px-8">
-        <span>Lab / 3D experiment</span>
+        <span>Creative exploration / 3D sculpture</span>
         <Link href="/" className="pointer-events-auto text-right leading-tight transition-colors hover:text-off-white">
           Chris
           <br />

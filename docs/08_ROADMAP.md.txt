@@ -89,4 +89,4 @@ Ideas belong here before becoming features.
 
 Only implement ideas after evaluating whether they improve the overall experience.
 
-- Lab: 3D statue showcase at /lab/statue (built 2026-10-05, unlinked and noindex). A candidate opening for a future page; not part of the site until placed.
+- Cyclops Sculpture: the 3D statue showcase (built 2026-10-05 as /lab/statue) is listed under Creative Exploration as /projects/cyclops-sculpture since 2026-10-09; the old URL redirects. A proper home may still come.

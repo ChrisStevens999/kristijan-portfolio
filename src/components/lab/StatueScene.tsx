@@ -9,6 +9,9 @@ import * as THREE from "three";
 
 export const STATUE_MODEL = "/lab/statue.glb";
 
+/** `?still` in the URL: keep the drawing buffer so a still can be captured (dev convenience) */
+const wantsStill = () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("still");
+
 const FOV = 30;
 /** the statue fills this much of the frame's height */
 const FILL = 0.74;
@@ -454,7 +457,8 @@ export function StatueScene({ reducedMotion, onReady, onRevealed }: SceneProps) 
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: FOV, near: 0.1, far: 50 }}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
+      // ?still keeps the drawing buffer so a cover image can be read off the canvas
+      gl={{ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: wantsStill() }}
       dpr={[1, 2]}
     >
       <color attach="background" args={["#000000"]} />

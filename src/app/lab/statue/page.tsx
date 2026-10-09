@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 
-import { StatueShowcase } from "@/components/lab/StatueShowcase";
-
-// Experiment page — reachable by URL only, not linked from the site's navigation.
-export const metadata: Metadata = { title: "Lab — 3D statue", robots: { index: false } };
-
+// The statue showcase started here as an unlinked lab experiment; it now
+// lives in Creative Exploration. The old URL keeps working.
 export default function StatueLabPage() {
-  return <StatueShowcase />;
+  permanentRedirect("/projects/cyclops-sculpture");
 }

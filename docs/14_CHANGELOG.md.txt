@@ -363,6 +363,24 @@ The decks are objects; showing the authored models lets the grain, the edge and 
 
 ---
 
+# 2026-10-09
+
+## Phase 3 — Cyclops Sculpture in Creative Exploration
+
+### Changes
+
+- The 3D statue showcase leaves the lab: it is the first Creative Exploration project, "Cyclops Sculpture", at /projects/cyclops-sculpture (the old /lab/statue URL redirects there). The category listing shows a still of the showcase itself, captured off the page (?still keeps the canvas readable; ?t=<s> jumps the opening).
+
+### Reason
+
+The user asked for the model to live in Creative Exploration for now.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

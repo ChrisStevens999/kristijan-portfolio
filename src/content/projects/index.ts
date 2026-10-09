@@ -12,6 +12,7 @@ import tagDesignsCover from "../../../assets/projects/tag designs/hero/Venom.png
 import tagDesignsThumbnail from "../../../assets/sub categories/DSC03342.jpg";
 import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/Miami Vice Tiger C-Drip Sticker-Front.png";
 import stickerArchiveThumbnail from "../../../assets/sub categories/Stickers Thumbnail.png";
+import cyclopsSculptureCover from "../../../assets/lab/statue-cover.jpg";
 
 /**
  * One entry per project. challenge/process/outcome are left empty: no
@@ -216,5 +217,19 @@ export const projects: Project[] = [
     outcome: "",
     featured: false,
     order: 10,
+  },
+  {
+    slug: "cyclops-sculpture",
+    title: "Cyclops Sculpture",
+    category: "creative-exploration",
+    summary: "An interactive 3D sculpture in the dark: the pointer is the light.",
+    // a still of the showcase itself (captured from the page with ?still)
+    cover: { src: cyclopsSculptureCover, alt: "A silver classical statue with a glowing red visor, lit from one side in the dark" },
+    gallery: [],
+    challenge: "",
+    process: "",
+    outcome: "",
+    featured: false,
+    order: 11,
   },
 ];

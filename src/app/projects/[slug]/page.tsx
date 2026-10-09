@@ -7,6 +7,7 @@ import { GraphicTees } from "@/components/case-studies/graphic-tees/GraphicTees"
 import { SkateboardDesigns } from "@/components/case-studies/skateboard-designs/SkateboardDesigns";
 import { LxixCaseStudy } from "@/components/case-studies/LxixCaseStudy";
 import { StickerPoleDemo } from "@/components/case-studies/sticker-pole-demo/StickerPoleDemo";
+import { StatueShowcase } from "@/components/lab/StatueShowcase";
 import { TagDesignsCaseStudy } from "@/components/case-studies/TagDesignsCaseStudy";
 import {
   getAllProjects,
@@ -57,6 +58,10 @@ export default async function ProjectPage({
         <GraphicTees category={getCategoryBySlug(project.category)} />
       </ApparelIntro>
     );
+  }
+
+  if (slug === "cyclops-sculpture") {
+    return <StatueShowcase />;
   }
 
   if (slug === "sticker-archive") {
