@@ -27,13 +27,18 @@
  *
  *  - public/apparel/hoodies/flat/<slug>.webp — the preview PNG, trimmed and
  *    centred in the same 1200² square the other tabs use, for the strip.
+ *  - public/apparel/hoodies/gallery/<slug>-<n>.webp — the "in the real
+ *    world" mockup photos ("<Name> 1.png", "<Name>-2.png"… in the folder)
+ *    for the gallery under the display, web-sized as the other two
+ *    galleries (`--gallery-only` rebuilds just these).
  *
- *   node scripts/build-hoodie-assets.mjs            # everything
- *   node scripts/build-hoodie-assets.mjs deviant    # just the named one(s)
+ *   node scripts/build-hoodie-assets.mjs                 # everything
+ *   node scripts/build-hoodie-assets.mjs deviant         # just the named one(s)
+ *   node scripts/build-hoodie-assets.mjs --gallery-only  # just the photos
  *
- * Adding a hoodie: drop its GLB + preview PNG in the folder, add it to
- * HOODIES below, run this script, then add it to
- * src/content/projects/apparel-display.ts.
+ * Adding a hoodie: drop its GLB + preview PNG (and its photos) in the
+ * folder, add it to HOODIES (and GALLERY) below, run this script, then add
+ * it to src/content/projects/apparel-display.ts.
  */
 import fs from "node:fs";
 import { createRequire } from "node:module";
@@ -76,6 +81,23 @@ const HOODIES = {
 };
 /** the mesh + normal map are identical in every GLB; this one supplies them */
 const SHARED_MESH_FROM = "bushido";
+
+/** slug -> its mockup photos, in order (sources are 3392x5056, 1–25 MB each).
+ *  Concrete Memories has one so far. */
+const GALLERY = {
+  bushido: ["Bushido-1.png", "Bushido-2.png"],
+  deviant: ["Devian Hoodie-1.png", "Devian Hoodie-2.png"],
+  "error-404": ["Error 404 hoodie-1.png", "Error 404 hoodie-2.png"],
+  "la-leakers": ["La 1.png", "La 2.png"],
+  swimmin: ["Swimmin 1.png", "Swimmin 2.png"],
+  "concrete-memories": ["Skate Hoodie 2.png"],
+  purgatory: ["Purgatory-1.png", "Purgatory-2.png"],
+  "brush-like-camo": ["Brush Like Camo 1.png", "Brush Like Camo 2.png"],
+  operator: ["Opperator hoodie-1.png", "Opperator hoodie-2.png"],
+  vision: ["Vision 1.png", "Vision 2.png"],
+  "hungry-dogs": ["Hungry Dogs Hoodie-1.png", "Hungry Dogs Hoodie-2.png"],
+};
+const GALLERY_WIDTH = 1100; // as the T-shirt and AOP galleries
 
 /** The geometry/normal-map treatment every shipped hoodie model gets. The
  *  base colour is never touched here: it is either stripped (shared mesh) or
@@ -126,10 +148,26 @@ function baseColorOf(doc) {
   return tex;
 }
 
-const only = process.argv.slice(2);
+const galleryOnly = process.argv.includes("--gallery-only");
+const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 for (const slug of only) if (!HOODIES[slug]) throw new Error(`unknown hoodie "${slug}"`);
-if (only.length === 0) fs.rmSync(OUT, { recursive: true, force: true });
-for (const dir of ["prints", "flat", "models"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
+if (only.length === 0 && !galleryOnly) fs.rmSync(OUT, { recursive: true, force: true });
+for (const dir of ["prints", "flat", "models", "gallery"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
+
+// --- gallery photos -----------------------------------------------------------
+for (const [slug, files] of Object.entries(GALLERY)) {
+  if (only.length && !only.includes(slug)) continue;
+  for (const [i, file] of files.entries()) {
+    const out = path.join(OUT, "gallery", `${slug}-${i + 1}.webp`);
+    await sharp(path.join(SRC, file))
+      .flatten({ background: "#000" })
+      .resize({ width: GALLERY_WIDTH })
+      .webp({ quality: 82, effort: 6 })
+      .toFile(out);
+    console.log(`gallery/${slug}-${i + 1}.webp  ${kb(out)}`);
+  }
+}
+if (galleryOnly) process.exit(0);
 
 // --- per hoodie: print (original bytes) or own model, + flat cutout -------------
 for (const [slug, { glb, png, own }] of Object.entries(HOODIES)) {

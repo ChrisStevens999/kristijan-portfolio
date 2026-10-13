@@ -129,6 +129,21 @@ export const hoodies: Garment[] = [
   hoodie("hungry-dogs", "Hungry Dogs"),
 ];
 
+/** "Hoodies in the real world" — the mockup photos in
+ *  public/apparel/hoodies/gallery (built by the same script): two per
+ *  hoodie, one for Concrete Memories so far. All the firsts, then all the
+ *  seconds, so no two of the same hoodie are neighbours. */
+const hoodiePhoto = (slug: string, n: 1 | 2, name: string): RealWorldPhoto => ({
+  src: `/apparel/hoodies/gallery/${slug}-${n}.webp`,
+  alt: `Wearing the ${name} hoodie`,
+  shirt: name,
+});
+const HOODIES_WITH_ONE_PHOTO = new Set(["concrete-memories"]);
+
+export const hoodiePhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
+  hoodies.filter((h) => n === 1 || !HOODIES_WITH_ONE_PHOTO.has(h.slug)).map((h) => hoodiePhoto(h.slug, n, h.name)),
+);
+
 export const apparelCollections: GarmentCollection[] = [
   {
     id: "graphic-tees",
@@ -160,6 +175,7 @@ export const apparelCollections: GarmentCollection[] = [
     model: HOODIE_MODEL,
     // the prints are on the back (a garment can say otherwise)
     faceBack: true,
+    gallery: hoodiePhotos,
     items: hoodies,
   },
 ];

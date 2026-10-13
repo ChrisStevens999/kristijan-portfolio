@@ -406,7 +406,7 @@ The user asked for a logofolio of the brand animations built from the supplied s
 
 ### Changes
 
-- Every project page now ends with ProjectExitNav: Back to Category on the left, Next Project on the right, side by side (stacked on phones). It replaces NextProjectNav's two single-door modes, and the Cyclops Sculpture page, which had no exit, now scrolls to one below its stage.
+- Every project page now ends with ProjectExitNav: Back to Category on the left, Next Project (the next in the same category, wrapping) on the right, side by side (stacked on phones); a project without a sibling in its category gets the back door alone, full width. It replaces NextProjectNav's two single-door modes, and the Cyclops Sculpture page, which had no exit, now scrolls to one below its stage.
 
 ### Reason
 
@@ -424,11 +424,29 @@ The user asked for both doors at the bottom of every project.
 
 ### Changes
 
-- The Apparel Design category tile links straight to /projects/graphic-tees (Category.href) and preloads the animated cover's three layers while on screen (Category.preload, via react-dom preload in CategoryCard), so the intro plays at once. /categories/apparel-design redirects to the project; a bypassed category's "Back to Category" door goes to the homepage's Explore by Category section.
+- The Apparel Design category tile links straight to /projects/graphic-tees (Category.href) and preloads the animated cover's three layers while on screen (Category.preload, via react-dom preload in CategoryCard), so the intro plays at once. /categories/apparel-design redirects to the project; a bypassed category's project ends with one full-width "Back to Categories" door to the homepage's Explore by Category section instead of the two doors.
 
 ### Reason
 
 The user asked for the one-item listing to go and the Apparel animation to start as soon as possible.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-13
+
+## Phase 3 — Hoodies in the real world
+
+### Changes
+
+- The Hoodies tab of the Apparel display gets the same "in the real world" gallery as the T-shirts and Pattern AOPs: the supplied mockup photos, two per hoodie (one for Concrete Memories), built by scripts/build-hoodie-assets.mjs into public/apparel/hoodies/gallery.
+
+### Reason
+
+The photos were supplied.
 
 ### Status
 

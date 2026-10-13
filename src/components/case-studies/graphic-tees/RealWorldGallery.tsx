@@ -15,85 +15,10 @@ import {
   MAX_CARD_WIDTH,
   ROWS_PER_CYCLE,
 } from "./galleryMotion";
+import { Sequences } from "./gallerySequences";
 import { Lightbox, type OpenPhoto } from "./Lightbox";
 
 type Photo = RealWorldPhoto;
-
-const RECENT = 5; // a column never repeats a photo within this many cards
-
-function shuffle<T>(items: T[]): T[] {
-  const a = items.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-/**
- * Endless, random photo sequences per column, generated lazily row by row.
- *
- * The MIDDLE column deals from shuffled decks of the whole set — every photo
- * passes through the centre once per deck before any repeats. The other
- * columns pick at random, avoiding their own recent cards.
- *
- * No card may show the same shirt as the card directly above/below it or
- * beside it on the same row: whichever of two neighbours is generated
- * second checks the first. Only if every option clashes (never, with this
- * set) does it fall back to a clash.
- */
-class Sequences {
-  private rows = new Map<number, Photo[]>(); // column -> photo per row
-  private deck: Photo[] = [];
-
-  constructor(
-    private photos: Photo[],
-    private middle: number,
-  ) {}
-
-  get(col: number, row: number): Photo {
-    let list = this.rows.get(col);
-    if (!list) this.rows.set(col, (list = []));
-    while (list.length <= row) list.push(this.next(col, list.length, list));
-    return list[row];
-  }
-
-  /** shirts already above / beside this slot */
-  private neighbourShirts(col: number, row: number, list: Photo[]) {
-    const shirts = new Set<string>();
-    if (list[row - 1]) shirts.add(list[row - 1].shirt);
-    for (const c of [col - 1, col + 1]) {
-      const n = this.rows.get(c);
-      for (const r of [row - 1, row, row + 1]) {
-        // same row = left/right; the rows either side are only near-neighbours
-        // while the columns' staggered glides are out of step, so avoid them too
-        if (n?.[r]) shirts.add(n[r].shirt);
-      }
-    }
-    return shirts;
-  }
-
-  private next(col: number, row: number, list: Photo[]): Photo {
-    const clash = this.neighbourShirts(col, row, list);
-    if (col === this.middle) {
-      if (this.deck.length === 0) this.deck = shuffle(this.photos);
-      // deal the first card in the deck that fits — every photo still comes
-      // through the middle once per deck, just in a clash-free order
-      const i = Math.max(
-        0,
-        this.deck.findIndex((p) => !clash.has(p.shirt)),
-      );
-      return this.deck.splice(i, 1)[0];
-    }
-    const recent = new Set<Photo>(list.slice(-RECENT));
-    const pick = (pool: Photo[]) =>
-      pool[Math.floor(Math.random() * pool.length)];
-    const ok = this.photos.filter((p) => !clash.has(p.shirt) && !recent.has(p));
-    if (ok.length) return pick(ok);
-    const noClash = this.photos.filter((p) => !clash.has(p.shirt));
-    return pick(noClash.length ? noClash : this.photos);
-  }
-}
 
 type Layout = {
   width: number;
@@ -164,6 +89,7 @@ export function RealWorldGallery({
   const columns = layout ? 2 * layout.side + 1 : 0;
   const middle = layout ? layout.side : 0;
   // fresh random sequences whenever the column count (or the set) changes
+  // — the no-alike-neighbours rule lives in gallerySequences.ts
   const sequences = useMemo(
     () => new Sequences(photos, middle),
     [photos, middle],
