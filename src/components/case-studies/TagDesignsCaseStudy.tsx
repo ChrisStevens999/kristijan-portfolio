@@ -28,6 +28,7 @@ export function TagDesignsCaseStudy({
 }) {
   return (
     <main className="flex flex-col bg-black text-off-white">
+      <h1 className="sr-only">Tag Designs</h1>
       <TagDesignsHero images={heroImages} />
 
       <Image

@@ -82,7 +82,7 @@ function ExitDoor({
   return (
     <Link
       href={href}
-      className="group relative flex h-[45vh] w-full items-center justify-center overflow-hidden sm:h-[60vh]"
+      className="group relative flex h-[45vh] w-full items-center justify-center overflow-hidden focus-visible:outline-2 focus-visible:-outline-offset-8 focus-visible:outline-white focus-visible:outline-solid sm:h-[60vh]"
     >
       <Image
         src={image.src}
@@ -95,9 +95,9 @@ function ExitDoor({
       <div className="absolute inset-0 bg-black/55" />
       <div className="relative px-6 text-center">
         <p className="font-accent text-sm tracking-[0.3em] text-off-white uppercase">{kicker}</p>
-        <h3 className={`font-sans mt-3 text-3xl text-off-white sm:text-5xl${uppercase ? " uppercase" : ""}`}>
+        <h2 className={`font-sans mt-3 text-3xl text-off-white sm:text-5xl${uppercase ? " uppercase" : ""}`}>
           {title}
-        </h3>
+        </h2>
       </div>
     </Link>
   );

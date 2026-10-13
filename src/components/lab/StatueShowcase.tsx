@@ -41,7 +41,7 @@ export function StatueShowcase({ category, nextProject }: { category?: Category;
       <AnimatePresence>
         {!ready && (
           <motion.p
-            className="pointer-events-none absolute inset-0 grid place-items-center font-accent text-[0.65rem] uppercase tracking-[0.3em] text-off-white/50"
+            className="pointer-events-none absolute inset-0 grid place-items-center font-accent text-[0.65rem] uppercase tracking-[0.3em] text-off-white/70"
             initial={{ opacity: 0 }}
             animate={{ opacity: [0.35, 1, 0.35] }}
             exit={{ opacity: 0, transition: { duration: 0.4 } }}
@@ -53,7 +53,7 @@ export function StatueShowcase({ category, nextProject }: { category?: Category;
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-5 pt-24 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/45 sm:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between px-5 pt-24 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/70 sm:px-8">
         <span>Creative exploration / 3D sculpture</span>
         <Link href="/" className="pointer-events-auto text-right leading-tight transition-colors hover:text-off-white">
           Chris
@@ -62,7 +62,7 @@ export function StatueShowcase({ category, nextProject }: { category?: Category;
         </Link>
       </div>
       <p
-        className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/45 transition-opacity duration-700"
+        className="pointer-events-none absolute inset-x-0 bottom-6 text-center font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/70 transition-opacity duration-700"
         // appears once the opening (visor flicker, then the zoom-out) has played
         style={{ opacity: revealed ? 1 : 0 }}
       >

@@ -105,6 +105,9 @@ export function RealWorldGallery({
   // without restarting.)
   const [open, setOpen] = useState<OpenPhoto | null>(null);
   const pausedRef = useRef(false);
+  // keyboard focus inside the gallery also holds it still, so the focused
+  // card isn't carried off screen (and unmounted) under the visitor
+  const focusedRef = useRef(false);
   // gallery time lives outside the loop effect, so a resize (which rebuilds
   // the loop) continues the motion instead of restarting it
   const elapsedRef = useRef(0);
@@ -137,7 +140,7 @@ export function RealWorldGallery({
       // resumes where it left off instead of jumping
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (visible && !reducedMotion && !pausedRef.current)
+      if (visible && !reducedMotion && !pausedRef.current && !focusedRef.current)
         elapsedRef.current += dt;
       const elapsed = elapsedRef.current;
       let changed = first;
@@ -180,6 +183,12 @@ export function RealWorldGallery({
         browser's scroll anchoring pick one and nudge the page */}
       <div
         ref={stageRef}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusedRef.current = false;
+        }}
         className="relative h-full w-full overflow-hidden [overflow-anchor:none]"
       >
         {layout &&

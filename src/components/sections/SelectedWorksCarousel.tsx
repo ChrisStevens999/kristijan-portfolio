@@ -81,6 +81,10 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
   // one step ago, to tell a card that is sliding from one that is wrapping
   const [pos, setPos] = useState({ current: 0, prev: 0 });
   const [visible, setVisible] = useState(false);
+  // held still while the pointer is over it or keyboard focus is inside it,
+  // so a card being read, or the link about to be pressed, doesn't move away
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const n = works.length;
   const { current, prev } = pos;
   const go = (delta: number) => setPos((p) => ({ current: p.current + delta, prev: p.current }));
@@ -115,10 +119,10 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
 
   // autoplay while on screen: hold, move, hold, move…
   useEffect(() => {
-    if (!visible || reduced || n < 2) return;
+    if (!visible || reduced || hovered || focused || n < 2) return;
     const t = setTimeout(() => setPos((p) => ({ current: p.current + 1, prev: p.current })), HOLD_MS + MOVE_S * 1000);
     return () => clearTimeout(t);
-  }, [current, visible, reduced, n]);
+  }, [current, visible, reduced, hovered, focused, n]);
 
   const work = works[((current % n) + n) % n];
   const geo = size ? geometry(size.w, size.h) : null;
@@ -127,9 +131,15 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
     <section
       aria-label="Selected work"
       className="relative flex h-[100svh] snap-start snap-always flex-col overflow-hidden bg-[#000] text-off-white"
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
     >
       {/* top / bottom captions, like the reference's chrome */}
-      <div className="flex shrink-0 items-center justify-between px-4 pt-5 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/45 sm:px-8">
+      <div className="flex shrink-0 items-center justify-between px-4 pt-5 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/70 sm:px-8">
         <span>Curated</span>
         <span>Selected Work</span>
         <span className="tabular-nums">
@@ -183,7 +193,7 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
           })}
       </div>
 
-      <div className="flex shrink-0 items-center justify-between px-4 pb-5 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/45 sm:px-8">
+      <div className="flex shrink-0 items-center justify-between px-4 pb-5 font-accent text-[0.65rem] uppercase tracking-[0.25em] text-off-white/70 sm:px-8">
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
             key={work.slug + "-c"}
@@ -198,7 +208,7 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
             key={work.slug + "-t"}
-            className="text-off-white/80"
+            className="text-off-white"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
@@ -207,7 +217,10 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
             {work.title}
           </motion.span>
         </AnimatePresence>
-        <Link href={work.href} className="transition-colors hover:text-off-white">
+        <Link
+          href={work.href}
+          className="transition-colors hover:text-off-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid"
+        >
           View project
         </Link>
       </div>

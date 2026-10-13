@@ -66,13 +66,16 @@ export function CategoryCard({ category }: { category: Category }) {
       // is never cropped. Desktop: each card is as tall as half the screen
       // allows (section padding 5rem + grid gap 0.75rem), so the 2x2 block
       // fits one screen; the width follows from the shape.
-      className="group relative block aspect-[3/4] w-full overflow-hidden [container-type:inline-size] lg:h-[clamp(300px,calc((100svh-5.75rem)/2),720px)] lg:w-auto"
+      className="group relative block aspect-[3/4] w-full overflow-hidden [container-type:inline-size] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid lg:h-[clamp(300px,calc((100svh-5.75rem)/2),720px)] lg:w-auto"
     >
       <Image
         src={category.cover.src}
-        alt={category.cover.alt}
+        // decorative: the card's own title names the link (an alt repeating
+        // it made screen readers announce the category twice)
+        alt=""
         fill
-        sizes="(min-width: 640px) 45vw, 90vw"
+        // two columns at every width; at most 540px wide on large screens
+        sizes="(min-width: 1024px) 540px, 50vw"
         quality={95}
         className="object-cover transition-transform duration-300 ease-out md:group-hover:scale-[1.03]"
       />

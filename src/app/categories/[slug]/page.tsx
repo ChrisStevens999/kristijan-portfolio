@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -10,6 +11,23 @@ import { getAllCategories, getCategoryBySlug, getProjectsByCategory } from "@/li
 
 export function generateStaticParams() {
   return getAllCategories().map((category) => ({ slug: category.slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const category = getCategoryBySlug(slug);
+  if (!category) return {};
+  // the projects it holds, in order, as its description
+  const titles = getProjectsByCategory(slug).map((p) => p.categoryTitle ?? p.title);
+  const description = titles.length
+    ? `${category.title}: ${titles.length > 1 ? `${titles.slice(0, -1).join(", ")} and ${titles.at(-1)}` : titles[0]}.`
+    : undefined;
+  const image = typeof category.cover.src === "string" ? category.cover.src : category.cover.src.src;
+  return {
+    title: category.title,
+    description,
+    openGraph: { title: category.title, description, images: [{ url: image, alt: category.title }] },
+  };
 }
 
 export default async function CategoryPage({

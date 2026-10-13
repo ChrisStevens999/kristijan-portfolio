@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -42,9 +44,13 @@ const akuKamu = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Kristijan Stevkovski",
-  description:
-    "A curated exhibition of brand direction, apparel design, illustration and creative concepts.",
+  metadataBase: new URL(SITE_URL),
+  // every page names itself: "<page> | Kristijan Stevkovski"
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  // the share image is src/app/opengraph-image.jpg (the Intro's opening photo)
+  openGraph: { type: "website", siteName: SITE_NAME, title: SITE_NAME, description: SITE_DESCRIPTION },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

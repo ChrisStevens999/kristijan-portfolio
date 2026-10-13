@@ -35,6 +35,7 @@ export function StickerPoleDemo({ category, nextProject }: { category?: Category
   const onScreen = useInView(stage);
   return (
     <main className="bg-[#000000]">
+      <h1 className="sr-only">Sticker Archive</h1>
       <section ref={stage} className="flex h-[100svh] items-center justify-center">
         <div
           className="relative overflow-hidden bg-[#000000]"

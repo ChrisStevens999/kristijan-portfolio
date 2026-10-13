@@ -21,6 +21,8 @@ const TeeScene = dynamic(() => import("./TeeScene").then((m) => m.TeeScene), { s
 const anton = Anton({ weight: "400", subsets: ["latin"], display: "swap" });
 
 const RED = "#99181c";
+/** the element the collection tabs control: the open collection's stage and strip */
+const APPAREL_PANEL_ID = "apparel-collection-panel";
 /** the active tab: a brighter red than the bar's, so it reads over the dark wall */
 const TAB_RED = "#c8202a";
 const BG = "/apparel/t-shirts/display-bg.jpg";
@@ -172,13 +174,17 @@ function Tabs({
       style={{ ...style, columnGap: gap }}
       onKeyDown={(e) => {
         const n = apparelCollections.length;
-        if (e.key === "ArrowRight") onSelect((active + 1) % n);
-        else if (e.key === "ArrowLeft") onSelect((active - 1 + n) % n);
-        else return;
+        const to =
+          e.key === "ArrowRight" ? (active + 1) % n
+          : e.key === "ArrowLeft" ? (active - 1 + n) % n
+          : e.key === "Home" ? 0
+          : e.key === "End" ? n - 1
+          : null;
+        if (to === null) return;
         e.preventDefault();
+        onSelect(to);
         // focus follows selection, as tabs should
-        const tabs = e.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]");
-        tabs[e.key === "ArrowRight" ? (active + 1) % n : (active - 1 + n) % n]?.focus();
+        e.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]")[to]?.focus();
       }}
     >
       {apparelCollections.map((c, i) => (
@@ -188,6 +194,7 @@ function Tabs({
           role="tab"
           id={`apparel-tab-${c.id}`}
           aria-selected={i === active}
+          aria-controls={APPAREL_PANEL_ID}
           tabIndex={i === active ? 0 : -1}
           onClick={() => onSelect(i)}
           className="whitespace-nowrap uppercase transition-colors duration-200 [text-shadow:0_0.08em_0.35em_rgba(0,0,0,0.7)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid"
@@ -420,6 +427,9 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
           {/* exactly as tall as the artboard (never letterboxed top/bottom), so the
               gallery starts right under the scroll line, not a band of empty black */}
           <div
+            id={APPAREL_PANEL_ID}
+            role="tabpanel"
+            aria-labelledby={`apparel-tab-${collection.id}`}
             className="relative [container-type:inline-size]"
             style={{ aspectRatio: `${W} / ${H}`, width: `min(100vw, calc(100svh * ${W} / ${H}))` }}
           >
@@ -562,7 +572,12 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
         // tabs along the bottom edge — then the red strip showing two shirts
         // at a time, then the scroll line. The frame takes whatever height
         // the screen leaves it.
-        <section className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-6">
+        <section
+          id={APPAREL_PANEL_ID}
+          role="tabpanel"
+          aria-labelledby={`apparel-tab-${collection.id}`}
+          className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-6"
+        >
           <div className="relative min-h-[24rem] flex-1 overflow-hidden rounded-[1.6rem] border-[3px] border-[#d2d2d2]">
             {/* the frame interior of the plate, cropped around the shadow —
                 scaled a few percent past the frame top and bottom, so the

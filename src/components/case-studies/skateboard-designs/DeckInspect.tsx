@@ -11,6 +11,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { SkateDeck } from "@/content/projects/skateboard-designs";
 
 import { CAMERA_DISTANCE, DECK_WIDTH, DeckLights, dressDeck, FOV, loadModel, loadPrint, setOpacity, type DressedDeck } from "./deckModel";
+import { useModalFocus } from "@/lib/useModalFocus";
 
 /**
  * The close-up: a picked deck leaves the wall and flies to the middle of
@@ -258,6 +259,7 @@ export function DeckInspect({
     clickY: 0,
   });
   const closeRef = useRef<HTMLButtonElement>(null);
+  useModalFocus(Boolean(current) && !closing, closeRef);
 
   useEffect(() => {
     if (!current || closing) return;
@@ -278,7 +280,6 @@ export function DeckInspect({
     window.addEventListener("wheel", block, { passive: false });
     window.addEventListener("touchmove", block, { passive: false });
     window.addEventListener("keydown", blockKeys);
-    closeRef.current?.focus({ preventScroll: true });
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wheel", block);

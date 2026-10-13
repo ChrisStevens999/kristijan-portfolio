@@ -6,6 +6,7 @@ import type { Category, Project } from "@/content/types";
 export function DamagedGoodsCaseStudy({ category, nextProject }: { category: Category; nextProject?: Project }) {
   return (
     <PanelSequence
+      title="Damaged Goods"
       panels={damagedGoodsPanels}
       exitNav={<ProjectExitNav category={category} nextProject={nextProject} />}
     />

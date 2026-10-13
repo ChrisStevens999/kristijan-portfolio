@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { LoopingVideo } from "@/components/ui/LoopingVideo";
+
 import type {
   SequenceImagePanel,
   SequencePanel,
@@ -15,20 +17,15 @@ function VideoPanel({ panel, framed }: { panel: SequenceVideoPanel; framed: bool
   const objectPosition =
     panel.mobileObjectPosition ?? panel.desktopObjectPosition ?? "50% 50%";
 
-  // Autoplay requires muted; playsInline stops iOS from going fullscreen.
-  // No controls — this is a moving panel, not a player.
+  // A moving panel, not a player (LoopingVideo: muted, looping; paused
+  // with controls for visitors who ask for reduced motion).
   if (fullBleed) {
     return (
       <div className="relative h-[100svh] w-full lg:h-screen">
-        <video
+        <LoopingVideo
           src={panel.src}
           poster={panel.poster}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-label={panel.alt}
+          alt={panel.alt}
           style={{ objectPosition }}
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -36,19 +33,7 @@ function VideoPanel({ panel, framed }: { panel: SequenceVideoPanel; framed: bool
     );
   }
 
-  return (
-    <video
-      src={panel.src}
-      poster={panel.poster}
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="metadata"
-      aria-label={panel.alt}
-      className="block h-auto w-full"
-    />
-  );
+  return <LoopingVideo src={panel.src} poster={panel.poster} alt={panel.alt} className="block h-auto w-full" />;
 }
 
 function Panel({ panel, framed }: { panel: SequenceImagePanel; framed: boolean }) {
@@ -130,8 +115,11 @@ export function PanelSequence({
   panels,
   exitNav,
   framed = false,
+  title,
 }: {
   panels: SequencePanel[];
+  /** the page's h1, for screen readers: the visible title is baked into the artwork */
+  title?: string;
   exitNav?: ReactNode;
   /**
    * Center the sequence in a fixed-max-width column so the black background
@@ -151,6 +139,7 @@ export function PanelSequence({
     <main
       className={`flex flex-col text-off-white ${framed ? "bg-[#000000]" : "bg-black"}`}
     >
+      {title ? <h1 className="sr-only">{title}</h1> : null}
       <div
         className={
           framed

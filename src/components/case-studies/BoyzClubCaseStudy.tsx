@@ -6,6 +6,7 @@ import type { Category, Project } from "@/content/types";
 export function BoyzClubCaseStudy({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <PanelSequence
+      title="BoyzClub"
       panels={boyzClubPanels}
       framed
       exitNav={<ProjectExitNav category={category} nextProject={nextProject} />}

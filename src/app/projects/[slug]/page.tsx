@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
@@ -21,6 +22,18 @@ import { getHeroImages } from "@/lib/hero-images";
 
 export function generateStaticParams() {
   return getAllProjects().map((project) => ({ slug: project.slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const project = getProjectBySlug((await params).slug);
+  if (!project) return {};
+  const description = project.introduction ?? project.summary;
+  const image = typeof project.cover.src === "string" ? project.cover.src : project.cover.src.src;
+  return {
+    title: project.title,
+    description,
+    openGraph: { title: project.title, description, images: [{ url: image, alt: project.cover.alt }] },
+  };
 }
 
 export default async function ProjectPage({

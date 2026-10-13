@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { useModalFocus } from "@/lib/useModalFocus";
 
 export type OpenPhoto = {
   photo: { src: string; alt: string };
@@ -52,6 +53,7 @@ export function Lightbox({
 }) {
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  useModalFocus(open !== null, closeRef);
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +69,6 @@ export function Lightbox({
     window.addEventListener("wheel", block, { passive: false });
     window.addEventListener("touchmove", block, { passive: false });
     window.addEventListener("keydown", blockKeys);
-    closeRef.current?.focus({ preventScroll: true });
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("wheel", block);

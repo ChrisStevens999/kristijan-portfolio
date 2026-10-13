@@ -72,6 +72,13 @@
 html:has(main[data-scroll-snap]) {
   scroll-snap-type: y mandatory;
 }
+/* Asked for less motion: no forced jumps between stops — the page settles
+   on a stop only when it is already close to one. */
+@media (prefers-reduced-motion: reduce) {
+  html:has(main[data-scroll-snap]) {
+    scroll-snap-type: y proximity;
+  }
+}
 
 /*
  * About boards (src/app/about/page.tsx). Landscape: each board is one full

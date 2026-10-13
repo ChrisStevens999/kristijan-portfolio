@@ -6,6 +6,7 @@ import type { Category, Project } from "@/content/types";
 export function LxixCaseStudy({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <PanelSequence
+      title="LXIX"
       panels={lxixPanels}
       framed
       exitNav={<ProjectExitNav category={category} nextProject={nextProject} />}

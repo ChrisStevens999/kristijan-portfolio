@@ -15,6 +15,7 @@ import { TEXTURES, textureStyle } from "@/lib/textures";
 export function LogofolioCaseStudy({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <main data-scroll-snap className="bg-black text-off-white">
+      <h1 className="sr-only">Logofolio</h1>
       {logofolioBrands.map((brand) => (
         <section
           key={brand.id}

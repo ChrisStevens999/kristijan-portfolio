@@ -205,6 +205,9 @@ export function AboutTeaser() {
   // the call to action fades up as the video settles
   const ctaOpacity = useTransform(time, (t) => easeOutCubic(span(t, T.grown - 0.35, T.grown)));
   const ctaPointer = useTransform(time, (t) => (t >= T.grown - 0.1 ? "auto" : "none"));
+  // the link is only reachable by keyboard once it is visible
+  const [ctaLive, setCtaLive] = useState(false);
+  useMotionValueEvent(ctaPointer, "change", (v) => setCtaLive(v === "auto"));
   const phone = layout === "phone";
 
   return (
@@ -299,6 +302,8 @@ export function AboutTeaser() {
         >
           <Link
             href={CTA_HREF}
+            tabIndex={ctaLive ? 0 : -1}
+            aria-hidden={!ctaLive}
             className={`${inter.className} block uppercase text-white focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-white focus-visible:outline-solid`}
             style={{ fontSize: heroH * 0.115, lineHeight: 0.95, letterSpacing: "-0.02em" }}
           >
