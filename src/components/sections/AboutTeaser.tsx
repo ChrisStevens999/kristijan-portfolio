@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { TEXTURES, textureStyle } from "@/lib/textures";
 
 /** The call to action's face (12_TYPOGRAPHY.md). */
 const inter = Inter({ weight: "700", subsets: ["latin"], display: "swap" });
@@ -50,7 +51,7 @@ const CTA_LINES = ["Click to", "find out", "about me"];
 const CTA_HREF = "/about";
 /** The stage's surface: the supplied black paper (11_VISUAL_ASSETS.md),
  *  as on the Intro and the section titles. */
-const TEXTURE = "/textures/black-page.png";
+const TEXTURE = TEXTURES.black;
 
 /**
  * Back to front, with positions in card widths/heights. Parallel planes
@@ -231,10 +232,7 @@ export function AboutTeaser() {
         style={{
           height: "100svh",
           perspective: Math.max(800, cardW * 8),
-          backgroundImage: `url('${TEXTURE}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
+          ...textureStyle(TEXTURE),
         }}
       >
         <motion.div

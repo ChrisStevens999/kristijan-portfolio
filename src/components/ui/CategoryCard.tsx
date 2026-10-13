@@ -55,7 +55,9 @@ export function CategoryCard({ category }: { category: Category }) {
 
   // What the destination's intro plays, fetched while this tile is on
   // screen, so that intro starts the moment its page arrives.
-  category.preload?.forEach((src) => preload(src, { as: "image" }));
+  // Low priority, so the hint never competes with what this page itself
+  // needs first.
+  category.preload?.forEach((src) => preload(src, { as: "image", fetchPriority: "low" }));
 
   return (
     <Link

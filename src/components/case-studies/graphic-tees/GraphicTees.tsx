@@ -78,11 +78,16 @@ function Stage({
   // What the 3D canvas shows. It keeps the last 3D view while a flat-only
   // garment (or an empty tab) is up, so the canvas — and its loaded models —
   // stay mounted instead of being rebuilt on the way back.
-  const prefetch = useMemo(
-    // the T-shirts' prints are small: fetch the rest once the first is up
-    () => (collection.model ? collection.items.flatMap((g) => (g.print ? [g.print] : [])) : []),
-    [collection],
-  );
+  const prefetch = useMemo(() => {
+    // the prints either side of this one, fetched once it is up, so the
+    // arrows land on a ready print — not the whole collection (the hoodie
+    // prints are 4096² each, and every one held costs GPU memory)
+    if (!collection.model) return [];
+    const n = collection.items.length;
+    return [collection.items[(index + 1) % n], collection.items[(index - 1 + n) % n]].flatMap((g) =>
+      g?.print ? [g.print] : [],
+    );
+  }, [collection, index]);
   const faceBack = item?.faceBack ?? collection.faceBack;
   const current = useMemo(
     () => (model ? { model, print, prefetch, faceBack } : null),
@@ -374,6 +379,8 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
   const count = collection.items.length;
   const index = Math.min(selected[tab], Math.max(0, count - 1));
   const garment: Garment | undefined = collection.items[index];
+  // an empty photo list shows no gallery (and no line pointing at one)
+  const hasGallery = Boolean(collection.gallery?.length);
   const setIndex = useCallback((i: number) => setSelected((s) => s.map((v, t) => (t === tab ? i : v))), [tab]);
   const step = useCallback(
     (d: number) => {
@@ -381,6 +388,19 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
     },
     [tab, count],
   );
+  // ?collection=<id>&garment=<slug> opens on that design (e.g. a homepage
+  // Selected Work that lives here rather than on a page of its own). Read
+  // after mount: the URL isn't known while the page is pre-rendered.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = apparelCollections.findIndex((c) => c.id === params.get("collection"));
+    if (t === -1) return;
+    const g = apparelCollections[t].items.findIndex((item) => item.slug === params.get("garment"));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTab(t);
+    if (g !== -1) setSelected((s) => s.map((v, i) => (i === t ? g : v)));
+  }, []);
+
   const scrollOn = () =>
     document.getElementById("graphic-tees-after")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
 
@@ -518,7 +538,7 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
               />
             </div>
 
-            {collection.gallery && (
+            {hasGallery && (
               <button
                 type="button"
                 onClick={scrollOn}
@@ -613,7 +633,7 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
             <Arrow dir="next" onClick={() => step(1)} className="h-7 w-6 shrink-0" />
           </div>
 
-          {collection.gallery && (
+          {hasGallery && (
             <button
               type="button"
               onClick={scrollOn}
@@ -631,9 +651,9 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
       )}
 
       {/* the "real world" photos of the open tab's garments (the T-shirts and the pattern shirts have them) */}
-      {collection.gallery && (
+      {hasGallery && (
         <section id="graphic-tees-after" aria-label="The shirts in the real world" className="h-[100svh] bg-[#000]">
-          {settled && <RealWorldGallery key={collection.id} photos={collection.gallery} reducedMotion={reducedMotion} />}
+          {settled && <RealWorldGallery key={collection.id} photos={collection.gallery ?? []} reducedMotion={reducedMotion} />}
         </section>
       )}
       <ProjectExitNav category={category} nextProject={nextProject} />

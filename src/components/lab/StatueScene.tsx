@@ -231,6 +231,8 @@ type SceneProps = {
   onReady?: () => void;
   /** the opening has finished: the statue is lit and the camera is back */
   onRevealed?: () => void;
+  /** false while the stage is off screen: no frames are drawn */
+  running?: boolean;
 };
 
 function Statue({
@@ -453,9 +455,11 @@ function IntroCamera({ intro, reducedMotion }: { intro: Intro; reducedMotion: bo
   return null;
 }
 
-export function StatueScene({ reducedMotion, onReady, onRevealed }: SceneProps) {
+export function StatueScene({ reducedMotion, onReady, onRevealed, running = true }: SceneProps) {
   return (
     <Canvas
+      // the bloom pass is costly: draw nothing while the stage is off screen
+      frameloop={running ? "always" : "never"}
       camera={{ position: [0, 0, 5], fov: FOV, near: 0.1, far: 50 }}
       // ?still keeps the drawing buffer so a cover image can be read off the canvas
       gl={{ antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: wantsStill() }}

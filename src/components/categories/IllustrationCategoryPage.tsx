@@ -27,7 +27,9 @@ export function IllustrationCategoryPage({
   return (
     <main className="flex min-h-screen flex-col bg-off-white text-black">
       <div className="flex items-start justify-between gap-6 px-6 pt-32 pb-16 sm:px-10 lg:px-16">
-        <h1 className="font-sans text-4xl leading-none font-bold uppercase sm:text-6xl lg:text-7xl">
+        {/* sized to the viewport on phones, so the title and the name mark
+            beside it always fit the width */}
+        <h1 className="min-w-0 font-sans text-[clamp(1.4rem,7vw,2.25rem)] leading-none font-bold uppercase sm:text-6xl lg:text-7xl">
           {category.title} Projects
         </h1>
         <Link

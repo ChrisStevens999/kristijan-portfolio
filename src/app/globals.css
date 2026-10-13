@@ -96,6 +96,21 @@ html:has(main[data-scroll-snap]) {
   }
 }
 
+/* Page arrival fade (PageTransition): pure CSS, so it needs no JavaScript. */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.page-fade {
+  animation: page-fade-in var(--duration-fast) ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-fade {
+    animation: none;
+  }
+}
+
 body {
   background: var(--color-black);
   color: var(--color-off-white);

@@ -33,6 +33,17 @@ export function LogofolioFilm({
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let hold: number | undefined;
+    // start fetching a screen ahead, so the film is ready when it arrives
+    const warm = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.preload = "auto";
+          warm.disconnect();
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    warm.observe(video);
     const observer = new IntersectionObserver(
       ([entry]) => {
         window.clearTimeout(hold);
@@ -54,6 +65,7 @@ export function LogofolioFilm({
 
     return () => {
       window.clearTimeout(hold);
+      warm.disconnect();
       observer.disconnect();
     };
   }, [holdMs]);
@@ -66,7 +78,9 @@ export function LogofolioFilm({
       muted
       loop
       playsInline
-      preload="auto"
+      // nothing fetched up front: the poster is the same logo frame, and the
+      // film (a few MB) loads as its screen approaches — see the observer
+      preload="none"
       aria-label={alt}
       className="block h-auto w-full"
     />

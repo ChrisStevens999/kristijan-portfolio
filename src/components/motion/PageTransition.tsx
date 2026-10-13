@@ -1,20 +1,13 @@
-"use client";
-
-import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 /**
- * Minimal placeholder only (06_MOTION_GUIDELINES.md: fade, gentle movement).
- * Intentionally not tuned/polished yet — revisit once real pages exist.
+ * The fade every page arrives with (06_MOTION_GUIDELINES.md: fade, gentle
+ * movement). A CSS animation (globals.css .page-fade), not a JS one: the
+ * page paints straight from the server HTML and fades in on its own,
+ * without waiting for JavaScript to hydrate — a framer-motion
+ * `initial={{ opacity: 0 }}` was server-rendered as opacity 0, leaving every
+ * page blank until hydration (and for good without JS).
  */
 export function PageTransition({ children }: { children: ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="page-fade">{children}</div>;
 }

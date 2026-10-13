@@ -71,7 +71,10 @@ function Deck3D({
   reducedMotion: boolean;
 }) {
   const gl = useThree((s) => s.gl);
-  const invalidate = useThree((s) => s.invalidate);
+  // advance, not invalidate: picking a deck stops the wall's loop
+  // (frameloop "never") in the same commit, and invalidate is ignored then —
+  // so the picked deck would stay drawn on its rail behind the close-up
+  const advance = useThree((s) => s.advance);
   const group = useRef<THREE.Group>(null);
   const shadowRef = useRef<THREE.Mesh>(null);
   const [dressed, setDressed] = useState<DressedDeck | null>(null);
@@ -98,8 +101,8 @@ function Deck3D({
   useEffect(() => {
     if (group.current) group.current.visible = !slot.hidden;
     if (shadowRef.current) shadowRef.current.visible = !slot.hidden;
-    invalidate();
-  }, [slot.hidden, invalidate]);
+    advance(performance.now());
+  }, [slot.hidden, advance]);
 
   const x = (layout.centre0 + layout.pitch * index - 0.5) * layout.aspect;
   const y = 0.5 - (layout.top + layout.height / 2);

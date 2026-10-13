@@ -155,7 +155,7 @@ function ClockDriver({ clockRef }: { clockRef: React.RefObject<DemoClock> }) {
   return null;
 }
 
-export function DemoScene() {
+export function DemoScene({ running = true }: { running?: boolean }) {
   // This component is only ever mounted client-side (dynamic, ssr: false),
   // so the URL is available at first render; the dev overrides default to
   // CLOCK_START / real time when absent.
@@ -174,6 +174,9 @@ export function DemoScene() {
   const [capture] = useState(() => new URLSearchParams(window.location.search).has("capture"));
   return (
     <Canvas
+      // nothing drawn while the stage is scrolled away (the demo clock caps
+      // its step, so it carries on smoothly when it comes back)
+      frameloop={running ? "always" : "never"}
       orthographic
       camera={{ position: [0, 0, 10], near: 0.1, far: 100 }}
       gl={{ antialias: true, preserveDrawingBuffer: capture }}

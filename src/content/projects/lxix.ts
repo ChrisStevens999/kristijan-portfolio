@@ -100,6 +100,7 @@ export const lxixPanels: SequencePanel[] = [
     enabled: true,
     kind: "video",
     src: "/lxix/intro-animation.mp4",
+    poster: "/lxix/intro-animation-poster.webp",
     alt: "LXIX intro animation",
     fullViewport: false,
   },

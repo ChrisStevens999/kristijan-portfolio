@@ -2,6 +2,7 @@ import { getCategoryBySlug, getSelectedWorks } from "@/lib/content";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 
 import { SelectedWorksCarousel } from "./SelectedWorksCarousel";
+import { TEXTURES } from "@/lib/textures";
 
 /**
  * 04_CONTENT_ARCHITECTURE.md: a curated collection, not a complete archive.
@@ -18,10 +19,11 @@ export function SelectedWorks() {
 
   return (
     <section id="selected-works" className="relative bg-black">
-      <SectionTitle title="Selected Work" kicker="Curated" texture="/textures/black-page.png" />
+      <SectionTitle title="Selected Work" kicker="Curated" texture={TEXTURES.black} />
       <SelectedWorksCarousel
         works={works.map((project) => ({
           slug: project.slug,
+          href: project.href ?? `/projects/${project.slug}`,
           title: project.title,
           category: getCategoryBySlug(project.category)?.title ?? "",
           cover: project.featuredCover ?? project.cover,

@@ -7,6 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 export type CarouselWork = {
   slug: string;
+  /** where the work opens */
+  href: string;
   title: string;
   category: string;
   cover: { src: StaticImageData | string; alt: string };
@@ -161,7 +163,7 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
                     link to the project, at the sides a click brings that
                     photo to the centre instead */}
                 <Link
-                  href={`/projects/${item.slug}`}
+                  href={item.href}
                   className="group absolute inset-0 block"
                   aria-label={`Open ${item.title}`}
                   aria-hidden={!isCenter}
@@ -205,7 +207,7 @@ export function SelectedWorksCarousel({ works }: { works: CarouselWork[] }) {
             {work.title}
           </motion.span>
         </AnimatePresence>
-        <Link href={`/projects/${work.slug}`} className="transition-colors hover:text-off-white">
+        <Link href={work.href} className="transition-colors hover:text-off-white">
           View project
         </Link>
       </div>

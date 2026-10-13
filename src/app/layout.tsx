@@ -3,24 +3,22 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 /**
- * 12_TYPOGRAPHY.md — three fonts, each with one job. Do not substitute.
+ * 12_TYPOGRAPHY.md — three site-wide fonts, each with one job. Do not
+ * substitute. (Two page-scoped faces load where they're used: Anton for the
+ * Apparel name tag, Inter for the About CTA.) next/font preloads every file
+ * listed here on every page, so list only the styles the site uses — no
+ * italics are used anywhere, so the Integral CF obliques aren't loaded.
  */
 
 /** Primary UI font: nav, headings, project titles, about, body copy. */
 const integralCF = localFont({
   src: [
     { path: "../../assets/fonts/IntegralCF-Regular.otf", weight: "400", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-RegularOblique.otf", weight: "400", style: "italic" },
     { path: "../../assets/fonts/IntegralCF-Medium.otf", weight: "500", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-MediumOblique.otf", weight: "500", style: "italic" },
     { path: "../../assets/fonts/IntegralCF-DemiBold.otf", weight: "600", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-DemiBoldOblique.otf", weight: "600", style: "italic" },
     { path: "../../assets/fonts/IntegralCF-Bold.otf", weight: "700", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-BoldOblique.otf", weight: "700", style: "italic" },
     { path: "../../assets/fonts/IntegralCF-ExtraBold.otf", weight: "800", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-ExtraBoldOblique.otf", weight: "800", style: "italic" },
     { path: "../../assets/fonts/IntegralCF-Heavy.otf", weight: "900", style: "normal" },
-    { path: "../../assets/fonts/IntegralCF-HeavyOblique.otf", weight: "900", style: "italic" },
   ],
   variable: "--font-integral-cf",
 });

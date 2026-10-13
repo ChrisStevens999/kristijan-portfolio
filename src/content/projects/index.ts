@@ -56,6 +56,9 @@ export const projects: Project[] = [
     category: "apparel-design",
     summary: "Apparel campaign photography.",
     cover: { src: neoTokyoCover, alt: "Neo Tokyo — a model in a pink printed shirt among shipping containers" },
+    // no case study of its own: it is one of the Pattern AOPs, so it opens
+    // the Apparel display with it selected
+    href: "/projects/graphic-tees?collection=pattern-aops&garment=neo-tokyo",
     gallery: [],
     challenge: "",
     process: "",
@@ -71,6 +74,9 @@ export const projects: Project[] = [
     category: "apparel-design",
     summary: "Apparel graphic design and campaign photography.",
     cover: { src: hardcoreCover, alt: "Hardcore Mentality campaign photograph" },
+    // no case study of its own: it is one of the Graphic T's, so it opens
+    // the Apparel display with it selected
+    href: "/projects/graphic-tees?collection=graphic-tees&garment=hardcore-mentality",
     gallery: [],
     challenge: "",
     process: "",

@@ -46,7 +46,9 @@ export default async function CategoryPage({
   return (
     <main className="flex min-h-screen flex-col bg-black text-off-white">
       <div className="px-6 pt-32 pb-16 sm:px-10 lg:px-16">
-        <h1 className="font-sans text-5xl font-bold sm:text-7xl">{category.title}</h1>
+        {/* sized to the viewport on phones: a long word ("Exploration")
+            must never be wider than the screen */}
+        <h1 className="font-sans text-[clamp(1.8rem,9vw,3rem)] leading-none font-bold sm:text-7xl">{category.title}</h1>
       </div>
       <div className="flex flex-col">
         {categoryProjects.map((project, index) => (
@@ -69,7 +71,10 @@ export default async function CategoryPage({
                 Project {String(index + 1).padStart(2, "0")}
               </p>
               <h2 className="font-sans mt-2 text-4xl font-bold sm:text-6xl">{project.title}</h2>
-              <p className="mt-3 max-w-md text-off-white/80">{project.summary}</p>
+              {/* max-w-[28rem], not max-w-md: the theme's spacing token "md"
+                  (2.5rem, globals.css) shadows Tailwind's container size of
+                  that name, which wrapped this one word per line */}
+              <p className="mt-3 max-w-[28rem] text-off-white/80">{project.summary}</p>
             </div>
           </ProjectCoverLink>
         ))}

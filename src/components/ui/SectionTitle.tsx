@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { textureStyle } from "@/lib/textures";
 
 /**
  * 05_COMPONENT_LIBRARY.md "SECTION TITLE": introduces a new chapter, large
@@ -25,12 +26,7 @@ export function SectionTitle({
       // A full-screen snap stop of its own on the snapping homepage — read,
       // then scrolled past with the same one-gesture step as the images.
       className="relative flex h-[100svh] w-full snap-start snap-always items-center justify-center px-6"
-      style={{
-        backgroundImage: `url('${texture}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      style={textureStyle(texture)}
     >
       <motion.div
         className="relative text-center"

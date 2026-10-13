@@ -2,8 +2,7 @@ import { LogofolioFilm } from "@/components/case-studies/logofolio/LogofolioFilm
 import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import { logofolioBrands } from "@/content/projects/logofolio";
 import type { Category, Project } from "@/content/types";
-
-const TEXTURE = "/textures/black-page.png";
+import { TEXTURES, textureStyle } from "@/lib/textures";
 
 /**
  * Logofolio: one brand per screen. Each screen is a snap stop (the same
@@ -21,12 +20,7 @@ export function LogofolioCaseStudy({ category, nextProject }: { category?: Categ
           key={brand.id}
           aria-label={brand.title}
           className="relative flex h-[100svh] w-full snap-start snap-always items-center justify-center px-6 py-md sm:px-10 lg:px-16"
-          style={{
-            backgroundImage: `url('${TEXTURE}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
+          style={textureStyle(TEXTURES.black)}
         >
           {/* A 16:9 frame is 9/16 as tall as it is wide, so its width follows
               the height left inside the section's vertical padding. */}

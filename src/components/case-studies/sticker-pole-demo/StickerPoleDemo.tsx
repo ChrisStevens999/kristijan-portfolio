@@ -1,6 +1,8 @@
 "use client";
 
+import { useInView } from "framer-motion";
 import dynamic from "next/dynamic";
+import { useRef } from "react";
 
 import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import type { Category, Project } from "@/content/types";
@@ -29,9 +31,11 @@ const DemoScene = dynamic(() => import("./DemoScene").then((m) => m.DemoScene), 
  * project page.
  */
 export function StickerPoleDemo({ category, nextProject }: { category?: Category; nextProject?: Project }) {
+  const stage = useRef<HTMLElement>(null);
+  const onScreen = useInView(stage);
   return (
     <main className="bg-[#000000]">
-      <section className="flex h-[100svh] items-center justify-center">
+      <section ref={stage} className="flex h-[100svh] items-center justify-center">
         <div
           className="relative overflow-hidden bg-[#000000]"
           style={{
@@ -39,7 +43,7 @@ export function StickerPoleDemo({ category, nextProject }: { category?: Category
             height: `min(100svh, calc(100vw / ${STAGE_ASPECT}))`,
           }}
         >
-          <DemoScene />
+          <DemoScene running={onScreen} />
         </div>
       </section>
       <StickerShowcase />

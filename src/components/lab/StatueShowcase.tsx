@@ -1,9 +1,9 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import type { Category, Project } from "@/content/types";
@@ -24,15 +24,17 @@ export function StatueShowcase({ category, nextProject }: { category?: Category;
   const onReady = useCallback(() => setReady(true), []);
   const [revealed, setRevealed] = useState(false);
   const onRevealed = useCallback(() => setRevealed(true), []);
+  const stage = useRef<HTMLElement>(null);
+  const onScreen = useInView(stage);
   return (
     <main className="bg-[#000] text-off-white">
       <h1 className="sr-only">3D statue showcase</h1>
       {/* The stage is one screen; the exit doors sit below it, so the page
           scrolls — touch-pan-y keeps vertical swipes over the canvas as
           scrolling (a phone has no pointer for the light anyway). */}
-      <section className="relative h-[100svh] w-full overflow-hidden">
+      <section ref={stage} className="relative h-[100svh] w-full overflow-hidden">
       <div className="absolute inset-0 touch-pan-y">
-        <StatueScene reducedMotion={reducedMotion} onReady={onReady} onRevealed={onRevealed} />
+        <StatueScene reducedMotion={reducedMotion} onReady={onReady} onRevealed={onRevealed} running={onScreen} />
       </div>
 
       {/* the model is a few MB — say so while it arrives, instead of a blank black page */}

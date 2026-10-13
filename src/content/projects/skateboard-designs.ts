@@ -47,7 +47,7 @@ const deck = (id: string, title: string, alt: string, edge: string, accent: stri
   id,
   title,
   alt,
-  print: `/skateboarding/prints/${id}.png`,
+  print: `/skateboarding/prints/${id}.webp`,
   edge,
   accent,
   destination,

@@ -10,9 +10,10 @@
  *  - public/apparel/hoodies/hoodie.glb — the shared mesh + normal map, base
  *    colour stripped, positions/normals quantized and meshopt-compressed.
  *    UVs stay exact floats, so every print lands at its authored scale.
- *  - public/apparel/hoodies/prints/<slug>.png — that hoodie's base-colour
- *    texture, the ORIGINAL PNG bytes from its GLB: not re-encoded, not
- *    resized.
+ *  - public/apparel/hoodies/prints/<slug>.webp — that hoodie's base-colour
+ *    texture at its full authored size (4096², never resized), as a q92
+ *    WebP: visually identical to the PNG in its GLB at a fraction of the
+ *    bytes.
  *
  * A hoodie that can't be a print on the shared mesh (`own: true`) — an
  * all-over pattern mapped with ITS OWN UVs (the pattern's tiling scale), or
@@ -20,8 +21,9 @@
  * model, as authored:
  *
  *  - public/apparel/hoodies/models/<slug>.glb — that GLB with its base
- *    colour kept byte-for-byte (same PNG, same size), only the normal map
- *    re-encoded and the geometry compressed exactly as the shared mesh is.
+ *    colour at full size as a q92 WebP (Concrete Memories' 17.7 MB PNG was
+ *    most of a 24 MB model), the normal map re-encoded and the geometry
+ *    compressed exactly as the shared mesh is.
  *
  * And for every hoodie:
  *
@@ -98,6 +100,8 @@ const GALLERY = {
   "hungry-dogs": ["Hungry Dogs Hoodie-1.png", "Hungry Dogs Hoodie-2.png"],
 };
 const GALLERY_WIDTH = 1100; // as the T-shirt and AOP galleries
+/** WebP quality for prints and own-model base colours: visually lossless here */
+const PRINT_QUALITY = 92;
 
 /** The geometry/normal-map treatment every shipped hoodie model gets. The
  *  base colour is never touched here: it is either stripped (shared mesh) or
@@ -106,8 +110,11 @@ async function compressModel(doc) {
   await doc.transform(
     dedup(),
     prune({ keepAttributes: true }),
-    // the knit normal map: kept at 4096², re-encoded as WebP. Only that slot.
+    // the knit normal map: kept at 4096², re-encoded as WebP
     textureCompress({ encoder: sharp, targetFormat: "webp", quality: 90, slots: /^normalTexture$/ }),
+    // an own model's base colour (stripped from the shared mesh before this
+    // runs): full size, WebP q92 — visually lossless on these graphics
+    textureCompress({ encoder: sharp, targetFormat: "webp", quality: PRINT_QUALITY, slots: /^baseColorTexture$/ }),
     // positions/normals only: the UVs carry the print's scale and stay exact
     quantize({ pattern: /^(POSITION|NORMAL|TANGENT)(_\d+)?$/ }),
   );
@@ -151,7 +158,11 @@ function baseColorOf(doc) {
 const galleryOnly = process.argv.includes("--gallery-only");
 const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 for (const slug of only) if (!HOODIES[slug]) throw new Error(`unknown hoodie "${slug}"`);
-if (only.length === 0 && !galleryOnly) fs.rmSync(OUT, { recursive: true, force: true });
+// a full build starts clean (a renamed or removed hoodie leaves nothing
+// behind) — except the flats, which may have to be kept when their preview
+// PNG has left the folder (see below); they are overwritten otherwise
+if (only.length === 0 && !galleryOnly)
+  for (const p of ["prints", "models", "gallery", "hoodie.glb"]) fs.rmSync(path.join(OUT, p), { recursive: true, force: true });
 for (const dir of ["prints", "flat", "models", "gallery"]) fs.mkdirSync(path.join(OUT, dir), { recursive: true });
 
 // --- gallery photos -----------------------------------------------------------
@@ -177,19 +188,21 @@ for (const [slug, { glb, png, own }] of Object.entries(HOODIES)) {
   if (tex.getMimeType() !== "image/png") throw new Error(`${glb}: expected a PNG print, got ${tex.getMimeType()}`);
   let line;
   if (own) {
-    const before = tex.getImage().byteLength;
+    const size = tex.getSize().join("x");
     await compressModel(doc);
-    if (baseColorOf(doc).getImage().byteLength !== before) throw new Error(`${glb}: base colour was altered`);
     const model = path.join(OUT, "models", `${slug}.glb`);
     await io.write(model, doc);
-    line = `${slug.padEnd(12)} model ${mb(model).padStart(8)} (own model, ${tex.getSize().join("x")} texture as authored)`;
+    line = `${slug.padEnd(12)} model ${mb(model).padStart(8)} (own model, ${size} texture, WebP q${PRINT_QUALITY})`;
   } else {
-    const print = path.join(OUT, "prints", `${slug}.png`);
-    fs.writeFileSync(print, Buffer.from(tex.getImage()));
-    line = `${slug.padEnd(12)} print ${kb(print).padStart(8)} (${tex.getSize().join("x")}, as authored)`;
+    const print = path.join(OUT, "prints", `${slug}.webp`);
+    await sharp(Buffer.from(tex.getImage())).webp({ quality: PRINT_QUALITY, effort: 6 }).toFile(print);
+    line = `${slug.padEnd(12)} print ${kb(print).padStart(8)} (${tex.getSize().join("x")}, WebP q${PRINT_QUALITY})`;
   }
   const flat = path.join(OUT, "flat", `${slug}.webp`);
-  await writeFlat(path.join(SRC, png), flat);
+  if (fs.existsSync(path.join(SRC, png))) await writeFlat(path.join(SRC, png), flat);
+  // the preview PNG has left the folder: keep the cutout already built
+  else if (fs.existsSync(flat)) console.warn(`${slug}: "${png}" is missing — kept the existing flat`);
+  else throw new Error(`${slug}: "${png}" is missing and there is no flat to keep`);
   console.log(`${line}  flat ${kb(flat).padStart(7)}`);
 }
 

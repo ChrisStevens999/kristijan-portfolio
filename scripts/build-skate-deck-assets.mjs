@@ -11,8 +11,10 @@
  *    as a 2048² WebP: the deck is small on screen), the print stripped, the
  *    two unused images dropped, positions/normals quantized and
  *    meshopt-compressed. UVs stay exact floats.
- *  - public/skateboarding/prints/<slug>.png — that deck's print, the
- *    ORIGINAL PNG bytes from its GLB: not re-encoded, not resized.
+ *  - public/skateboarding/prints/<slug>.webp — that deck's print at its
+ *    full authored size (2048x4096, never resized), as a q92 WebP: visually
+ *    identical to the PNG in the GLB at about an eighth of the bytes (the
+ *    six PNGs were 22 MB, all loaded by the wall at once).
  *
  * The edge colour is per deck and is read off each GLB's edge material; the
  * script prints it to paste into src/content/projects/skateboard-designs.ts,
@@ -76,19 +78,22 @@ function printOf(doc) {
 /** the plain-coloured edge material */
 const edgeOf = (doc) => doc.getRoot().listMaterials().find((m) => / edge$/.test(m.getName()));
 
+/** WebP quality for the prints: visually lossless on these graphics */
+const PRINT_QUALITY = 92;
+
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, "prints"), { recursive: true });
 
-// --- per deck: the print, original bytes ------------------------------------------
+// --- per deck: the print, full size, as WebP ---------------------------------------
 for (const [slug, glb] of Object.entries(DECKS)) {
   const doc = await io.read(path.join(SRC, glb));
   const tex = printOf(doc);
   if (tex.getMimeType() !== "image/png") throw new Error(`${glb}: expected a PNG print, got ${tex.getMimeType()}`);
-  const print = path.join(OUT, "prints", `${slug}.png`);
-  fs.writeFileSync(print, Buffer.from(tex.getImage()));
+  const print = path.join(OUT, "prints", `${slug}.webp`);
+  await sharp(Buffer.from(tex.getImage())).webp({ quality: PRINT_QUALITY, effort: 6 }).toFile(print);
   const edge = edgeOf(doc);
   console.log(
-    `${slug.padEnd(14)} print ${kb(print).padStart(8)} (${tex.getSize().join("x")}, as authored)  edge ${hex(edge.getBaseColorFactor())} "${edge.getName()}"`,
+    `${slug.padEnd(14)} print ${kb(print).padStart(8)} (${tex.getSize().join("x")}, WebP q${PRINT_QUALITY})  edge ${hex(edge.getBaseColorFactor())} "${edge.getName()}"`,
   );
 }
 

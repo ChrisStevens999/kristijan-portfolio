@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import heroPhoto from "../../../assets/Intro/1.png";
 // The blue-sky regrade of the supplied finale frame.
 import finalePhoto from "../../../assets/Intro/5 blue.webp";
+import { TEXTURES, textureStyle } from "@/lib/textures";
 
 const SESSION_KEY = "intro-played";
 
@@ -18,14 +19,6 @@ const SESSION_KEY = "intro-played";
  * monitor) — cover scales cleanly from the 3840x2160 source at every size
  * with no seam risk.
  */
-function textureStyle(url: string): React.CSSProperties {
-  return {
-    backgroundImage: `url('${url}')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-  };
-}
 
 /**
  * 05_COMPONENT_LIBRARY.md: full screen, cinematic, plays once.
@@ -52,21 +45,21 @@ const FRAMES: Frame[] = [
     kind: "text",
     lines: ["Chris Stevens"],
     hold: 1900,
-    texture: "/textures/black-page.png",
+    texture: TEXTURES.black,
     className: "text-off-white",
   },
   {
     kind: "text",
     lines: ["Brand Design", "Creative Direction"],
     hold: 1900,
-    texture: "/textures/black-page.png",
+    texture: TEXTURES.black,
     className: "text-red",
   },
   {
     kind: "text",
     lines: ["Creating What", "People Remember"],
     hold: 2100,
-    texture: "/textures/red-page.png",
+    texture: TEXTURES.red,
     className: "text-off-white",
   },
   { kind: "image", src: finalePhoto, alt: "", hold: 2600 },
@@ -123,12 +116,39 @@ function IntroSequence({ onComplete }: { onComplete: () => void }) {
   const exiting = index >= FRAMES.length;
 
   useEffect(() => {
+    // it has played this session once it has started (set here rather than
+    // in the gate, so React's development double-run of the gate's effect
+    // can't mark it played before it ever shows)
+    sessionStorage.setItem(SESSION_KEY, "1");
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
     };
   }, []);
+
+  // Skippable, as the Apparel intro is: any click, key, wheel or swipe goes
+  // straight to the closing fade (and doesn't scroll the page underneath).
+  useEffect(() => {
+    if (exiting) return;
+    const skip = (e: Event) => {
+      // the gesture that skips is spent on skipping: no scroll, and no
+      // Space/arrow/Page key moving the page underneath on its way out
+      if (e.type !== "pointerdown") e.preventDefault();
+      setIndex(FRAMES.length);
+    };
+    const opts = { passive: false } as const;
+    window.addEventListener("wheel", skip, opts);
+    window.addEventListener("touchmove", skip, opts);
+    window.addEventListener("keydown", skip);
+    window.addEventListener("pointerdown", skip);
+    return () => {
+      window.removeEventListener("wheel", skip);
+      window.removeEventListener("touchmove", skip);
+      window.removeEventListener("keydown", skip);
+      window.removeEventListener("pointerdown", skip);
+    };
+  }, [exiting]);
 
   useEffect(() => {
     if (exiting) return;
@@ -166,9 +186,9 @@ function IntroSequence({ onComplete }: { onComplete: () => void }) {
 
 /**
  * Session-scoped gate: plays once per browser session, and is skipped
- * outright when the visitor prefers reduced motion (no visible skip
- * button — 05_COMPONENT_LIBRARY.md only requires one "if accessibility
- * requires it").
+ * outright when the visitor prefers reduced motion or arrives at a section
+ * of the page (a #hash link, e.g. the "Back to Categories" door) rather
+ * than the top. Any input skips it while it plays (see IntroSequence).
  */
 export function Intro() {
   const [shouldPlay, setShouldPlay] = useState<boolean | null>(null);
@@ -178,12 +198,12 @@ export function Intro() {
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+    const deepLink = window.location.hash.length > 1;
 
-    sessionStorage.setItem(SESSION_KEY, "1");
     // sessionStorage/matchMedia don't exist during SSR, so this can't be
     // derived at render time — it must sync from the browser after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShouldPlay(!(alreadyPlayed || reducedMotion));
+    setShouldPlay(!(alreadyPlayed || reducedMotion || deepLink));
   }, []);
 
   if (!shouldPlay) return null;

@@ -101,7 +101,7 @@ const hoodie = (slug: string, name: string, opts: Pick<Garment, "faceBack"> = {}
   slug,
   name,
   flat: `/apparel/hoodies/flat/${slug}.webp`,
-  print: `/apparel/hoodies/prints/${slug}.png`,
+  print: `/apparel/hoodies/prints/${slug}.webp`,
   ...opts,
 });
 /** shown as its own model, as authored: an all-over pattern (its own UVs,

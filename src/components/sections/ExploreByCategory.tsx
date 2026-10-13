@@ -1,5 +1,6 @@
 import { getAllCategories } from "@/lib/content";
 import { CategoryCard } from "@/components/ui/CategoryCard";
+import { TEXTURES, textureStyle } from "@/lib/textures";
 
 /**
  * 04_CONTENT_ARCHITECTURE.md: categories function as chapters, not filters.
@@ -15,12 +16,7 @@ export function ExploreByCategory() {
     <section
       id="explore-by-category"
       className="relative flex min-h-screen w-full snap-start items-center justify-center px-6 py-16 lg:px-8 lg:py-10"
-      style={{
-        backgroundImage: "url('/textures/textured-page.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
+      style={textureStyle(TEXTURES.textured)}
     >
       {/*
         Mobile/tablet: simple equal-width 2x2 grid. Desktop (lg+): each

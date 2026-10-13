@@ -202,12 +202,18 @@ function Garment({ view, reducedMotion }: { view: GarmentView; reducedMotion: bo
     const key = viewKey(view);
     loadGarment(view, anisotropy).then((object) => {
       // a later selection may have superseded this one while it loaded
-      if (cancelled || key === shown.current || !spin.current) return;
+      if (cancelled || !spin.current) return;
+      if (key === shown.current) {
+        // back to the garment already up before a pending swap had shown its
+        // replacement: let the turn finish on this one, not on the other
+        if (swap.current) swap.current = { ...swap.current, object, key };
+        return;
+      }
+      // this one is ready — warm the cache for its neighbours' prints
+      if (!reducedMotion) view.prefetch.forEach((url) => loadPrint(url, anisotropy));
       if (shown.current === null || reducedMotion) {
         shown.current = key;
         show(spin.current, object);
-        // first one is up — warm the cache for the other prints
-        if (!reducedMotion) view.prefetch.forEach((url) => loadPrint(url, anisotropy));
         return;
       }
       swap.current = { start: clock.elapsedTime, from0: spin.current.rotation.y, object, key };

@@ -64,6 +64,12 @@ export interface Project {
   listedInCategory?: boolean;
   /** Manual sort order within Selected Works and within its category. */
   order: number;
+  /**
+   * Where this project opens when it has no case study of its own — e.g. a
+   * design shown in the Apparel display, opened there with it selected.
+   * Its cards link here directly, and /projects/<slug> redirects here.
+   */
+  href?: string;
   /** Disciplines this project spans. Optional — most existing entries don't set it. */
   services?: string[];
   /** One or two-line project statement, distinct from the card-facing `summary`. */

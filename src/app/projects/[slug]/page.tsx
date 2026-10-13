@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { BoyzClubCaseStudy } from "@/components/case-studies/BoyzClubCaseStudy";
 import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCaseStudy";
@@ -33,6 +33,12 @@ export default async function ProjectPage({
 
   if (!project) {
     notFound();
+  }
+
+  // no case study of its own: it opens where it lives (e.g. the Apparel
+  // display, with it selected) instead of an empty page
+  if (project.href) {
+    redirect(project.href);
   }
 
   // Every project ends with the same two exit doors (ProjectExitNav): back

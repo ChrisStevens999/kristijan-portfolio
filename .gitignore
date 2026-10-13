@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Apparel source masters (GLBs, preview PNGs, mockup photos): 2.7 GB,
+# read by scripts/build-*-assets.mjs, never shipped
+/assets/projects/apperal/
