@@ -105,9 +105,9 @@ export default async function ProjectPage({
     return <TagDesignsCaseStudy category={category} nextProject={nextProject} heroImages={getHeroImages()} />;
   }
 
-  // Placeholder only — the generic project page structure (Hero, Challenge,
-  // Process, Outcome, Gallery, Next Project) for the other projects is
-  // built in Phase 3.
+  // Every project above has a bespoke case study (05_COMPONENT_LIBRARY.md);
+  // this bare title only catches a project added to the content before its
+  // page exists.
   return (
     <main className="flex min-h-screen flex-col bg-black text-off-white">
       <h1>{project.title}</h1>

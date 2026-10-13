@@ -19,7 +19,6 @@
  * src/content/projects/graphic-tees.ts.
  */
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -28,12 +27,9 @@ import { EXTMeshoptCompression, EXTTextureWebP, KHRMeshQuantization } from "@glt
 import { meshopt, prune, quantize, textureCompress } from "@gltf-transform/functions";
 import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer";
 
+import { sharp, writeFlat } from "./lib/assets.mjs";
+
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-// gltf-transform's texture tools already load their own sharp; a second
-// copy (e.g. the one Next uses) in the same process breaks libvips, so
-// borrow theirs.
-const require = createRequire(import.meta.url);
-const sharp = createRequire(require.resolve("ndarray-pixels", { paths: [path.dirname(require.resolve("@gltf-transform/functions"))] }))("sharp");
 
 const SRC = path.join(root, "assets/projects/apperal/t-shirts");
 const OUT = path.join(root, "public/apparel/t-shirts");
@@ -95,19 +91,6 @@ const GALLERY_WIDTH = 1100;
 /** Flat cutouts: trimmed to the shirt, then centred in the same 1200² square
  *  with the same margin, so every thumbnail lines up whatever the source
  *  framing (sources are 3500–7000 px). */
-const FLAT_SIZE = 1200;
-async function writeFlat(src, out) {
-  const trimmed = await sharp(src).trim({ threshold: 1 }).png().toBuffer();
-  const inner = Math.round(FLAT_SIZE * 0.92);
-  const fitted = await sharp(trimmed).resize(inner, inner, { fit: "inside" }).png().toBuffer();
-  const m = await sharp(fitted).metadata();
-  await sharp({
-    create: { width: FLAT_SIZE, height: FLAT_SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
-  })
-    .composite([{ input: fitted, left: Math.round((FLAT_SIZE - m.width) / 2), top: Math.round((FLAT_SIZE - m.height) / 2) }])
-    .webp({ quality: 88, alphaQuality: 100, effort: 6 })
-    .toFile(out);
-}
 
 await MeshoptDecoder.ready;
 await MeshoptEncoder.ready;

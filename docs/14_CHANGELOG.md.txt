@@ -472,6 +472,27 @@ The user supplied the mobile mockup.
 
 ---
 
+# 2026-10-14
+
+## Phase 4 — Site-wide review fixes
+
+### Changes
+
+- Bugs: the two dead-end Selected Works open the Apparel display; pages no longer start invisible until JavaScript loads; the homepage intro is skippable; two phone pages no longer scroll sideways; the listing summaries no longer wrap one word per line; a shirt-swap race and a stuck skate deck fixed.
+- Weight: about 100 MB less across the site — films re-encoded, prints and textures as WebP, unused font files dropped, films and prints loaded only as they're reached, cache headers on media.
+- Accessibility and SEO: per-page titles, descriptions and share images, sitemap, robots, 404 page, one h1 per page, focus handling in overlays, motion held still under focus, reduced motion respected, readable label contrast.
+- Clean-up: about 1,100 lines of unused code removed (the old sticker pole, the old Selected Work card, the expanding cover, unused content fields); the asset scripts share one helper; the spacing tokens no longer shadow Tailwind's sizes; docs brought in line with the code.
+
+### Reason
+
+A full-site review.
+
+### Status
+
+✅ Complete — still open: a Contact section, one name across titles and pages, the Logofolio listing cover.
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

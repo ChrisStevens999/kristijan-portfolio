@@ -22,7 +22,6 @@ export type CategorySlug = string;
 export interface Category {
   slug: CategorySlug;
   title: string;
-  description: string;
   cover: ImageAsset;
   /**
    * Override the category tile's link target. Used when a category has a
@@ -47,11 +46,6 @@ export interface Project {
   /** Short line used on cards (Selected Work / Category listings). */
   summary: string;
   cover: ImageAsset;
-  gallery: ImageAsset[];
-  /** 05_COMPONENT_LIBRARY.md project page structure. */
-  challenge: string;
-  process: string;
-  outcome: string;
   /** Selected Works is curated, not chronological — true = eligible for the homepage. */
   featured: boolean;
   /** Image for the homepage Selected Works when it differs from `cover`. */
@@ -159,15 +153,3 @@ export type SequencePanel =
   | SequenceVideoPanel
   | SequenceRowPanel
   | SequenceDisabledPanel;
-
-export interface SiteConfig {
-  about: {
-    heading: string;
-    body: string[];
-  };
-  contact: {
-    heading: string;
-    email: string;
-    socials: { label: string; href: string }[];
-  };
-}

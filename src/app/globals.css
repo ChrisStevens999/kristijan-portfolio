@@ -47,14 +47,9 @@
   --font-accent: var(--font-accent);
   --font-intro: var(--font-intro);
 
-  --spacing-2xs: var(--space-2xs);
-  --spacing-xs: var(--space-xs);
-  --spacing-sm: var(--space-sm);
-  --spacing-md: var(--space-md);
-  --spacing-lg: var(--space-lg);
-  --spacing-xl: var(--space-xl);
-  --spacing-2xl: var(--space-2xl);
-  --spacing-3xl: var(--space-3xl);
+  /* The --space-* scale is NOT mapped into Tailwind's spacing here: names
+     like "md" would shadow Tailwind's own sizes (max-w-md became 2.5rem).
+     Use it as var(--space-md) or py-[var(--space-md)]. */
 
   --radius-none: var(--radius-none);
   --radius-sm: var(--radius-sm);

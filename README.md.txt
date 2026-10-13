@@ -51,16 +51,14 @@ Do not change this structure without approval.
 ```
 Kristijan-Portfolio/
 
-README.md
+README.md.txt
 
-docs/
-assets/
-references/
-src/
-public/
+docs/       the documentation (the files are .md.txt)
+assets/     supplied source files and masters (fonts, artwork, textures, films)
+scripts/    build scripts that turn masters into what public/ ships
+src/        the Next.js app
+public/     what the site serves as-is (films, 3D models, prints, textures)
 ```
-
-The `src` and `public` folders may not exist initially. Create them only when development begins.
 
 ---
 
@@ -78,6 +76,12 @@ Read the documentation in this order:
 8. 08_ROADMAP.md
 9. 09_AI_INSTRUCTIONS.md
 10. 10_DECISION_LOG.md
+11. 11_VISUAL_ASSETS.md
+12. 12_TYPOGRAPHY.md
+13. 13_LAYOUT_SYSTEM.md
+14. 14_CHANGELOG.md
+
+(Every file is saved as .md.txt; the names above omit the .txt.)
 
 ---
 
@@ -102,11 +106,7 @@ Avoid duplicate assets whenever possible.
 
 # References
 
-The `/references` folder contains inspiration only.
-
-Nothing inside this folder should be copied directly.
-
-Its purpose is to communicate mood, pacing, composition and visual language.
+Reference boards and clips (mood, pacing, composition) are supplied with each request rather than kept in the repo. Nothing in them should be copied directly.
 
 ---
 

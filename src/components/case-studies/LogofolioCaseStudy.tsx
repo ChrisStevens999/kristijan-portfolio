@@ -20,7 +20,7 @@ export function LogofolioCaseStudy({ category, nextProject }: { category?: Categ
         <section
           key={brand.id}
           aria-label={brand.title}
-          className="relative flex h-[100svh] w-full snap-start snap-always items-center justify-center px-6 py-md sm:px-10 lg:px-16"
+          className="relative flex h-[100svh] w-full snap-start snap-always items-center justify-center px-6 py-[var(--space-md)] sm:px-10 lg:px-16"
           style={textureStyle(TEXTURES.black)}
         >
           {/* A 16:9 frame is 9/16 as tall as it is wide, so its width follows

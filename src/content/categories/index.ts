@@ -15,7 +15,6 @@ export const categories: Category[] = [
   {
     slug: "brand-direction",
     title: "Brand Direction",
-    description: "",
     cover: { src: brandDirectionCover, alt: "Brand Direction" },
     // Bypass removed — LXIX is now a second Brand Direction project, so the
     // category listing page is a real listing worth stopping at.
@@ -23,7 +22,6 @@ export const categories: Category[] = [
   {
     slug: "apparel-design",
     title: "Apparel Design",
-    description: "",
     cover: { src: apparelDesignCover, alt: "Apparel Design" },
     // Graphic T's is the chapter's only listed project, so the tile opens it
     // directly and its animated cover plays at once — no one-item listing
@@ -34,7 +32,6 @@ export const categories: Category[] = [
   {
     slug: "illustration",
     title: "Illustration",
-    description: "",
     cover: { src: illustrationCover, alt: "Illustration" },
     // No href bypass: the category page now hosts real content (the Tag
     // Designs gallery) in addition to the Damaged Goods project listing.
@@ -42,7 +39,6 @@ export const categories: Category[] = [
   {
     slug: "creative-exploration",
     title: "Creative Exploration",
-    description: "",
     cover: { src: creativeExplorationCover, alt: "Creative Exploration" },
   },
 ];

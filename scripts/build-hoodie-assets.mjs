@@ -43,7 +43,6 @@
  * it to src/content/projects/apparel-display.ts.
  */
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -52,16 +51,12 @@ import { ALL_EXTENSIONS, EXTMeshoptCompression } from "@gltf-transform/extension
 import { dedup, prune, quantize, textureCompress } from "@gltf-transform/functions";
 import { MeshoptDecoder, MeshoptEncoder } from "meshoptimizer";
 
+import { sharp, writeFlat } from "./lib/assets.mjs";
+
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-// borrow gltf-transform's own sharp (a second copy in-process breaks libvips)
-const require = createRequire(import.meta.url);
-const sharp = createRequire(
-  require.resolve("ndarray-pixels", { paths: [path.dirname(require.resolve("@gltf-transform/functions"))] }),
-)("sharp");
 
 const SRC = path.join(root, "assets/projects/apperal/hoodies");
 const OUT = path.join(root, "public/apparel/hoodies");
-const FLAT_SIZE = 1200;
 
 /** slug -> sources. The PNG is the strip cutout; the GLB carries the print.
  *  `own`: the GLB ships whole — its own UV layout (an all-over pattern) or
@@ -122,21 +117,6 @@ async function compressModel(doc) {
     .createExtension(EXTMeshoptCompression)
     .setRequired(true)
     .setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.QUANTIZE });
-}
-
-/** Preview cutout: trimmed to the hoodie, then centred in a square with the
- *  same margin, so every thumbnail lines up whatever the source framing. */
-async function writeFlat(src, out) {
-  const trimmed = await sharp(src).trim({ threshold: 1 }).png().toBuffer();
-  const inner = Math.round(FLAT_SIZE * 0.92);
-  const fitted = await sharp(trimmed).resize(inner, inner, { fit: "inside" }).png().toBuffer();
-  const m = await sharp(fitted).metadata();
-  await sharp({
-    create: { width: FLAT_SIZE, height: FLAT_SIZE, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
-  })
-    .composite([{ input: fitted, left: Math.round((FLAT_SIZE - m.width) / 2), top: Math.round((FLAT_SIZE - m.height) / 2) }])
-    .webp({ quality: 88, alphaQuality: 100, effort: 6 })
-    .toFile(out);
 }
 
 await MeshoptDecoder.ready;

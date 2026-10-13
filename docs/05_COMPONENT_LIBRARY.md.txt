@@ -40,19 +40,20 @@ Rules
 
 ---
 
-# SELECTED WORK CARD
+# SELECTED WORK CAROUSEL
 
 Purpose
 
-Highlight one project.
+Present the curated projects, one at a time.
 
 Rules
 
 • Large imagery
 • Minimal text
-• Entire card clickable
+• The centre card is the link; a side card brings itself to the centre
 • Hover is subtle
 • Image remains the hero
+• Holds still under the pointer or keyboard focus
 
 ---
 
@@ -119,16 +120,14 @@ Rules
 
 # PROJECT PAGE
 
-Structure
+Every case study is bespoke, built to its own supplied reference board
+(10_DECISION_LOG.md, 2026-08-30) — not a shared Hero / Challenge / Process
+/ Outcome / Gallery template. What every project page shares:
 
-1. Hero
-2. Challenge
-3. Process
-4. Outcome
-5. Gallery
-6. Exit navigation: two doors side by side at the very bottom — back to the project's category on the left, the next project in that same category on the right, wrapping around (ProjectExitNav). A project with no sibling in its category ends with a single full-width back door instead: to the categories for Graphic T's (Apparel Design's only project), to its category listing otherwise.
+1. One h1 (screen-reader-only where the title is part of the artwork)
+2. Exit navigation: two doors side by side at the very bottom — back to the project's category on the left, the next project in that same category on the right, wrapping around (ProjectExitNav). A project with no sibling in its category ends with a single full-width back door instead: to the categories for Graphic T's (Apparel Design's only project), to its category listing otherwise.
 
-Every project should follow this structure unless there is a compelling reason not to.
+A project with no case study of its own opens where it lives instead (e.g. a design in the Apparel display, selected).
 
 ---
 

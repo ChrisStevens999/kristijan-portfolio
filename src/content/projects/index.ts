@@ -16,9 +16,8 @@ import cyclopsSculptureCover from "../../../assets/lab/statue-cover.jpg";
 import logofolioCover from "../../../assets/projects/boyzclub/logofolio/10-logo-black.png";
 
 /**
- * One entry per project. challenge/process/outcome are left empty: no
- * project-page copy has been supplied yet, and Selected Works cards don't
- * display them. The five homepage Selected Works are, in order: Drop In
+ * One entry per project; each case study is bespoke (see
+ * src/app/projects/[slug]/page.tsx). The five homepage Selected Works are, in order: Drop In
  * Skateboards, Neo Tokyo, LXIX, Hardcore Mentality and BoyzClub.
  */
 export const projects: Project[] = [
@@ -43,10 +42,6 @@ export const projects: Project[] = [
       src: "/featured/1-fav.png",
       alt: "Drop In Skateboards campaign photograph",
     },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     featured: true,
     order: 1,
   },
@@ -59,10 +54,6 @@ export const projects: Project[] = [
     // no case study of its own: it is one of the Pattern AOPs, so it opens
     // the Apparel display with it selected
     href: "/projects/graphic-tees?collection=pattern-aops&garment=neo-tokyo",
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     featured: true,
     // Homepage Selected Works only — the Apparel listing shows just Graphic T's.
     listedInCategory: false,
@@ -77,10 +68,6 @@ export const projects: Project[] = [
     // no case study of its own: it is one of the Graphic T's, so it opens
     // the Apparel display with it selected
     href: "/projects/graphic-tees?collection=graphic-tees&garment=hardcore-mentality",
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     featured: true,
     // Homepage Selected Works only — the Apparel listing shows just Graphic T's.
     listedInCategory: false,
@@ -104,10 +91,6 @@ export const projects: Project[] = [
     cover: { src: boyzclubCover, alt: "Camouflaged sports car with the BoyzClub wordmark" },
     // Homepage Selected Works shows the BoyzClub cover art instead.
     featuredCover: { src: boyzclubFeaturedCover, alt: "BoyzClub — a figure in a blue balaclava over a grainy crowd" },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Fifth of the homepage Selected Works, and in the Brand Direction listing.
     featured: true,
     order: 5,
@@ -131,10 +114,6 @@ export const projects: Project[] = [
     // Homepage Selected Works shows the LXIX sunglasses campaign shot instead.
     featuredCover: { src: lxixFeaturedCover, alt: "LXIX — a model in sunglasses" },
     featuredOrder: 3,
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Third of the homepage Selected Works (see featuredCover/featuredOrder),
     // and the second Brand Direction project in that category's listing.
     featured: true,
@@ -152,10 +131,6 @@ export const projects: Project[] = [
     // logo still (the first brand on the reference board) stands in until
     // one is. Swap this import when a dedicated cover arrives.
     cover: { src: logofolioCover, alt: "BoyzClub wordmark, white on black" },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Third Brand Direction project in that category's listing; not on the homepage.
     featured: false,
     order: 7,
@@ -176,10 +151,6 @@ export const projects: Project[] = [
       desktopObjectPosition: "50% 15%",
       mobileObjectPosition: "50% 15%",
     },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
@@ -198,10 +169,6 @@ export const projects: Project[] = [
       desktopObjectPosition: "60% 50%",
       mobileObjectPosition: "60% 50%",
     },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
@@ -220,10 +187,6 @@ export const projects: Project[] = [
       src: stickerArchiveThumbnail,
       alt: "A cluster of die-cut sticker designs on black",
     },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     // Phase 1 interactive prototype — reachable at /projects/sticker-archive
     // and via the Illustration category listing.
     featured: false,
@@ -238,10 +201,6 @@ export const projects: Project[] = [
     // Still of the animated APPAREL angel cover — on the Apparel listing it
     // expands full screen into the animated intro, then the project page.
     cover: { src: "/apparel/hero/cover.jpg", alt: "A red-lit angel statue rising in front of the word APPAREL" },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     featured: false,
     order: 11,
   },
@@ -252,10 +211,6 @@ export const projects: Project[] = [
     summary: "An interactive 3D sculpture in the dark: the pointer is the light.",
     // a still of the showcase itself (captured from the page with ?still)
     cover: { src: cyclopsSculptureCover, alt: "A silver classical statue with a glowing red visor, lit from one side in the dark" },
-    gallery: [],
-    challenge: "",
-    process: "",
-    outcome: "",
     featured: false,
     order: 12,
   },

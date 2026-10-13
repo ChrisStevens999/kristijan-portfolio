@@ -36,6 +36,9 @@ Maximum content width:
 
 Very large imagery may intentionally extend beyond this limit when it strengthens the composition.
 
+(Current pages are image-led: full-bleed sections, or a framed column for
+the reference-board case studies. No page uses a 1600px text container yet.)
+
 ---
 
 # Horizontal Padding
@@ -136,7 +139,7 @@ Tablet
 
 Mobile
 
-1 column
+2 columns (the 2x2 chapter covers stay a 2x2 on phones, 2026-10-05)
 
 Cards should maintain equal proportions.
 

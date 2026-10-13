@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { ReactNode } from "react";
 
-import { APPAREL_HERO_LAYERS } from "@/components/categories/apparelHeroLayers";
 import { IllustrationCategoryPage } from "@/components/categories/IllustrationCategoryPage";
-import { ExpandingCoverLink } from "@/components/ui/ExpandingCoverLink";
 import { getAllCategories, getCategoryBySlug, getProjectsByCategory } from "@/lib/content";
 
 export function generateStaticParams() {
@@ -70,9 +67,9 @@ export default async function CategoryPage({
       </div>
       <div className="flex flex-col">
         {categoryProjects.map((project, index) => (
-          <ProjectCoverLink
+          <Link
             key={project.slug}
-            slug={project.slug}
+            href={`/projects/${project.slug}`}
             className="group relative flex h-[80vh] w-full items-end overflow-hidden sm:h-screen"
           >
             <Image
@@ -94,33 +91,9 @@ export default async function CategoryPage({
                   that name, which wrapped this one word per line */}
               <p className="mt-3 max-w-[28rem] text-off-white/80">{project.summary}</p>
             </div>
-          </ProjectCoverLink>
+          </Link>
         ))}
       </div>
     </main>
-  );
-}
-
-/**
- * Projects whose cover opens with a full-screen transition — the cover grows
- * to fill the screen, dips to black, and the project's own intro takes over —
- * instead of a plain link. Value: the full-resolution still for that frame.
- */
-const EXPANDING_COVERS: Record<string, { still: string; preload?: string[] }> = {
-  // preload: the layers of the animated intro the project page opens with
-  "graphic-tees": { still: "/apparel/hero/cover.jpg", preload: APPAREL_HERO_LAYERS },
-};
-
-function ProjectCoverLink({ slug, className, children }: { slug: string; className: string; children: ReactNode }) {
-  const href = `/projects/${slug}`;
-  const expandTo = EXPANDING_COVERS[slug];
-  return expandTo ? (
-    <ExpandingCoverLink href={href} image={expandTo.still} preload={expandTo.preload} className={className}>
-      {children}
-    </ExpandingCoverLink>
-  ) : (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
   );
 }

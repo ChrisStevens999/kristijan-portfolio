@@ -34,14 +34,14 @@ Status: Complete
 - [x] Explore by Category (2x2 chapter covers, 3:4 tiles with names always shown, 2026-10-05)
 - [x] About — removed 2026-09-10, returned 2026-10-07 as a wordless stop between Selected Works and Explore by Category: a deck of ten photographs plays the reference clip’s motion and collides into the looping portrait video, with a “Click to find out about me” line
 - [x] About page — /about shows the five supplied boards (about me, work history title and list, free time title and board) as full-screen artwork, one snap stop each, 2026-10-07
-- [ ] About boards for phones — portrait (9:16) exports of the five boards into assets/about/boards/portrait; until then phones see the landscape boards cropped to the middle
+- [x] About boards for phones — portrait exports of the five boards (public/about/boards/portrait), shown at their own proportions on phones
 - [ ] About page as live HTML — the copy is baked into the boards; rebuild them as components with live text (12_TYPOGRAPHY.md)
 - [ ] Contact
 - [x] Responsive adjustments (done per section as each is built; mobile layouts exist for every shipped section)
-- [ ] Accessibility review
+- [x] Accessibility review (2026-10-14): one h1 per page, focus kept inside open overlays and returned on close, carousels and galleries hold still under focus or the pointer, reduced motion respected by the intros, film panels and scroll snapping, faint labels raised to readable contrast
 - [x] Performance optimization — shipped images 794 MB → 266 MB with no visual change (2026-09-29); 3D assets compressed per project
 
-Status: Complete except Contact and the accessibility review
+Status: Complete except Contact (and the About page as live HTML)
 
 ---
 
@@ -56,9 +56,9 @@ Status: Complete except Contact and the accessibility review
   - [x] Damaged Goods (2026-09-30)
   - [x] Skateboard Designs — interactive deck wall + campaign panels (2026-09-19)
   - [x] Apparel display — animated APPAREL intro, 3D Graphic T's, Pattern AOPs and Hoodies tabs (2026-10-02 → 2026-10-07)
-  - [ ] Neo Tokyo, Hardcore Mentality — homepage Selected Works only; their project routes are still the placeholder
-- [x] Category pages: Illustration has its designed "Projects" grid (2026-08-30); Brand Direction, Apparel Design and Creative Exploration keep the minimal listing until designed
-- [ ] Test navigation between projects
+  - [x] Neo Tokyo, Hardcore Mentality — homepage Selected Works only, with no case study of their own: they open the Apparel display with that design selected (2026-10-14)
+- [x] Category pages: Illustration has its designed "Projects" grid (2026-08-30); Apparel Design opens Graphic T's directly (2026-10-13); Brand Direction and Creative Exploration keep the minimal listing until designed
+- [x] Navigation between projects — every project ends with Back to Category and Next Project (the next in its category) doors (2026-10-13)
 
 ---
 
@@ -75,9 +75,9 @@ Status: Complete except Contact and the accessibility review
 
 # Phase 5 — Launch
 
-- [ ] SEO
+- [x] SEO — per-page titles, descriptions and share images, robots.txt, sitemap.xml, a 404 page (2026-10-14)
 - [ ] Analytics
-- [ ] Deploy
+- [x] Deploy — Vercel, from master
 - [ ] Final QA
 - [ ] Portfolio announcement
 

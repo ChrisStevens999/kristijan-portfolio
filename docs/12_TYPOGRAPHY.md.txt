@@ -74,11 +74,23 @@ Loaded through next/font/google, like Anton. Not for headings or long copy.
 
 ---
 
+# Anton
+
+Condensed display face for the Apparel display's name tag only (the shirt,
+pattern or hoodie name). Loaded through next/font/google, on that page only.
+
+Not for anything else.
+
+---
+
 # Rules
 
 Typography should remain HTML.
 
-Never bake text into images.
+Never bake text into images. The exception is supplied artwork shown as
+artwork — the About boards and the case-study panels arrive as finished,
+art-directed images with their words in them; their text is repeated as
+screen-reader text or alt text.
 
 Maintain generous spacing.
 

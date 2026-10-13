@@ -72,6 +72,16 @@ function Panel({ panel, framed }: { panel: SequenceImagePanel; framed: boolean }
     );
   }
 
+  // a raw public/ path has no intrinsic size for next/image: give it the
+  // panel's aspect ratio (SequenceImagePanel.aspectRatio) and fill that box
+  if (typeof panel.src === "string") {
+    return (
+      <div className="relative w-full" style={{ aspectRatio: panel.aspectRatio ?? 16 / 9 }}>
+        <Image src={panel.src} alt={panel.alt} fill sizes="100vw" quality={95} priority={panel.priority} className="object-cover" />
+      </div>
+    );
+  }
+
   return (
     <Image
       src={panel.src}
@@ -109,7 +119,8 @@ function RowPanel({ panel }: { panel: SequenceRowPanel }) {
  * Renders a flat, ordered SequencePanel array as one seamless vertical
  * composition — no gap, no padding, no max-width wrapper. Shared by every
  * image-sequence case study (BoyzClub, Damaged Goods) reconstructing a
- * supplied tall reference board, so the rendering logic exists once.
+ * supplied tall reference board (BoyzClub, LXIX, Damaged Goods), so the
+ * rendering logic exists once.
  */
 export function PanelSequence({
   panels,

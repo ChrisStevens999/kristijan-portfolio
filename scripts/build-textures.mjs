@@ -11,16 +11,12 @@
  *   node scripts/build-textures.mjs
  */
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { sharp } from "./lib/assets.mjs";
+
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-// borrow gltf-transform's own sharp, as the other build scripts do
-const require = createRequire(import.meta.url);
-const sharp = createRequire(
-  require.resolve("ndarray-pixels", { paths: [path.dirname(require.resolve("@gltf-transform/functions"))] }),
-)("sharp");
 
 const SRC = path.join(root, "assets/textures");
 const OUT = path.join(root, "public/textures");

@@ -48,7 +48,6 @@ Never use:
 - generated textures
 
 The background should almost disappear while still giving depth.
-The background should almost disappear while still giving depth.
 
 ## Background Surface Mapping
 
@@ -74,10 +73,14 @@ Never overuse it.
 
 ---
 
-These textures ship as public/textures/black-page.png, red-page.png and
-textured-page.png (the only copies kept in the repo). A white editorial
-texture was supplied but never used; it was dropped in the 2026-10-07
-clean-up and can be re-added if a lighter surface is ever designed.
+The supplied PNGs are kept as masters in assets/textures/ and ship as
+WebP of the same size (public/textures/black-page.webp, red-page.webp and
+textured-page.webp; scripts/build-textures.mjs) — the grain survives at a
+fraction of the weight. Components use them through src/lib/textures.ts.
+public/textures/ also holds metal-zinc.jpg and metal-scratches.jpg, the
+sticker pole's metal. A white editorial texture was supplied but never
+used; it was dropped in the 2026-10-07 clean-up and can be re-added if a
+lighter surface is ever designed.
 
 These textures are reusable UI surfaces.
 
@@ -109,7 +112,8 @@ Never change the color grading unless requested.
 
 Use only artwork from:
 
-assets/featured/
+assets/featured projects/ (and public/featured/ for the one cover served
+as-is)
 
 Do not generate placeholder artwork.
 

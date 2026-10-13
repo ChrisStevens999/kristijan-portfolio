@@ -301,6 +301,20 @@ Requested with the mockup. The earlier phone layout stacked the title, frame, ta
 
 ---
 
+# 2026-10-14
+
+## Decision
+
+Neo Tokyo and Hardcore Mentality stay in the homepage Selected Works, but since neither has a case study they open the Apparel display with that design selected (Neo Tokyo is a Pattern AOP, Hardcore Mentality a Graphic T), instead of an empty page.
+
+Web copies of supplied media are re-encoded for the web while the masters stay in assets/: films as 1080p H.264 (the BoyzClub films were 4K HEVC, which Firefox and many Windows browsers can't play), deck and hoodie prints and the background textures as full-size WebP. Each has a build script.
+
+### Reason
+
+A full-site review found both featured projects led to a blank page, two films that some browsers couldn't play, and pages carrying tens of megabytes they didn't need.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

@@ -22,7 +22,13 @@
  */
 const fs = require("fs");
 const path = require("path");
-const sharp = require(path.join(__dirname, "../node_modules/.pnpm/sharp@0.34.5/node_modules/sharp"));
+// sharp isn't a site dependency: borrow gltf-transform's copy, as the other
+// build scripts do (scripts/lib/assets.mjs) — a pinned node_modules/.pnpm
+// path broke on every sharp version bump
+const { createRequire } = require("module");
+const sharp = createRequire(
+  require.resolve("ndarray-pixels", { paths: [path.dirname(require.resolve("@gltf-transform/functions"))] }),
+)("sharp");
 
 const root = path.join(__dirname, "..");
 const DRY = process.argv.includes("--dry");
@@ -31,7 +37,8 @@ const MAX_SERVED = 3840;
 const walk = (d, o = []) => {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name);
-    e.isDirectory() ? walk(p, o) : o.push(p);
+    if (e.isDirectory()) walk(p, o);
+    else o.push(p);
   }
   return o;
 };

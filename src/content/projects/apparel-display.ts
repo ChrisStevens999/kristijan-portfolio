@@ -62,7 +62,7 @@ const aop = (slug: string, name: string): Garment => ({
   model: `/apparel/aop/models/${slug}.glb`,
 });
 
-export const patternShirts: Garment[] = [
+const patternShirts: Garment[] = [
   aop("ronin", "Ronin"),
   aop("neo-tokyo", "Neo Tokyo"),
   aop("midnight-blossom", "Midnight Blossom"),
@@ -90,11 +90,11 @@ const patternPhoto = (slug: string, n: 1 | 2, shirt: string): RealWorldPhoto => 
   shirt,
 });
 
-export const patternPhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
+const patternPhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
   patternShirts.map((s) => patternPhoto(s.slug, n, s.name)),
 );
 
-export const HOODIE_MODEL = "/apparel/hoodies/hoodie.glb";
+const HOODIE_MODEL = "/apparel/hoodies/hoodie.glb";
 
 /** Names are the preview PNGs' file names (see the build script for the pairs). */
 const hoodie = (slug: string, name: string, opts: Pick<Garment, "faceBack"> = {}): Garment => ({
@@ -142,7 +142,7 @@ const hoodiePhoto = (slug: string, n: 1 | 2, name: string): RealWorldPhoto => ({
 });
 const HOODIES_WITH_ONE_PHOTO = new Set(["concrete-memories"]);
 
-export const hoodiePhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
+const hoodiePhotos: RealWorldPhoto[] = ([1, 2] as const).flatMap((n) =>
   hoodies.filter((h) => n === 1 || !HOODIES_WITH_ONE_PHOTO.has(h.slug)).map((h) => hoodiePhoto(h.slug, n, h.name)),
 );
 
