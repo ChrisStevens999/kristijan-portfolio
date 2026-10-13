@@ -37,6 +37,8 @@ const FRAME = { l: 72, t: 38, r: 3770, b: 1595 }; // white frame interior → 3D
 const BAR = { l: 72, t: 1625, r: 3771, b: 2091 };
 const STRIP = { l: 330, r: 3490 }; // visible shirt window inside the bar
 const VISIBLE = 6;
+/** on the phone the plate overshoots the frame by this much of its height, top and bottom */
+const PLATE_BLEED = 0.04;
 
 function useIsDesktop() {
   return useSyncExternalStore(
@@ -542,7 +544,10 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
         // the screen leaves it.
         <section className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-16">
           <div className="relative min-h-[24rem] flex-1 overflow-hidden rounded-[1.6rem] border-[3px] border-[#d2d2d2]">
-            {/* the frame interior of the plate, cropped around the shadow */}
+            {/* the frame interior of the plate, cropped around the shadow —
+                scaled a few percent past the frame top and bottom, so the
+                plate's own white frame line never peeks in beside the
+                border (on a phone it read as a double line) */}
             {/* eslint-disable-next-line @next/next/no-img-element -- exact backdrop plate */}
             <img
               src={BG}
@@ -550,8 +555,8 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
               draggable={false}
               className="absolute max-w-none select-none"
               style={{
-                height: `${(H / (FRAME.b - FRAME.t)) * 100}%`,
-                top: `${(-FRAME.t / (FRAME.b - FRAME.t)) * 100}%`,
+                height: `${(H / (FRAME.b - FRAME.t)) * (1 + 2 * PLATE_BLEED) * 100}%`,
+                top: `${((-FRAME.t / (FRAME.b - FRAME.t)) * (1 + 2 * PLATE_BLEED) - PLATE_BLEED) * 100}%`,
                 left: "50%",
                 transform: `translateX(-${(1926 / W) * 100}%)`,
               }}
@@ -571,8 +576,8 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
               <NameTag
                 name={garment.name}
                 label={collection.nameLabel}
-                className="right-4 w-[50%]"
-                style={{ bottom: "calc(2.2rem + 3.3vw)", fontSize: "0.6rem" }}
+                className="right-4 w-[38%]"
+                style={{ bottom: "calc(2.2rem + 3.3vw)", fontSize: "0.46rem" }}
               />
             )}
 
