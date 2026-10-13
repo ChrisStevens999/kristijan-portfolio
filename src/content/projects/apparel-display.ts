@@ -125,6 +125,8 @@ export const hoodies: Garment[] = [
   ownHoodie("brush-like-camo", "Brush Like Camo"),
   hoodie("operator", "Operator"),
   hoodie("vision", "Vision"),
+  // "Hungry dogs are never loyal"
+  hoodie("hungry-dogs", "Hungry Dogs"),
 ];
 
 export const apparelCollections: GarmentCollection[] = [

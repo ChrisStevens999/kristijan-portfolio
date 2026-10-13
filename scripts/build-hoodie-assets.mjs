@@ -72,6 +72,7 @@ const HOODIES = {
   "brush-like-camo": { glb: "Brush-Like-Camo-Hoodie.glb", png: "Brush Like Camo.png", own: true },
   operator: { glb: "Operator-Hoodie.glb", png: "Opperator Hoodie.png" },
   vision: { glb: "Vision-Hoodie.glb", png: "Vision.png" },
+  "hungry-dogs": { glb: "Hungry-Dogs-Hoodie.glb", png: "Hungry Dogs.png" },
 };
 /** the mesh + normal map are identical in every GLB; this one supplies them */
 const SHARED_MESH_FROM = "bushido";
