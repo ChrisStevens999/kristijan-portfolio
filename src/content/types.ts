@@ -28,9 +28,9 @@ export interface Category {
    * Override the category tile's link target. Used when a category has a
    * single flagship project, so the tile goes straight to it instead of
    * stopping at a one-item listing; the listing route then redirects there
-   * too, and the project's "back to category" door returns to the
-   * homepage's chapters instead. Omit once a category has more than one
-   * project worth listing.
+   * too, and the project ends with a single "back to categories" door to
+   * the homepage's chapters instead of the usual two. Omit once a category
+   * has more than one project worth listing.
    */
   href?: string;
   /**

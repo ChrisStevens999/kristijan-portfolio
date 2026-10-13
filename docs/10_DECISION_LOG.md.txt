@@ -269,7 +269,7 @@ Brand Direction now lists BoyzClub, LXIX and Logofolio. The listing cover for Lo
 
 ## Decision
 
-Every project page ends the same way: two doors side by side at the very bottom — on the left, back to the project's own category listing; on the right, the next project in global order. On a phone they stack, back first.
+Every project page ends the same way: two doors side by side at the very bottom — on the left, back to the project's own category listing; on the right, the next project in that same category, wrapping around, never one from another chapter. A project with no sibling in its category gets the back door alone, full width. On a phone the two stack, back first.
 
 ### Reason
 
@@ -281,7 +281,7 @@ Requested. Until now each case study ended with one or the other (a forward link
 
 ## Decision
 
-The Apparel Design tile opens Graphic T's directly, and its animated cover starts the moment the page arrives. The one-item Apparel listing is gone: its route redirects to the project, and the project's "back to category" door returns to the homepage's chapters.
+The Apparel Design tile opens Graphic T's directly, and its animated cover starts the moment the page arrives. The one-item Apparel listing is gone: its route redirects to the project, and the project ends with a single full-width "Back to Categories" door to the homepage's chapters — not the two doors every other project has, since there is no listing to return to and no sibling to go on to.
 
 ### Reason
 

@@ -126,7 +126,7 @@ Structure
 3. Process
 4. Outcome
 5. Gallery
-6. Exit navigation: two doors side by side at the very bottom — back to the project's category on the left, the next project on the right (ProjectExitNav)
+6. Exit navigation: two doors side by side at the very bottom — back to the project's category on the left, the next project in that same category on the right, wrapping around (ProjectExitNav). A project with no sibling in its category ends with a single full-width back door instead: to the categories for Graphic T's (Apparel Design's only project), to its category listing otherwise.
 
 Every project should follow this structure unless there is a compelling reason not to.
 

@@ -7,9 +7,15 @@ import type { Category, ImageAsset, Project } from "@/content/types";
  * 05_COMPONENT_LIBRARY.md's Project Page structure ends with the exit
  * navigation: two doors side by side at the very bottom of every project.
  * Left, back to the project's own category listing; right, forward to the
- * next project in global order (wrapping at the end). One visual component
+ * next project in that same category (wrapping at the end). One visual component
  * shared by every case study rather than each inventing its own. On a
  * phone the two stack, back first.
+ *
+ * A project that IS its category (the category's tile bypasses its listing
+ * — category.href — because this is its only project) gets one door
+ * instead, full width: back to the homepage's chapters. There is no
+ * listing to return to and no sibling to go on to. A project with a
+ * listing but no sibling likewise gets just the back door, full width.
  */
 export function ProjectExitNav({
   category,
@@ -20,15 +26,28 @@ export function ProjectExitNav({
 }) {
   if (!category && !nextProject) return null;
 
+  if (category?.href) {
+    return (
+      <nav aria-label="Project exit">
+        <ExitDoor
+          href="/#explore-by-category"
+          image={category.cover}
+          kicker={category.title}
+          title="← Back to Categories"
+          uppercase
+        />
+      </nav>
+    );
+  }
+
   return (
-    <nav aria-label="Project exit" className="grid grid-cols-1 sm:grid-cols-2">
+    <nav
+      aria-label="Project exit"
+      className={category && nextProject ? "grid grid-cols-1 sm:grid-cols-2" : undefined}
+    >
       {category ? (
         <ExitDoor
-          // A category whose tile bypasses its listing (category.href) has
-          // the listing route redirect there too, so this door would only
-          // bounce back to the project it's on — it returns to the
-          // homepage's chapters instead.
-          href={category.href ? "/#explore-by-category" : `/categories/${category.slug}`}
+          href={`/categories/${category.slug}`}
           image={category.cover}
           kicker="Back to Category"
           title={`← ${category.title}`}

@@ -31,10 +31,17 @@ export function getProjectsByCategory(slug: string): Project[] {
   );
 }
 
-/** Next project in the full ordered list, wrapping around at the end. */
+/**
+ * The next project in the same category's listing, wrapping around at the
+ * end — never a project from another chapter. Undefined when the project
+ * has no listed sibling (it is its category's only project, or isn't
+ * listed in its category at all).
+ */
 export function getNextProject(slug: string): Project | undefined {
-  const all = getAllProjects();
-  const index = all.findIndex((project) => project.slug === slug);
-  if (index === -1) return undefined;
-  return all[(index + 1) % all.length];
+  const project = getProjectBySlug(slug);
+  if (!project) return undefined;
+  const siblings = getProjectsByCategory(project.category);
+  const index = siblings.findIndex((p) => p.slug === slug);
+  if (index === -1 || siblings.length < 2) return undefined;
+  return siblings[(index + 1) % siblings.length];
 }
