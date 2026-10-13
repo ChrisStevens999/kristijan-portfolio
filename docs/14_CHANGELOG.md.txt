@@ -400,6 +400,42 @@ The user asked for a logofolio of the brand animations built from the supplied s
 
 ---
 
+# 2026-10-13
+
+## Phase 3 — Project exit doors
+
+### Changes
+
+- Every project page now ends with ProjectExitNav: Back to Category on the left, Next Project on the right, side by side (stacked on phones). It replaces NextProjectNav's two single-door modes, and the Cyclops Sculpture page, which had no exit, now scrolls to one below its stage.
+
+### Reason
+
+The user asked for both doors at the bottom of every project.
+
+### Status
+
+✅ Complete
+
+---
+
+# 2026-10-13
+
+## Phase 3 — Apparel opens directly
+
+### Changes
+
+- The Apparel Design category tile links straight to /projects/graphic-tees (Category.href) and preloads the animated cover's three layers while on screen (Category.preload, via react-dom preload in CategoryCard), so the intro plays at once. /categories/apparel-design redirects to the project; a bypassed category's "Back to Category" door goes to the homepage's Explore by Category section.
+
+### Reason
+
+The user asked for the one-item listing to go and the Apparel animation to start as soon as possible.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

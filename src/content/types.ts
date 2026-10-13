@@ -25,12 +25,19 @@ export interface Category {
   description: string;
   cover: ImageAsset;
   /**
-   * Override the category tile's link target. Used when a category
-   * currently has a single flagship project, so the tile goes straight to
-   * it instead of stopping at the (still-unbuilt) category listing page.
-   * Omit once a category has more than one project worth listing.
+   * Override the category tile's link target. Used when a category has a
+   * single flagship project, so the tile goes straight to it instead of
+   * stopping at a one-item listing; the listing route then redirects there
+   * too, and the project's "back to category" door returns to the
+   * homepage's chapters instead. Omit once a category has more than one
+   * project worth listing.
    */
   href?: string;
+  /**
+   * Images the `href` destination's intro plays, fetched while the tile is
+   * on screen so the intro can start the moment the page arrives.
+   */
+  preload?: string[];
 }
 
 export interface Project {

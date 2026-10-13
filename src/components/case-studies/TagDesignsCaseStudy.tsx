@@ -1,13 +1,13 @@
 import Image from "next/image";
 
 import { TagDesignsHero } from "@/components/sections/TagDesignsHero";
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import {
   tagDesignsArchive,
   tagDesignsGallery,
   tagDesignsStatement,
 } from "@/content/projects/tag-designs";
-import type { Category } from "@/content/types";
+import type { Category, Project } from "@/content/types";
 import type { HeroImage } from "@/lib/hero-images";
 
 /**
@@ -19,9 +19,11 @@ import type { HeroImage } from "@/lib/hero-images";
  */
 export function TagDesignsCaseStudy({
   category,
+  nextProject,
   heroImages,
 }: {
   category: Category;
+  nextProject?: Project;
   heroImages: HeroImage[];
 }) {
   return (
@@ -59,7 +61,7 @@ export function TagDesignsCaseStudy({
         className="block h-auto w-full"
       />
 
-      <NextProjectNav mode="back-to-category" category={category} />
+      <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );
 }

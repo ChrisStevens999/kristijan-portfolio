@@ -265,6 +265,30 @@ Brand Direction now lists BoyzClub, LXIX and Logofolio. The listing cover for Lo
 
 ---
 
+# 2026-10-13
+
+## Decision
+
+Every project page ends the same way: two doors side by side at the very bottom — on the left, back to the project's own category listing; on the right, the next project in global order. On a phone they stack, back first.
+
+### Reason
+
+Requested. Until now each case study ended with one or the other (a forward link on the Brand Direction projects, a back link on the rest), and the Cyclops Sculpture had no exit at all; one shared component (ProjectExitNav, replacing NextProjectNav) gives every project the same way out.
+
+---
+
+# 2026-10-13
+
+## Decision
+
+The Apparel Design tile opens Graphic T's directly, and its animated cover starts the moment the page arrives. The one-item Apparel listing is gone: its route redirects to the project, and the project's "back to category" door returns to the homepage's chapters.
+
+### Reason
+
+Requested. Graphic T's is the chapter's only listed project (see 2026-10-02), so the listing was a stop with nothing to choose from. The cover's three layers are fetched while the tile is on screen, so the intro no longer waits on them.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

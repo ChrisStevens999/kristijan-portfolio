@@ -1,8 +1,8 @@
 import Image from "next/image";
 
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import { skateCampaigns } from "@/content/projects/skateboard-designs";
-import type { Category } from "@/content/types";
+import type { Category, Project } from "@/content/types";
 
 import { DeckWall } from "./DeckWall";
 
@@ -12,7 +12,7 @@ import { DeckWall } from "./DeckWall";
  * cards, headings or copy — in the approved order. Each carries the id the
  * wall's decks and "Scroll for campaigns" control scroll to.
  */
-export function SkateboardDesigns({ category }: { category?: Category }) {
+export function SkateboardDesigns({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <main className="flex flex-col bg-black text-off-white">
       <DeckWall />
@@ -30,7 +30,7 @@ export function SkateboardDesigns({ category }: { category?: Category }) {
         />
       ))}
 
-      {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
+      <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );
 }

@@ -7,9 +7,9 @@ import { Anton } from "next/font/google";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { useIntroSettled } from "@/components/categories/ApparelIntro";
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import { apparelCollections, type Garment, type GarmentCollection } from "@/content/projects/apparel-display";
-import type { Category } from "@/content/types";
+import type { Category, Project } from "@/content/types";
 
 import { RealWorldGallery } from "./RealWorldGallery";
 
@@ -358,7 +358,7 @@ function Strip({
   );
 }
 
-export function GraphicTees({ category }: { category?: Category }) {
+export function GraphicTees({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   const reducedMotion = Boolean(useReducedMotion());
   const settled = useIntroSettled();
   const isDesktop = useIsDesktop();
@@ -594,7 +594,7 @@ export function GraphicTees({ category }: { category?: Category }) {
           {settled && <RealWorldGallery key={collection.id} photos={collection.gallery} reducedMotion={reducedMotion} />}
         </section>
       )}
-      {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
+      <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );
 }

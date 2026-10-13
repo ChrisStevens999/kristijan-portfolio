@@ -1,3 +1,4 @@
+import { APPAREL_HERO_LAYERS } from "@/components/categories/apparelHeroLayers";
 import type { Category } from "@/content/types";
 
 import brandDirectionCover from "../../../assets/category covers/5 3.jpg";
@@ -24,6 +25,11 @@ export const categories: Category[] = [
     title: "Apparel Design",
     description: "",
     cover: { src: apparelDesignCover, alt: "Apparel Design" },
+    // Graphic T's is the chapter's only listed project, so the tile opens it
+    // directly and its animated cover plays at once — no one-item listing
+    // in between. Its three layers are fetched while the tile is on screen.
+    href: "/projects/graphic-tees",
+    preload: APPAREL_HERO_LAYERS,
   },
   {
     slug: "illustration",

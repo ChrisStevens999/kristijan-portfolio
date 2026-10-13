@@ -126,7 +126,7 @@ Structure
 3. Process
 4. Outcome
 5. Gallery
-6. Navigation to next project
+6. Exit navigation: two doors side by side at the very bottom — back to the project's category on the left, the next project on the right (ProjectExitNav)
 
 Every project should follow this structure unless there is a compelling reason not to.
 

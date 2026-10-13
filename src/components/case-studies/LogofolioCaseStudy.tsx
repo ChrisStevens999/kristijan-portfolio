@@ -1,7 +1,7 @@
 import { LogofolioFilm } from "@/components/case-studies/logofolio/LogofolioFilm";
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import { logofolioBrands } from "@/content/projects/logofolio";
-import type { Project } from "@/content/types";
+import type { Category, Project } from "@/content/types";
 
 const TEXTURE = "/textures/black-page.png";
 
@@ -13,7 +13,7 @@ const TEXTURE = "/textures/black-page.png";
  * LogofolioFilm). The frame is sized from the viewport height so it always
  * fits on one screen, never wider than the padded viewport.
  */
-export function LogofolioCaseStudy({ nextProject }: { nextProject?: Project }) {
+export function LogofolioCaseStudy({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <main data-scroll-snap className="bg-black text-off-white">
       {logofolioBrands.map((brand) => (
@@ -36,13 +36,11 @@ export function LogofolioCaseStudy({ nextProject }: { nextProject?: Project }) {
         </section>
       ))}
 
-      {nextProject ? (
-        // snap-end: the exit link is shorter than a screen, so its end is
-        // the page's last reachable snap position.
-        <div className="snap-end">
-          <NextProjectNav project={nextProject} />
-        </div>
-      ) : null}
+      {/* snap-end: the exit doors are shorter than a screen, so their end
+          is the page's last reachable snap position. */}
+      <div className="snap-end">
+        <ProjectExitNav category={category} nextProject={nextProject} />
+      </div>
     </main>
   );
 }

@@ -10,7 +10,7 @@ import {
   useTransform,
 } from "framer-motion";
 
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import type { Category } from "@/content/types";
 
 import { StickerShowcase } from "./StickerShowcase";
@@ -74,11 +74,11 @@ const StickerScene = dynamic(() => import("./StickerScene").then((m) => m.Sticke
  * settling time during a fast scroll: by the time raw scroll reaches the
  * true release point, the animation has been fully at rest for a real,
  * substantial stretch of scroll distance, not just an instant.
- * NextProjectNav needed no changes: it's a plain sibling in normal
+ * ProjectExitNav needed no changes: it's a plain sibling in normal
  * document flow, already confirmed to sit exactly at the section's own
  * bottom edge with no overlap — the fix here is entirely about WHEN the
  * pole finishes moving relative to WHEN the sticky stage can release, not
- * about how NextProjectNav is positioned.
+ * about how ProjectExitNav is positioned.
  */
 /** How much of the section's total pinned-scroll distance drives the pole's own 0→1 animation — the rest (below) is a pure post-animation hold before release. */
 const ANIMATION_TO_PIN_RATIO = 0.92;
@@ -142,7 +142,7 @@ export function StickerArchive({ category }: { category: Category }) {
 
       <StickerShowcase />
 
-      <NextProjectNav mode="back-to-category" category={category} />
+      <ProjectExitNav category={category} />
     </main>
   );
 }

@@ -2,8 +2,8 @@
 
 import dynamic from "next/dynamic";
 
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
-import type { Category } from "@/content/types";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
+import type { Category, Project } from "@/content/types";
 
 import { StickerShowcase } from "../sticker-archive/StickerShowcase";
 import { STAGE_ASPECT } from "./demoConfig";
@@ -28,7 +28,7 @@ const DemoScene = dynamic(() => import("./DemoScene").then((m) => m.DemoScene), 
  * artboard, followed by the back-to-category nav when rendered as a
  * project page.
  */
-export function StickerPoleDemo({ category }: { category?: Category }) {
+export function StickerPoleDemo({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <main className="bg-[#000000]">
       <section className="flex h-[100svh] items-center justify-center">
@@ -43,7 +43,7 @@ export function StickerPoleDemo({ category }: { category?: Category }) {
         </div>
       </section>
       <StickerShowcase />
-      {category ? <NextProjectNav mode="back-to-category" category={category} /> : null}
+      <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );
 }

@@ -5,6 +5,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
+import type { Category, Project } from "@/content/types";
+
 // WebGL — client-only.
 const StatueScene = dynamic(() => import("./StatueScene").then((m) => m.StatueScene), { ssr: false });
 
@@ -15,16 +18,20 @@ const StatueScene = dynamic(() => import("./StatueScene").then((m) => m.StatueSc
  * statue is lit from wherever the pointer is and turns to follow it. With
  * no pointer (phones, or an idle mouse) the light wanders by itself.
  */
-export function StatueShowcase() {
+export function StatueShowcase({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   const reducedMotion = Boolean(useReducedMotion());
   const [ready, setReady] = useState(false);
   const onReady = useCallback(() => setReady(true), []);
   const [revealed, setRevealed] = useState(false);
   const onRevealed = useCallback(() => setRevealed(true), []);
   return (
-    <main className="relative h-[100svh] w-full overflow-hidden bg-[#000] text-off-white">
+    <main className="bg-[#000] text-off-white">
       <h1 className="sr-only">3D statue showcase</h1>
-      <div className="absolute inset-0 touch-none">
+      {/* The stage is one screen; the exit doors sit below it, so the page
+          scrolls — touch-pan-y keeps vertical swipes over the canvas as
+          scrolling (a phone has no pointer for the light anyway). */}
+      <section className="relative h-[100svh] w-full overflow-hidden">
+      <div className="absolute inset-0 touch-pan-y">
         <StatueScene reducedMotion={reducedMotion} onReady={onReady} onRevealed={onRevealed} />
       </div>
 
@@ -59,6 +66,9 @@ export function StatueShowcase() {
       >
         Move the light
       </p>
+      </section>
+
+      <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );
 }

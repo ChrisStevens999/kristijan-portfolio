@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { APPAREL_HERO_LAYERS } from "@/components/categories/apparelHeroLayers";
@@ -22,6 +22,12 @@ export default async function CategoryPage({
 
   if (!category) {
     notFound();
+  }
+
+  // A chapter with one flagship project has no listing to stop at: its
+  // tile opens the project directly, and so does this route.
+  if (category.href) {
+    redirect(category.href);
   }
 
   const categoryProjects = getProjectsByCategory(slug);

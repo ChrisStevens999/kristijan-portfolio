@@ -35,20 +35,25 @@ export default async function ProjectPage({
     notFound();
   }
 
+  // Every project ends with the same two exit doors (ProjectExitNav): back
+  // to its category on the left, the next project in global order on the right.
+  const category = getCategoryBySlug(project.category);
+  const nextProject = getNextProject(slug);
+
   if (slug === "boyzclub") {
-    return <BoyzClubCaseStudy nextProject={getNextProject(slug)} />;
+    return <BoyzClubCaseStudy category={category} nextProject={nextProject} />;
   }
 
   if (slug === "lxix") {
-    return <LxixCaseStudy nextProject={getNextProject(slug)} />;
+    return <LxixCaseStudy category={category} nextProject={nextProject} />;
   }
 
   if (slug === "logofolio") {
-    return <LogofolioCaseStudy nextProject={getNextProject(slug)} />;
+    return <LogofolioCaseStudy category={category} nextProject={nextProject} />;
   }
 
   if (slug === "dropin-skateboards") {
-    return <SkateboardDesigns category={getCategoryBySlug(project.category)} />;
+    return <SkateboardDesigns category={category} nextProject={nextProject} />;
   }
 
   if (slug === "graphic-tees") {
@@ -60,34 +65,25 @@ export default async function ProjectPage({
           (url): url is string => Boolean(url),
         )}
       >
-        <GraphicTees category={getCategoryBySlug(project.category)} />
+        <GraphicTees category={category} nextProject={nextProject} />
       </ApparelIntro>
     );
   }
 
   if (slug === "cyclops-sculpture") {
-    return <StatueShowcase />;
+    return <StatueShowcase category={category} nextProject={nextProject} />;
   }
 
   if (slug === "sticker-archive") {
-    const category = getCategoryBySlug(project.category);
-    if (category) {
-      return <StickerPoleDemo category={category} />;
-    }
+    return <StickerPoleDemo category={category} nextProject={nextProject} />;
   }
 
-  if (slug === "damaged-goods") {
-    const category = getCategoryBySlug(project.category);
-    if (category) {
-      return <DamagedGoodsCaseStudy category={category} />;
-    }
+  if (slug === "damaged-goods" && category) {
+    return <DamagedGoodsCaseStudy category={category} nextProject={nextProject} />;
   }
 
-  if (slug === "tag-designs") {
-    const category = getCategoryBySlug(project.category);
-    if (category) {
-      return <TagDesignsCaseStudy category={category} heroImages={getHeroImages()} />;
-    }
+  if (slug === "tag-designs" && category) {
+    return <TagDesignsCaseStudy category={category} nextProject={nextProject} heroImages={getHeroImages()} />;
   }
 
   // Placeholder only — the generic project page structure (Hero, Challenge,

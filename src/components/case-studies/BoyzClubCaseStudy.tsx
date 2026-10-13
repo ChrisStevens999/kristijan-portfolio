@@ -1,14 +1,14 @@
 import { PanelSequence } from "@/components/case-studies/PanelSequence";
-import { NextProjectNav } from "@/components/ui/NextProjectNav";
+import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
 import { boyzClubPanels } from "@/content/projects/boyzclub";
-import type { Project } from "@/content/types";
+import type { Category, Project } from "@/content/types";
 
-export function BoyzClubCaseStudy({ nextProject }: { nextProject?: Project }) {
+export function BoyzClubCaseStudy({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <PanelSequence
       panels={boyzClubPanels}
       framed
-      exitNav={nextProject ? <NextProjectNav project={nextProject} /> : null}
+      exitNav={<ProjectExitNav category={category} nextProject={nextProject} />}
     />
   );
 }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { preload } from "react-dom";
 
 import type { Category } from "@/content/types";
 
@@ -51,6 +52,10 @@ export function CategoryCard({ category }: { category: Category }) {
   const lines = TITLE_LINES[category.slug] ?? [category.title];
   const color = TITLE_COLOR[category.slug] ?? "white";
   const size = TITLE_SIZE[category.slug] ?? DEFAULT_TITLE_SIZE;
+
+  // What the destination's intro plays, fetched while this tile is on
+  // screen, so that intro starts the moment its page arrives.
+  category.preload?.forEach((src) => preload(src, { as: "image" }));
 
   return (
     <Link
