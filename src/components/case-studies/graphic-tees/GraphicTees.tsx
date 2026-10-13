@@ -619,9 +619,9 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
               onClick={scrollOn}
               // one line on any phone: sized to the viewport width, never wrapped
               className="mt-4 flex shrink-0 items-center justify-center gap-2 whitespace-nowrap px-2 font-accent font-bold uppercase leading-none"
-              style={{ color: RED, fontSize: "clamp(0.4rem, 2.2vw, 0.6rem)" }}
+              style={{ color: RED, fontSize: "clamp(0.36rem, 1.98vw, 0.54rem)" }}
             >
-              Scroll down to check out the shirts in the real world
+              Scroll down to check out the designs in the real world
               <svg viewBox="0 0 34 22" className="w-3 shrink-0" aria-hidden>
                 <path d="M0 0h34L17 22z" fill="currentColor" />
               </svg>
