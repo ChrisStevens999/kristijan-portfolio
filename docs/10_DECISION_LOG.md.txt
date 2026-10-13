@@ -289,6 +289,18 @@ Requested. Graphic T's is the chapter's only listed project (see 2026-10-02), so
 
 ---
 
+# 2026-10-13
+
+## Decision
+
+The Apparel display on a phone follows the supplied mobile mockup: one tall bordered frame holds the title and line over the plate's texture, the garment floating in the middle, the name tag bottom-right and the three tabs along the frame's bottom edge; beneath it the red strip shows two shirts at a time, then the "scroll down" line. The desktop artboard is unchanged.
+
+### Reason
+
+Requested with the mockup. The earlier phone layout stacked the title, frame, tabs, tag and strip as separate blocks.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

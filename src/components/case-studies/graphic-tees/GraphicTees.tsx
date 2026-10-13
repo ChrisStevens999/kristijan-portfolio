@@ -147,12 +147,15 @@ function Tabs({
   className,
   style,
   gap,
+  short = false,
 }: {
   active: number;
   onSelect: (i: number) => void;
   className?: string;
   style?: React.CSSProperties;
   gap: string;
+  /** use each collection's shortLabel where it has one (the phone) */
+  short?: boolean;
 }) {
   return (
     <div
@@ -183,7 +186,7 @@ function Tabs({
           className="whitespace-nowrap uppercase transition-colors duration-200 [text-shadow:0_0.08em_0.35em_rgba(0,0,0,0.7)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white focus-visible:outline-solid"
           style={{ color: i === active ? TAB_RED : "#ffffff" }}
         >
-          {c.label}
+          {short ? (c.shortLabel ?? c.label) : c.label}
         </button>
       ))}
     </div>
@@ -531,15 +534,14 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
       )}
 
       {isDesktop === false && (
-        <section className="flex min-h-[100svh] flex-col bg-[#000] px-4 pb-6 pt-24">
-          <p className="font-accent text-[2.4rem] font-extrabold uppercase leading-none" style={{ color: RED }}>
-            {collection.title}
-          </p>
-          <p className="mt-3 max-w-[22rem] font-accent text-[0.65rem] font-medium uppercase leading-snug text-white">
-            All designs created by me through illustration, photobashing, collage design and other techniques
-          </p>
-
-          <div className="relative mt-5 aspect-[4/5] w-full overflow-hidden rounded-[1.4rem] border-[3px] border-[#d2d2d2]">
+        // The phone, after the supplied mobile mockup: one tall bordered frame
+        // holds everything — the title and line over the plate's texture, the
+        // garment floating in the middle, the name tag bottom-right and the
+        // tabs along the bottom edge — then the red strip showing two shirts
+        // at a time, then the scroll line. The frame takes whatever height
+        // the screen leaves it.
+        <section className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-16">
+          <div className="relative min-h-[24rem] flex-1 overflow-hidden rounded-[1.6rem] border-[3px] border-[#d2d2d2]">
             {/* the frame interior of the plate, cropped around the shadow */}
             {/* eslint-disable-next-line @next/next/no-img-element -- exact backdrop plate */}
             <img
@@ -555,36 +557,70 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
               }}
             />
             <Stage collection={collection} index={index} reducedMotion={reducedMotion} />
-          </div>
 
-          {/* sized so all three fit on one line on a narrow phone */}
-          <Tabs
-            active={tab}
-            onSelect={setTab}
-            className="mt-4 justify-between"
-            gap="0.5rem"
-            style={{ fontSize: "clamp(0.5rem, 2.7vw, 0.85rem)" }}
-          />
+            <div className="pointer-events-none absolute left-4 top-4 right-4">
+              <p className="font-accent text-[1.5rem] font-extrabold uppercase leading-none" style={{ color: RED }}>
+                {collection.title}
+              </p>
+              <p className="mt-2 max-w-[17rem] font-accent text-[0.52rem] font-medium uppercase leading-snug text-white">
+                All designs created by me through illustration, photobashing, collage design and other techniques
+              </p>
+            </div>
 
-          <div className="relative mt-3 ml-auto aspect-[640/303] w-[62%]">
             {garment && (
-              <NameTag name={garment.name} label={collection.nameLabel} className="inset-0" style={{ fontSize: "0.75rem" }} />
+              <NameTag
+                name={garment.name}
+                label={collection.nameLabel}
+                className="right-4 w-[50%]"
+                style={{ bottom: "calc(2.2rem + 3.3vw)", fontSize: "0.6rem" }}
+              />
             )}
+
+            {/* the collections along the frame's bottom edge; short labels so
+                all three fit one line on a narrow phone */}
+            <Tabs
+              active={tab}
+              onSelect={setTab}
+              short
+              className="absolute inset-x-3 bottom-4 justify-between"
+              gap="0.5rem"
+              // three Benzin labels across the frame: 3.3% of the viewport
+              // width each fits a 360px phone with a little air
+              style={{ fontSize: "clamp(0.7rem, 3.3vw, 1.1rem)" }}
+            />
           </div>
 
-          <div className="mt-4 flex h-28 items-center gap-1 rounded-[1.4rem] px-2" style={{ background: RED }}>
-            <Arrow dir="prev" onClick={() => step(-1)} className="h-6 w-5 shrink-0" />
+          <div
+            className="mt-3 flex shrink-0 items-center gap-1 rounded-[1.6rem] px-2"
+            style={{ background: RED, height: "clamp(7rem, 20svh, 11rem)" }}
+          >
+            <Arrow dir="prev" onClick={() => step(-1)} className="h-7 w-6 shrink-0" />
             <Strip
               key={collection.id}
               collection={collection}
               index={index}
               onSelect={setIndex}
-              itemBasis="28%"
+              // two shirts at a time
+              itemBasis="50%"
               className="h-full min-w-0 flex-1 py-2"
-              style={{ fontSize: "0.7rem" }}
+              style={{ fontSize: "0.8rem" }}
             />
-            <Arrow dir="next" onClick={() => step(1)} className="h-6 w-5 shrink-0" />
+            <Arrow dir="next" onClick={() => step(1)} className="h-7 w-6 shrink-0" />
           </div>
+
+          {collection.gallery && (
+            <button
+              type="button"
+              onClick={scrollOn}
+              className="mt-4 flex shrink-0 items-center justify-center gap-2 px-2 text-center font-accent text-[0.5rem] font-bold uppercase leading-tight"
+              style={{ color: RED }}
+            >
+              Scroll down to check out the shirts in the real world
+              <svg viewBox="0 0 34 22" className="w-3 shrink-0" aria-hidden>
+                <path d="M0 0h34L17 22z" fill="currentColor" />
+              </svg>
+            </button>
+          )}
         </section>
       )}
 

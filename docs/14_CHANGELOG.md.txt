@@ -454,6 +454,24 @@ The photos were supplied.
 
 ---
 
+# 2026-10-13
+
+## Phase 3 — Apparel display on the phone
+
+### Changes
+
+- The phone layout of the Apparel display (GraphicTees, under 768px) is rebuilt to the supplied mobile mockup: title, line, garment, name tag and tabs all inside one tall bordered frame, a two-shirt red strip beneath it, and the scroll-down line. Tabs use a short label on the phone (GarmentCollection.shortLabel: "Patterns"). Desktop is untouched.
+
+### Reason
+
+The user supplied the mobile mockup.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

@@ -37,6 +37,8 @@ export type GarmentCollection = {
   id: string;
   /** the tab's label */
   label: string;
+  /** a shorter one for the phone's tabs, where all three share a line */
+  shortLabel?: string;
   /** the big red heading while this tab is open */
   title: string;
   /** small caption on the name tag */
@@ -159,6 +161,7 @@ export const apparelCollections: GarmentCollection[] = [
   {
     id: "pattern-aops",
     label: "Pattern AOPs",
+    shortLabel: "Patterns",
     title: "Pattern AOPs",
     nameLabel: "Pattern name",
     noun: "shirt",
