@@ -249,6 +249,22 @@ holds the result. All stages reverse with scrolling. There are six stops.
 
 ---
 
+# 2026-10-13
+
+## Decision
+
+Logofolio is the third Brand Direction project, at /projects/logofolio. It shows five brand identities — BoyzClub, mono, RC, LXIX and WARRIOR — one brand per screen: each screen is a snap stop holding one frame, centred on the black page texture with space around it. The frame is the brand's logo, still; once the screen arrives it holds a beat, then cuts into the brand's three-second film, looping, and rewinds to the logo when the screen is left. Two earlier forms were tried and set aside: the framed edge-to-edge stack of the other case studies (too dense for a page of logos) and the logo still with the film beneath it (the film opens on that same logo, so the pair repeated itself).
+
+### Reason
+
+Requested with the ten stills and a reference board per brand, plus a reference clip for the pace: hard cuts of a few frames each, no dissolves. The films are cut from the stills by scripts/build-logofolio-video.mjs so a brand can be re-cut or added without touching the page.
+
+### Result
+
+Brand Direction now lists BoyzClub, LXIX and Logofolio. The listing cover for Logofolio is provisional (the BoyzClub logo still) until a dedicated cover is supplied.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

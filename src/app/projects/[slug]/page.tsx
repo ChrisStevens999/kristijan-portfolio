@@ -5,6 +5,7 @@ import { DamagedGoodsCaseStudy } from "@/components/case-studies/DamagedGoodsCas
 import { ApparelIntro } from "@/components/categories/ApparelIntro";
 import { GraphicTees } from "@/components/case-studies/graphic-tees/GraphicTees";
 import { SkateboardDesigns } from "@/components/case-studies/skateboard-designs/SkateboardDesigns";
+import { LogofolioCaseStudy } from "@/components/case-studies/LogofolioCaseStudy";
 import { LxixCaseStudy } from "@/components/case-studies/LxixCaseStudy";
 import { StickerPoleDemo } from "@/components/case-studies/sticker-pole-demo/StickerPoleDemo";
 import { StatueShowcase } from "@/components/lab/StatueShowcase";
@@ -40,6 +41,10 @@ export default async function ProjectPage({
 
   if (slug === "lxix") {
     return <LxixCaseStudy nextProject={getNextProject(slug)} />;
+  }
+
+  if (slug === "logofolio") {
+    return <LogofolioCaseStudy nextProject={getNextProject(slug)} />;
   }
 
   if (slug === "dropin-skateboards") {

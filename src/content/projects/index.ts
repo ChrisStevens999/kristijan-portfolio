@@ -13,6 +13,7 @@ import tagDesignsThumbnail from "../../../assets/sub categories/DSC03342.jpg";
 import stickerArchiveCover from "../../../assets/projects/Sticker Illustrations/Miami Vice Tiger C-Drip Sticker-Front.png";
 import stickerArchiveThumbnail from "../../../assets/sub categories/Stickers Thumbnail.png";
 import cyclopsSculptureCover from "../../../assets/lab/statue-cover.jpg";
+import logofolioCover from "../../../assets/projects/boyzclub/logofolio/10-logo-black.png";
 
 /**
  * One entry per project. challenge/process/outcome are left empty: no
@@ -134,6 +135,26 @@ export const projects: Project[] = [
     order: 6,
   },
   {
+    slug: "logofolio",
+    title: "Logofolio",
+    category: "brand-direction",
+    summary: "Five brand identities, each logo set in motion.",
+    introduction:
+      "Five logos — BoyzClub, mono, RC, LXIX and WARRIOR — each shown still, then cut into a three-second film of the brand around it.",
+    services: ["Brand Identity", "Logo Design", "Motion"],
+    // Provisional: no cover was supplied for the listing, so the BoyzClub
+    // logo still (the first brand on the reference board) stands in until
+    // one is. Swap this import when a dedicated cover arrives.
+    cover: { src: logofolioCover, alt: "BoyzClub wordmark, white on black" },
+    gallery: [],
+    challenge: "",
+    process: "",
+    outcome: "",
+    // Third Brand Direction project in that category's listing; not on the homepage.
+    featured: false,
+    order: 7,
+  },
+  {
     slug: "damaged-goods",
     title: "Damaged Goods",
     category: "illustration",
@@ -156,7 +177,7 @@ export const projects: Project[] = [
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
-    order: 7,
+    order: 8,
   },
   {
     slug: "tag-designs",
@@ -178,7 +199,7 @@ export const projects: Project[] = [
     // Not part of the curated homepage Selected Works — reachable via the
     // Illustration category listing and its own project page.
     featured: false,
-    order: 8,
+    order: 9,
   },
   {
     slug: "sticker-archive",
@@ -200,7 +221,7 @@ export const projects: Project[] = [
     // Phase 1 interactive prototype — reachable at /projects/sticker-archive
     // and via the Illustration category listing.
     featured: false,
-    order: 9,
+    order: 10,
   },
   {
     slug: "graphic-tees",
@@ -216,7 +237,7 @@ export const projects: Project[] = [
     process: "",
     outcome: "",
     featured: false,
-    order: 10,
+    order: 11,
   },
   {
     slug: "cyclops-sculpture",
@@ -230,6 +251,6 @@ export const projects: Project[] = [
     process: "",
     outcome: "",
     featured: false,
-    order: 11,
+    order: 12,
   },
 ];

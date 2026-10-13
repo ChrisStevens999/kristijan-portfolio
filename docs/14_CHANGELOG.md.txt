@@ -381,6 +381,25 @@ The user asked for the model to live in Creative Exploration for now.
 
 ---
 
+# 2026-10-13
+
+## Phase 3 — Logofolio in Brand Direction
+
+### Changes
+
+- New Brand Direction project "Logofolio" at /projects/logofolio: five brands (BoyzClub, mono, RC, LXIX, WARRIOR), one per screen as a snap stop (the homepage's data-scroll-snap), each a single frame centred on the black page texture: the logo, still, which cuts into the brand's 3-second film once its screen is in view and rewinds to the logo when it leaves (LogofolioFilm, an IntersectionObserver; reduced-motion visitors keep the still).
+- scripts/build-logofolio-video.mjs cuts each film from the brand's stills in assets/projects/<brand> (8 frames per still, 13 per logo, hard cuts, 90 frames at 30 fps) into public/<brand>/<brand>-animation.mp4 with a poster.
+
+### Reason
+
+The user asked for a logofolio of the brand animations built from the supplied stills, cut at the pace of a supplied reference clip.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
