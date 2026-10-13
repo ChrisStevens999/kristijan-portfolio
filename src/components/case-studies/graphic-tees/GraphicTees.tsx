@@ -542,7 +542,7 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
         // tabs along the bottom edge — then the red strip showing two shirts
         // at a time, then the scroll line. The frame takes whatever height
         // the screen leaves it.
-        <section className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-16">
+        <section className="flex min-h-[100svh] flex-col bg-[#000] px-3 pb-4 pt-6">
           <div className="relative min-h-[24rem] flex-1 overflow-hidden rounded-[1.6rem] border-[3px] border-[#d2d2d2]">
             {/* the frame interior of the plate, cropped around the shadow —
                 scaled a few percent past the frame top and bottom, so the
@@ -617,8 +617,9 @@ export function GraphicTees({ category, nextProject }: { category?: Category; ne
             <button
               type="button"
               onClick={scrollOn}
-              className="mt-4 flex shrink-0 items-center justify-center gap-2 px-2 text-center font-accent text-[0.5rem] font-bold uppercase leading-tight"
-              style={{ color: RED }}
+              // one line on any phone: sized to the viewport width, never wrapped
+              className="mt-4 flex shrink-0 items-center justify-center gap-2 whitespace-nowrap px-2 font-accent font-bold uppercase leading-none"
+              style={{ color: RED, fontSize: "clamp(0.4rem, 2.2vw, 0.6rem)" }}
             >
               Scroll down to check out the shirts in the real world
               <svg viewBox="0 0 34 22" className="w-3 shrink-0" aria-hidden>
