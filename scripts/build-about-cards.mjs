@@ -20,7 +20,7 @@ const sharp = createRequire(
 
 const SRC = path.join(root, "assets/about/cards");
 const OUT = path.join(root, "public/about/cards");
-const WIDTH = 900; // the cards show at ~48% of the screen height: 900 wide covers a 4K screen at 1x and a laptop at 2x
+const WIDTH = 720; // the cards show at ~48% of the screen height (~400px wide on a laptop): 720 covers 2x there
 
 fs.mkdirSync(OUT, { recursive: true });
 const files = fs
@@ -30,6 +30,6 @@ const files = fs
 
 for (const f of files) {
   const out = path.join(OUT, f.replace(/\.png$/i, ".webp"));
-  await sharp(path.join(SRC, f)).resize({ width: WIDTH, withoutEnlargement: true }).webp({ quality: 82, effort: 6 }).toFile(out);
+  await sharp(path.join(SRC, f)).resize({ width: WIDTH, withoutEnlargement: true }).webp({ quality: 80, effort: 6 }).toFile(out);
   console.log(`${f.padEnd(8)} -> ${path.basename(out).padEnd(8)} ${(fs.statSync(out).size / 1024).toFixed(0)} KB`);
 }

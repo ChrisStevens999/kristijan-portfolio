@@ -493,6 +493,27 @@ A full-site review.
 
 ---
 
+# 2026-10-28
+
+## Performance — page weight on first load
+
+### Changes
+
+- Homepage: the Drop In featured photograph ships as a hand-encoded WebP (quality 94, smart subsampling; 387 KB, checked clean in the dark areas where the optimiser's re-encode had shown artefacts) instead of the 1.95 MB PNG; the About stop's cards drop from 900 to 720 wide (2 MB → 1 MB). Homepage first load 6.3 → 4.6 MB.
+- Graphic T's: the files warmed during the APPAREL intro (shirt model, first print, backdrop) are now preload hints in the same request mode the 3D loader uses, so the browser hands over the one download instead of fetching the 3 MB model twice. 12.6 → 8.5 MB.
+- Case-study films (BoyzClub, LXIX): a film is only fetched once its panel comes within a screen of the viewport, and pauses when far away; before, both BoyzClub films (12 MB) downloaded with the page. BoyzClub first load 14.4 → 2.3 MB.
+- Dev: `next-start` in .claude/launch.json serves the production build on port 3001 for measuring real page weight.
+
+### Reason
+
+The site felt slow to load; nothing was broken (clean console, layouts hold on desktop and phone), the pages were simply heavy on first visit.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

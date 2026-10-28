@@ -1,5 +1,7 @@
 "use client";
 
+import { preload as warm } from "react-dom";
+
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
@@ -46,7 +48,13 @@ function preloadImage(src: string) {
  *  - Skippable — any click, key, wheel or touch goes straight to the fade.
  *  - Reduced-motion visitors get the content immediately.
  */
-export function ApparelIntro({ children, preload }: { children: ReactNode; preload?: string[] }) {
+/** A file the page underneath will need, fetched while the intro plays, in
+ *  the same mode the page will request it — so the browser hands over the
+ *  one download instead of starting a second (three.js fetches models with
+ *  same-origin credentials and loads textures as anonymous images). */
+export type Warmup = { href: string; as: "fetch" | "image"; crossOrigin?: "anonymous" };
+
+export function ApparelIntro({ children, preload }: { children: ReactNode; preload?: Warmup[] }) {
   const reduced = useReducedMotion();
   const [ready, setReady] = useState(false); // scene images decoded
   const [playing, setPlaying] = useState(true);
@@ -68,9 +76,7 @@ export function ApparelIntro({ children, preload }: { children: ReactNode; prelo
   // 2. play; warm the cache for the page underneath; then fade
   useEffect(() => {
     if (!showIntro || !ready) return;
-    preload?.forEach((url) => {
-      fetch(url, { priority: "low" } as RequestInit).catch(() => {});
-    });
+    preload?.forEach(({ href, as, crossOrigin }) => warm(href, { as, crossOrigin, fetchPriority: "low" }));
     const end = setTimeout(() => setPlaying(false), PLAY_MS);
     return () => clearTimeout(end);
   }, [showIntro, ready, preload]);

@@ -38,8 +38,10 @@ export const projects: Project[] = [
     // Bypasses next/image entirely — the optimizer's WebP re-encode was
     // introducing real block-compression artifacts in this image's dark
     // areas (confirmed: source is clean, blockRatio 1.0 vs 16.3 optimized).
+    // So it ships as its own WebP, encoded once at quality 94 with smart
+    // subsampling (387 KB, where the PNG was 1.95 MB), checked clean.
     cover: {
-      src: "/featured/1-fav.png",
+      src: "/featured/1-fav.webp",
       alt: "Drop In Skateboards campaign photograph",
     },
     featured: true,

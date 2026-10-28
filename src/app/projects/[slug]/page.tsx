@@ -80,9 +80,11 @@ export default async function ProjectPage({
     return (
       <ApparelIntro
         // cached during the intro, so the 3D display is ready when it ends
-        preload={[TSHIRT_MODEL, graphicTees[0].print, "/apparel/t-shirts/display-bg.jpg"].filter(
-          (url): url is string => Boolean(url),
-        )}
+        preload={[
+          { href: TSHIRT_MODEL, as: "fetch", crossOrigin: "anonymous" },
+          ...(graphicTees[0].print ? [{ href: graphicTees[0].print, as: "image", crossOrigin: "anonymous" } as const] : []),
+          { href: "/apparel/t-shirts/display-bg.jpg", as: "image" },
+        ]}
       >
         <GraphicTees category={category} nextProject={nextProject} />
       </ApparelIntro>
