@@ -69,7 +69,7 @@ function Cover({ work }: { work: CarouselWork }) {
     // eslint-disable-next-line @next/next/no-img-element -- deliberate next/image bypass, see content/projects
     <img src={work.cover.src} alt={work.cover.alt} loading="eager" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
   ) : (
-    <Image src={work.cover.src} alt={work.cover.alt} fill sizes="80vw" loading="eager" className="object-cover" draggable={false} />
+    <Image src={work.cover.src} alt={work.cover.alt} fill sizes="80vw" loading="eager" placeholder="blur" className="object-cover" draggable={false} />
   );
 }
 

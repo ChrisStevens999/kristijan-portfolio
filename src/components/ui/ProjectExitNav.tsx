@@ -89,7 +89,8 @@ function ExitDoor({
         alt=""
         fill
         sizes="(min-width: 640px) 50vw, 100vw"
-        quality={95}
+        // a thumbnail: default quality, blurred preview while it loads
+        placeholder={typeof image.src === "string" ? "empty" : "blur"}
         className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
       />
       <div className="absolute inset-0 bg-black/55" />

@@ -78,6 +78,7 @@ export default async function CategoryPage({
               fill
               sizes="100vw"
               quality={95}
+              placeholder={typeof project.cover.src === "string" ? "empty" : "blur"}
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
             <div className="absolute inset-0 bg-black/40" />

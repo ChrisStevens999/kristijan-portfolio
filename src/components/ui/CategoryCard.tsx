@@ -70,7 +70,9 @@ export function CategoryCard({ category }: { category: Category }) {
         fill
         // two columns at every width; at most 540px wide on large screens
         sizes="(min-width: 1024px) 540px, 50vw"
-        quality={95}
+        // a thumbnail: q75 is a third of q95's bytes and the grain holds at
+        // this size; the blurred preview shows while it loads
+        placeholder={typeof category.cover.src === "string" ? "empty" : "blur"}
         className="object-cover transition-transform duration-300 ease-out md:group-hover:scale-[1.03]"
       />
       {/* what the destination's intro plays, fetched once this tile is on

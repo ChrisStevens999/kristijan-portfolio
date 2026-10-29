@@ -60,7 +60,7 @@ export function IllustrationCategoryPage({
                   alt={thumbnail.alt}
                   fill
                   sizes="(min-width: 640px) 50vw, 100vw"
-                  quality={95}
+                  placeholder={typeof thumbnail.src === "string" ? "empty" : "blur"}
                   style={{ objectPosition: mobilePosition }}
                   className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] sm:hidden"
                 />
@@ -69,7 +69,7 @@ export function IllustrationCategoryPage({
                   alt={thumbnail.alt}
                   fill
                   sizes="(min-width: 640px) 50vw, 100vw"
-                  quality={95}
+                  placeholder={typeof thumbnail.src === "string" ? "empty" : "blur"}
                   style={{ objectPosition: desktopPosition }}
                   className="hidden object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] sm:block"
                 />
