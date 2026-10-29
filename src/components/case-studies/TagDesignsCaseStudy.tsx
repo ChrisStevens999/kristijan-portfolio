@@ -39,18 +39,18 @@ export function TagDesignsCaseStudy({
         className="block h-auto w-full"
       />
 
-      <section className="grid grid-cols-1 sm:grid-cols-3">
+      {/* three supplied boards, one per row of tags, shown whole */}
+      <section className="flex flex-col">
         {tagDesignsGallery.map((item, i) => (
-          <div key={i} className="relative aspect-[4/5]">
-            <Image
-              src={item.src}
-              alt={item.alt}
-              fill
-              sizes="(min-width: 640px) 34vw, 100vw"
-              quality={90}
-              className="object-cover"
-            />
-          </div>
+          <Image
+            key={i}
+            src={item.src}
+            alt={item.alt}
+            sizes="100vw"
+            quality={90}
+            placeholder="blur"
+            className="block h-auto w-full"
+          />
         ))}
       </section>
 
