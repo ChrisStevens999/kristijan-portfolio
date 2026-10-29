@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
  * The film itself (several MB) is only fetched once the panel comes within
  * a screen of the viewport — an autoplaying <video> otherwise downloads the
  * whole file with the page, two films deep on a case study — and it pauses
- * again while scrolled far away.
+ * again while scrolled far away, keeping what it has loaded.
  */
 const NEAR = "100% 0px";
 
@@ -32,6 +32,9 @@ export function LoopingVideo({
   const reduced = useReducedMotion();
   const ref = useRef<HTMLVideoElement>(null);
   const [near, setNear] = useState(false);
+  // once near, the film keeps its source: scrolling away only pauses it
+  const [fetched, setFetched] = useState(false);
+  if (near && !fetched) setFetched(true);
 
   useEffect(() => {
     const el = ref.current;
@@ -52,7 +55,7 @@ export function LoopingVideo({
   return (
     <video
       ref={ref}
-      src={near || reduced ? src : undefined}
+      src={fetched || reduced ? src : undefined}
       poster={poster}
       controls={Boolean(reduced)}
       muted

@@ -366,9 +366,10 @@ function Card({
         alt=""
         draggable={false}
         className="absolute inset-0 h-full w-full object-cover"
-        // fetched and decoded with the page, so the deck never opens on an
-        // image that is still arriving
-        loading="eager"
+        // fetched as the section approaches (it sits two full screens down,
+        // so they are in well before the deck opens), not with the page's
+        // first load
+        loading="lazy"
         decoding="async"
       />
     </motion.div>

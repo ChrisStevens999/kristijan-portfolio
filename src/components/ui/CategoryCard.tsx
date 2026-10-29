@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { preload } from "react-dom";
 
+import { WarmWhenSeen } from "@/components/ui/WarmWhenSeen";
 import type { Category } from "@/content/types";
 
 /**
@@ -53,12 +53,6 @@ export function CategoryCard({ category }: { category: Category }) {
   const color = TITLE_COLOR[category.slug] ?? "white";
   const size = TITLE_SIZE[category.slug] ?? DEFAULT_TITLE_SIZE;
 
-  // What the destination's intro plays, fetched while this tile is on
-  // screen, so that intro starts the moment its page arrives.
-  // Low priority, so the hint never competes with what this page itself
-  // needs first.
-  category.preload?.forEach((src) => preload(src, { as: "image", fetchPriority: "low" }));
-
   return (
     <Link
       href={category.href ?? `/categories/${category.slug}`}
@@ -79,6 +73,9 @@ export function CategoryCard({ category }: { category: Category }) {
         quality={95}
         className="object-cover transition-transform duration-300 ease-out md:group-hover:scale-[1.03]"
       />
+      {/* what the destination's intro plays, fetched once this tile is on
+          screen — not with the homepage's first load */}
+      {category.preload ? <WarmWhenSeen hrefs={category.preload} /> : null}
 
       {/* Dark overlay so the always-visible title reads on any cover; a touch deeper on hover. */}
       <div className="absolute inset-0 bg-black/40 transition-colors duration-300 md:group-hover:bg-black/55" />
