@@ -15,8 +15,6 @@ import ringedHandsDetail from "../../../assets/projects/lxix/5.png";
 import lipsSymbolDetail from "../../../assets/projects/lxix/6.png";
 import billboardAtNight from "../../../assets/projects/lxix/Car page.png";
 import bottleChapter from "../../../assets/projects/lxix/BB.png";
-import bottlePairPackaging from "../../../assets/projects/lxix/Package 2.png";
-import bottleTriptychStatement from "../../../assets/projects/lxix/44.png";
 import invitationCardUnboxing from "../../../assets/projects/lxix/8.png";
 import wetGlassWordmark from "../../../assets/projects/lxix/11.png";
 import closingCredit from "../../../assets/projects/lxix/End Page.png";
@@ -35,14 +33,13 @@ import closingCredit from "../../../assets/projects/lxix/End Page.png";
  *    width (its own panel, `sunglasses-portrait`, same treatment as the
  *    cufflink/watch panel before it), then the ringed-hands and lips-with-
  *    symbol shots as a 50/50 side-by-side row underneath — those two exist
- *    as separate source files (not one flattened image like the moodboard
- *    or the bottle triptych below), so they're rendered via PanelSequence's
+ *    as separate source files (not one flattened image like the moodboard),
+ *    so they're rendered via PanelSequence's
  *    `row` panel kind instead of stacking as full-width panels.
  *
- * The moodboard (`moodboard`) and 3-across bottle shot
- * (`bottleTriptychStatement`) ARE already pre-composited single images
- * (specific crops/captions baked in), so those stay as plain image panels,
- * not rebuilt as rows.
+ * The moodboard (`moodboard`) IS already a pre-composited single image
+ * (specific crops and captions baked in), so it stays a plain image panel,
+ * not rebuilt as a row.
  */
 export const lxixPanels: SequencePanel[] = [
   {
@@ -142,18 +139,6 @@ export const lxixPanels: SequencePanel[] = [
     enabled: true,
     src: bottleChapter,
     alt: "The Bottle",
-  },
-  {
-    id: "bottle-pair-packaging",
-    enabled: true,
-    src: bottlePairPackaging,
-    alt: "Two LXIX bottle packaging concepts side by side",
-  },
-  {
-    id: "bottle-triptych-statement",
-    enabled: true,
-    src: bottleTriptychStatement,
-    alt: "Three studio shots of the LXIX bottle — framed, boxed, and among rocks. The vessel becomes the statement. Through exaggerated form, symbolism, and material experimentation, LXIX turns traditional champagne packaging into contemporary art objects.",
   },
   {
     id: "invitation-card-unboxing",
