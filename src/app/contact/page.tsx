@@ -4,7 +4,7 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { ContactNav } from "@/components/contact/ContactNav";
 import { anton, inter } from "@/components/contact/fonts";
 import { getAllCategories } from "@/lib/content";
-import { TEXTURES, textureStyle } from "@/lib/textures";
+import { textureStyle } from "@/lib/textures";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Contact, to the supplied mockup: one red screen with the page's own top
+ * Contact, to the supplied mockup: one red screen (its own supplied
+ * background, public/contact/bg.webp) with the page's own top
  * menu, CONTACT ME as a poster title across the column, the form under its
  * right-hand side and the dog in goggles in the bottom-left corner.
  *
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   const categories = getAllCategories().map((c) => ({ title: c.title, href: c.href ?? `/categories/${c.slug}` }));
   return (
-    <main className={`contact-page ${inter.className}`} style={textureStyle(TEXTURES.red)}>
+    <main className={`contact-page ${inter.className}`} style={textureStyle("/contact/bg.webp")}>
       <div className="contact-col">
         <ContactNav categories={categories} />
         <h1 className={`contact-title ${anton.className}`}>Contact me</h1>
