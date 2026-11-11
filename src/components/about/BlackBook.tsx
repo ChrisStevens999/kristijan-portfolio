@@ -117,7 +117,14 @@ function Arrow({
   );
 }
 
-export function BlackBook({ startOpen = false }: { startOpen?: boolean }) {
+export function BlackBook({
+  startOpen = false,
+  scrollCue = false,
+}: {
+  startOpen?: boolean;
+  /** beside the closed book: an arrow pointing down, "Scroll down to check my work" (for a page with more below) */
+  scrollCue?: boolean;
+}) {
   const reduced = Boolean(useReducedMotion());
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<Size | null>(null);
@@ -193,6 +200,8 @@ export function BlackBook({ startOpen = false }: { startOpen?: boolean }) {
   };
 
   const turn = { duration: reduced ? 0 : TURN_S, ease: EASE };
+  // the scroll cue: beside the closed book; on a phone the back cover's own controls take its place
+  const cueHidden = open || (single && closedBack);
   const arrowGap = 44;
 
   return (
@@ -278,6 +287,35 @@ export function BlackBook({ startOpen = false }: { startOpen?: boolean }) {
           >
             Back to front
           </button>
+          {scrollCue && (
+            // to the left of the closed book (under it on a phone); away while it is open and being read
+            <button
+              type="button"
+              onClick={() =>
+                stageRef.current
+                  ?.closest("section")
+                  ?.nextElementSibling?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" })
+              }
+              tabIndex={cueHidden ? -1 : 0}
+              className={`font-accent absolute flex -translate-x-1/2 cursor-pointer flex-col items-center gap-3 text-center text-[0.65rem] leading-relaxed tracking-[0.25em] text-off-white/80 uppercase transition-opacity duration-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid ${cueHidden ? "pointer-events-none opacity-0" : "opacity-100 delay-300"} ${single ? "" : "-translate-y-1/2"}`}
+              style={
+                single
+                  ? { left: "50%", top: `calc(50% + ${pageH / 2 + 18}px)` }
+                  : { left: `calc(50% - ${pageW / 2 + Math.max(110, pageW * 0.3)}px)`, top: "50%" }
+              }
+            >
+              <span>
+                Scroll down
+                <br />
+                to check
+                <br />
+                my work
+              </span>
+              <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden>
+                <path d="M3 5l7 11 7-11z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
         </>
       )}
 

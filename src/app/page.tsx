@@ -12,7 +12,7 @@ export default function Home() {
       <h1 className="sr-only">{SITE_NAME}: portfolio</h1>
       <Intro />
       <SelectedWorks />
-      <AboutBook />
+      <AboutBook scrollCue />
       <ExploreByCategory />
       {/*
         Remaining planned section, per 04_CONTENT_ARCHITECTURE.md, not built

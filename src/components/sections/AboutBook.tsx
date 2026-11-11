@@ -7,7 +7,16 @@ import { TEXTURES } from "@/lib/textures";
  * turn the pages). On the homepage it is a snap stop between Selected Work
  * and the categories and starts closed; /about opens it on the first spread.
  */
-export function AboutBook({ startOpen = false, heading = "h2" }: { startOpen?: boolean; heading?: "h1" | "h2" }) {
+export function AboutBook({
+  startOpen = false,
+  heading = "h2",
+  scrollCue = false,
+}: {
+  startOpen?: boolean;
+  heading?: "h1" | "h2";
+  /** the page goes on below: show "Scroll down to check my work" beside the closed book */
+  scrollCue?: boolean;
+}) {
   const Heading = heading;
   return (
     <section
@@ -26,7 +35,7 @@ export function AboutBook({ startOpen = false, heading = "h2" }: { startOpen?: b
       <Heading id="about-heading" className="sr-only">
         About me
       </Heading>
-      <BlackBook startOpen={startOpen} />
+      <BlackBook startOpen={startOpen} scrollCue={scrollCue} />
     </section>
   );
 }
