@@ -22,7 +22,7 @@ Visitors should discover the portfolio in the following order:
 2. Selected Works
 3. About (the little black book)
 4. Explore by Category
-5. Contact (planned, not built yet)
+5. Contact is not a homepage section: it is its own page, /contact (2026-11-11)
 
 About is a little black book lying on the dark paper between Selected Works and Explore by Category: a click opens it and its pages turn (cover, about me, work history, free time, back cover). /about shows the same book already open. It replaced the photo deck and portrait video on 2026-11-11 (see 10_DECISION_LOG.md).
 

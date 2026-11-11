@@ -62,10 +62,23 @@ Never use Benzin for long paragraphs.
 
 # Anton
 
-Condensed display face for the Apparel display's name tag only (the shirt,
-pattern or hoodie name). Loaded through next/font/google, on that page only.
+Condensed display face, loaded through next/font/google only on the pages
+that use it:
+
+- The Apparel display's name tag (the shirt, pattern or hoodie name)
+- The Contact page's poster title (CONTACT ME) and its full-screen menu
 
 Not for anything else.
+
+---
+
+# Inter
+
+The Contact page's grotesque (added 2026-11-11), weights 700 and 800: its
+top menu, the form's labels and fields, and the Submit button, as in the
+mockup. Loaded through next/font/google on that page only.
+
+Not for headings or long copy elsewhere.
 
 ---
 

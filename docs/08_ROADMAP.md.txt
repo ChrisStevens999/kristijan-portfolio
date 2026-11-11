@@ -34,12 +34,14 @@ Status: Complete
 - [x] Explore by Category (2x2 chapter covers, 3:4 tiles with names always shown, 2026-10-05)
 - [x] About — a little black book (2026-11-11): the homepage stop between Selected Works and Explore by Category is the closed book on the dark paper, opened with a click and paged through with real page turns; /about is the same book, already open. Replaces the photo deck and portrait video (2026-10-07) and the five full-screen boards.
 - [ ] About book as live HTML — the copy is in the page artwork (repeated for screen readers); live text on the pages would need the artwork without its words
-- [ ] Contact
+- [x] Contact — /contact, to the supplied mockup (2026-11-11): red page, its own top menu, CONTACT ME poster title, the form, the dog in goggles. Delivery through Web3Forms.
+- [ ] Contact: connect the form — paste the Web3Forms access key into src/content/contact.ts (until then Submit says the form is not connected)
+- [ ] Contact: the dog is lifted from the mockup as a stand-in; replace with the real cut-out (assets/contact/dog.png, then scripts/build-contact-dog.mjs)
 - [x] Responsive adjustments (done per section as each is built; mobile layouts exist for every shipped section)
 - [x] Accessibility review (2026-10-14): one h1 per page, focus kept inside open overlays and returned on close, carousels and galleries hold still under focus or the pointer, reduced motion respected by the intros, film panels and scroll snapping, faint labels raised to readable contrast
 - [x] Performance optimization — shipped images 794 MB → 266 MB with no visual change (2026-09-29); 3D assets compressed per project
 
-Status: Complete except Contact
+Status: Complete; the Contact form awaits its access key and the dog its real cut-out
 
 ---
 

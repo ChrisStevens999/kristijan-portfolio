@@ -14,12 +14,7 @@ export default function Home() {
       <SelectedWorks />
       <AboutBook scrollCue />
       <ExploreByCategory />
-      {/*
-        Remaining planned section, per 04_CONTENT_ARCHITECTURE.md, not built
-        yet:
-
-        <Contact /> // id="contact" -> /#contact
-      */}
+      {/* Contact is its own page, /contact, rather than a section here. */}
     </main>
   );
 }

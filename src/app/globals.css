@@ -120,3 +120,261 @@ body {
     cursor: image-set(url("/cursor/hand.png") 1x, url("/cursor/hand@2x.png") 2x) 14 1, auto;
   }
 }
+
+/*
+ * Contact page (src/app/contact), to the supplied 16:9 mockup. Plain rules
+ * rather than utilities because everything on a wide screen is sized in one
+ * unit: --u, 1% of the width of the largest 16:9 board that fits the
+ * window. So the page is the mockup at any window shape and stays one
+ * screen. Phones (below 768px) stack it at ordinary sizes.
+ */
+.contact-page {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  color: #fff;
+}
+.contact-col {
+  position: relative;
+  z-index: 1;
+  container-type: inline-size;
+  width: calc(100% - 2.5rem);
+  margin-inline: auto;
+  padding-top: 1.5rem;
+}
+.contact-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.contact-nav a,
+.contact-burger,
+.contact-menu a,
+.contact-menu-close {
+  color: #fff;
+  transition: opacity 200ms;
+}
+.contact-nav a:hover,
+.contact-burger:hover,
+.contact-menu a:hover,
+.contact-menu-close:hover {
+  opacity: 0.7;
+}
+.contact-burger {
+  width: 1.6rem;
+  margin-left: auto;
+}
+.contact-burger svg,
+.contact-menu-close svg {
+  display: block;
+  width: 100%;
+  fill: none;
+}
+/* the poster title spans the column exactly: its size is the column's width
+   over the title's own width in ems (Anton, "CONTACT ME") */
+.contact-title {
+  --title-em: 4.6;
+  margin-top: 2rem;
+  font-size: calc(100cqw / var(--title-em));
+  font-weight: 400;
+  line-height: 0.82;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.contact-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1.5rem;
+  row-gap: 1.4rem;
+  margin-top: 2rem;
+}
+.contact-field {
+  display: flex;
+  flex-direction: column;
+}
+.contact-field--wide,
+.contact-actions,
+.contact-form--done > * {
+  grid-column: 1 / -1;
+}
+.contact-label {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.contact-field input,
+.contact-field textarea {
+  width: 100%;
+  padding: 0.5rem 0 0.35rem;
+  border: 0;
+  border-bottom: 3px solid #fff;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  outline: none;
+}
+.contact-field textarea {
+  min-height: 5.5rem;
+  resize: none;
+}
+.contact-field input:focus-visible,
+.contact-field textarea:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+/* a browser's autofill must not paint the fields white */
+.contact-field input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  transition: background-color 99999s;
+}
+.contact-trap {
+  position: absolute;
+  left: -9999px;
+}
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.4rem;
+}
+.contact-submit {
+  padding: 0.7rem 2rem;
+  background: #fff;
+  color: var(--color-red);
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition:
+    background-color 200ms,
+    color 200ms;
+}
+.contact-submit:hover:not(:disabled) {
+  background: var(--color-black);
+  color: #fff;
+}
+.contact-submit:disabled {
+  opacity: 0.6;
+}
+.contact-submit:focus-visible,
+.contact-again:focus-visible,
+.contact-nav a:focus-visible,
+.contact-burger:focus-visible,
+.contact-menu a:focus-visible,
+.contact-menu-close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+.contact-note {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.contact-thanks {
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.contact-again {
+  justify-self: start;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.contact-dog {
+  position: relative;
+  display: block;
+  width: 62vw;
+  max-width: 320px;
+  height: auto;
+  margin-top: 2rem;
+  pointer-events: none;
+  user-select: none;
+}
+/* the hamburger's menu: the whole site as one list */
+.contact-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--color-black);
+  color: #fff;
+}
+.contact-menu ul {
+  display: grid;
+  gap: 0.35em;
+  font-size: clamp(2rem, 8svh, 5.5rem);
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+.contact-menu-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 1.75rem;
+}
+@media (min-width: 768px) {
+  .contact-page {
+    --u: min(1vw, 1.7778svh);
+  }
+  .contact-col {
+    width: calc(var(--u) * 68.9);
+    padding-top: calc(var(--u) * 3.1);
+  }
+  .contact-nav {
+    gap: calc(var(--u) * 4.6);
+    font-size: calc(var(--u) * 1.28);
+  }
+  .contact-burger {
+    width: calc(var(--u) * 1.4);
+  }
+  .contact-title {
+    margin-top: calc(var(--u) * 3.6);
+  }
+  .contact-form {
+    column-gap: calc(var(--u) * 5.5);
+    row-gap: calc(var(--u) * 1.7);
+    margin-top: calc(var(--u) * 3.6);
+    margin-left: 40.9%;
+  }
+  .contact-label {
+    font-size: calc(var(--u) * 1.25);
+  }
+  .contact-field input,
+  .contact-field textarea {
+    padding: calc(var(--u) * 0.45) 0 calc(var(--u) * 0.35);
+    border-bottom-width: max(2px, calc(var(--u) * 0.2));
+    font-size: calc(var(--u) * 1.1);
+  }
+  .contact-field textarea {
+    min-height: calc(var(--u) * 6);
+  }
+  .contact-actions {
+    gap: calc(var(--u) * 1.6);
+    margin-top: calc(var(--u) * 0.2);
+  }
+  .contact-submit {
+    padding: calc(var(--u) * 0.85) calc(var(--u) * 2.6);
+    font-size: calc(var(--u) * 1.9);
+  }
+  .contact-note {
+    font-size: calc(var(--u) * 1);
+  }
+  .contact-thanks {
+    font-size: calc(var(--u) * 2.2);
+  }
+  .contact-dog {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: calc(var(--u) * 29);
+    max-width: none;
+    margin: 0;
+  }
+}

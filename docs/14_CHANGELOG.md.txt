@@ -536,6 +536,27 @@ A complete rework of About, to the supplied book design.
 
 ---
 
+# 2026-11-11
+
+## Phase 2 — Contact page
+
+### Changes
+
+- /contact, to the supplied 16:9 mockup: the red texture, the page's own top menu (About me, Work, Contact, and a hamburger that opens the whole site as a full-screen list), CONTACT ME as an Anton poster title spanning the column, the form under its right-hand side (first name, last name, email, message, Submit) and the dog in goggles pinned bottom-left. On wide screens everything is sized in one unit, 1% of the largest 16:9 board that fits the window, so the page is the mockup at any window shape and stays one screen; phones stack it. The rules are plain CSS (.contact-*) in globals.css.
+- The form posts to Web3Forms (src/content/contact.ts holds the access key, public by design) and reports plainly: sent, failed (the visitor's words are kept), or not connected while the key is empty. A hidden field traps bots. The page is in the sitemap.
+- The dog is lifted off the mockup as a stand-in (scripts/build-contact-dog.mjs separates the grey dog from the red background); a supplied cut-out at assets/contact/dog.png replaces it.
+- Typography: Anton also sets the Contact title; Inter (700/800) returns as the Contact page's grotesque.
+
+### Reason
+
+The last planned page. The site had no way to get in touch.
+
+### Status
+
+✅ Built; the form needs its access key before it delivers
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
