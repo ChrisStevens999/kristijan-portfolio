@@ -6,8 +6,8 @@ import "./globals.css";
 
 /**
  * 12_TYPOGRAPHY.md — three site-wide fonts, each with one job. Do not
- * substitute. (Two page-scoped faces load where they're used: Anton for the
- * Apparel name tag, Inter for the About CTA.) next/font preloads every file
+ * substitute. (One page-scoped face loads where it is used: Anton for the
+ * Apparel name tag.) next/font preloads every file
  * listed here on every page, so list only the styles the site uses — no
  * italics are used anywhere, so the Integral CF obliques aren't loaded.
  */

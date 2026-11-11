@@ -1,6 +1,6 @@
 import { Intro } from "@/components/sections/Intro";
 import { SelectedWorks } from "@/components/sections/SelectedWorks";
-import { AboutTeaser } from "@/components/sections/AboutTeaser";
+import { AboutBook } from "@/components/sections/AboutBook";
 import { ExploreByCategory } from "@/components/sections/ExploreByCategory";
 import { SITE_NAME } from "@/lib/site";
 
@@ -12,7 +12,7 @@ export default function Home() {
       <h1 className="sr-only">{SITE_NAME}: portfolio</h1>
       <Intro />
       <SelectedWorks />
-      <AboutTeaser />
+      <AboutBook />
       <ExploreByCategory />
       {/*
         Remaining planned section, per 04_CONTENT_ARCHITECTURE.md, not built

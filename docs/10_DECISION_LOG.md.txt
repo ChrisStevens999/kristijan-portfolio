@@ -315,6 +315,18 @@ A full-site review found both featured projects led to a blank page, two films t
 
 ---
 
+# 2026-11-11
+
+## Decision
+
+About is reworked completely as a little black book, designed and supplied as artwork (cover, three spreads, back cover). On the homepage the closed book lies on the dark paper as the stop between Selected Works and Explore by Category; clicking it opens it in place and the pages turn one leaf at a time, in real depth, to the back cover and back to the front. /about is the same book, already open. Wide screens show two-page spreads; phones show one page at a time. The photo deck that gathered into the portrait video, the five full-screen boards and the Inter call to action are removed.
+
+### Reason
+
+Requested, after the notebook on kyoosangchoi.com: About as an object the visitor picks up and reads rather than a sequence they scroll through.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

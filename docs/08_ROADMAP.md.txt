@@ -32,16 +32,14 @@ Status: Complete
 - [x] Intro sequence (approved 2026-07-16; blue-sky finale and "Chris Stevens" name frame 2026-10-05)
 - [x] Selected Works (chapter card + endless carousel of the five curated projects, 2026-10-02)
 - [x] Explore by Category (2x2 chapter covers, 3:4 tiles with names always shown, 2026-10-05)
-- [x] About — removed 2026-09-10, returned 2026-10-07 as a wordless stop between Selected Works and Explore by Category: a deck of ten photographs plays the reference clip’s motion and collides into the looping portrait video, with a “Click to find out about me” line
-- [x] About page — /about shows the five supplied boards (about me, work history title and list, free time title and board) as full-screen artwork, one snap stop each, 2026-10-07
-- [x] About boards for phones — portrait exports of the five boards (public/about/boards/portrait), shown at their own proportions on phones
-- [ ] About page as live HTML — the copy is baked into the boards; rebuild them as components with live text (12_TYPOGRAPHY.md)
+- [x] About — a little black book (2026-11-11): the homepage stop between Selected Works and Explore by Category is the closed book on the dark paper, opened with a click and paged through with real page turns; /about is the same book, already open. Replaces the photo deck and portrait video (2026-10-07) and the five full-screen boards.
+- [ ] About book as live HTML — the copy is in the page artwork (repeated for screen readers); live text on the pages would need the artwork without its words
 - [ ] Contact
 - [x] Responsive adjustments (done per section as each is built; mobile layouts exist for every shipped section)
 - [x] Accessibility review (2026-10-14): one h1 per page, focus kept inside open overlays and returned on close, carousels and galleries hold still under focus or the pointer, reduced motion respected by the intros, film panels and scroll snapping, faint labels raised to readable contrast
 - [x] Performance optimization — shipped images 794 MB → 266 MB with no visual change (2026-09-29); 3D assets compressed per project
 
-Status: Complete except Contact (and the About page as live HTML)
+Status: Complete except Contact
 
 ---
 

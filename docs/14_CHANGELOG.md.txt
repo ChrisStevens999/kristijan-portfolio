@@ -514,6 +514,28 @@ The site felt slow to load; nothing was broken (clean console, layouts hold on d
 
 ---
 
+# 2026-11-11
+
+## Phase 2 — About as a little black book
+
+### Changes
+
+- About is one component, BlackBook (src/components/about), placed by AboutBook on the homepage (closed, a snap stop) and on /about (open on the first spread). The supplied spreads are cut at the spine into single pages (scripts/build-about-book.mjs → public/about/book, eight pages, 2.9 MB, fetched as the book comes near; the cover first).
+- Every leaf is hinged on the spine with a page on each face; a turn is a 3D rotation about the hinge, and each leaf sits a hair deeper than the one before, applied after the rotation, so the stack sorts itself on both sides of the spine. Click the right page to go on, the left to go back; arrows beside the book, the arrow keys and a sideways swipe do the same; the back cover offers “Back to front”.
+- Phones show one page at a time, large enough to read: the book slides from the left page to the right within a spread and the leaf turns between spreads.
+- The words on the pages are repeated in reading order for screen readers and search. Reduced motion turns pages without the animation.
+- Removed: AboutTeaser (photo deck and portrait video), the five About boards and their portrait exports, the cards, the film, their three build scripts, the boards’ CSS and the Inter face.
+
+### Reason
+
+A complete rework of About, to the supplied book design.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
