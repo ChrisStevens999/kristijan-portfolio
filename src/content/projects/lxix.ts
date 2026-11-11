@@ -14,7 +14,6 @@ import sunglassesPortrait from "../../../assets/projects/lxix/7.png";
 import ringedHandsDetail from "../../../assets/projects/lxix/5.png";
 import lipsSymbolDetail from "../../../assets/projects/lxix/6.png";
 import billboardAtNight from "../../../assets/projects/lxix/Car page.png";
-import bottleChapter from "../../../assets/projects/lxix/BB.png";
 import invitationCardUnboxing from "../../../assets/projects/lxix/8.png";
 import wetGlassWordmark from "../../../assets/projects/lxix/11.png";
 import closingCredit from "../../../assets/projects/lxix/End Page.png";
@@ -133,12 +132,6 @@ export const lxixPanels: SequencePanel[] = [
     enabled: true,
     src: billboardAtNight,
     alt: "LXIX wordmark lit on a night bus-stop billboard as a car passes",
-  },
-  {
-    id: "bottle-chapter",
-    enabled: true,
-    src: bottleChapter,
-    alt: "The Bottle",
   },
   {
     id: "invitation-card-unboxing",
