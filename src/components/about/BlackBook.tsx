@@ -122,7 +122,7 @@ export function BlackBook({
   scrollCue = false,
 }: {
   startOpen?: boolean;
-  /** beside the closed book: an arrow pointing down, "Scroll down to check my work" (for a page with more below) */
+  /** in the bottom-left corner while the book is closed: "Scroll down to check my work" over an arrow pointing down (for a page with more below) */
   scrollCue?: boolean;
 }) {
   const reduced = Boolean(useReducedMotion());
@@ -288,7 +288,7 @@ export function BlackBook({
             Back to front
           </button>
           {scrollCue && (
-            // to the left of the closed book (under it on a phone); away while it is open and being read
+            // in the page's bottom-left corner (under the book on a phone); away while the book is open and being read
             <button
               type="button"
               onClick={() =>
@@ -297,11 +297,11 @@ export function BlackBook({
                   ?.nextElementSibling?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" })
               }
               tabIndex={cueHidden ? -1 : 0}
-              className={`font-accent absolute flex -translate-x-1/2 cursor-pointer flex-col items-center gap-3 text-center text-[0.65rem] leading-relaxed tracking-[0.25em] text-off-white/80 uppercase transition-opacity duration-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid ${cueHidden ? "pointer-events-none opacity-0" : "opacity-100 delay-300"} ${single ? "" : "-translate-y-1/2"}`}
+              className={`font-accent absolute flex cursor-pointer flex-col gap-3 text-[0.65rem] leading-relaxed tracking-[0.25em] text-off-white/80 uppercase transition-opacity duration-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid ${cueHidden ? "pointer-events-none opacity-0" : "opacity-100 delay-300"} ${single ? "-translate-x-1/2 items-center text-center" : "items-start text-left"}`}
               style={
                 single
                   ? { left: "50%", top: `calc(50% + ${pageH / 2 + 18}px)` }
-                  : { left: `calc(50% - ${pageW / 2 + Math.max(110, pageW * 0.3)}px)`, top: "50%" }
+                  : { left: "clamp(1.25rem, 4vw, 3.5rem)", bottom: "clamp(1.5rem, 6vh, 3.5rem)" }
               }
             >
               <span>
