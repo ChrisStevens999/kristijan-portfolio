@@ -56,7 +56,7 @@ class ImmediateResizeObserver {
 const PERIOD_INDICES = [-1, 0, 1];
 
 /**
- * The pole SHELL: metal cylinder + weld seams + the yellow clamp, rotating
+ * The pole SHELL: metal cylinder + weld seams + the dark red clamp, rotating
  * at w and descending at s. Its Y is taken modulo VERTICAL_PERIOD — the
  * hardware repeats every period and the metal texture tiles a whole (even)
  * number of times per period, so the wrap is invisible and the pole is
@@ -120,7 +120,9 @@ function PoleShell({ clockRef }: { clockRef: React.RefObject<DemoClock> }) {
         {PERIOD_INDICES.map((k) => (
           <group key={k} position={[clampX, k * VERTICAL_PERIOD + VERTICAL_PERIOD * 0.38, 0]}>
             <RoundedBox args={[0.8, 3.2, 0.95]} radius={0.06} smoothness={4}>
-              <meshStandardMaterial color="#e2a600" roughness={0.55} metalness={0.15} />
+              {/* dark red, by request (the reference's clamp is yellow); deeper than the site red
+                  because the scene's lights lift it */}
+              <meshStandardMaterial color="#6a060b" roughness={0.65} metalness={0.05} />
             </RoundedBox>
             {/* Two dark fixings on the face toward the camera, like the reference's. */}
             {[1.1, -1.1].map((y) => (

@@ -11,7 +11,7 @@ import { stickerPlacements } from "@/content/projects/sticker-archive";
  *   - stickers slap on one after another, ~0.7s apart, each entering big
  *     from the upper-right (partly off-frame), landing in the upper-middle
  *     of the frame, then riding the pole down and out of the bottom
- *   - a weathered yellow clamp on the pole's side and horizontal weld
+ *   - a weathered clamp (yellow in the reference, dark red here) on the pole's side and horizontal weld
  *     seams, both repeating up the pole
  *
  * Every number here was read off frames of that video, not guessed. The
