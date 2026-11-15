@@ -89,7 +89,7 @@ export function RealWorldGallery({
   const columns = layout ? 2 * layout.side + 1 : 0;
   const middle = layout ? layout.side : 0;
   // fresh random sequences whenever the column count (or the set) changes
-  // — the no-alike-neighbours rule lives in gallerySequences.ts
+  // — the no-repeats rules live in gallerySequences.ts
   const sequences = useMemo(
     () => new Sequences(photos, middle),
     [photos, middle],

@@ -8,6 +8,29 @@ const RECENT = 5;
 /** Two photos are alike when they show the same garment (`shirt`). */
 export const alike = (a: Photo, b: Photo) => a.shirt === b.shirt;
 
+/**
+ * THE RULES, as distances between two slots (columns apart, rows apart).
+ * About three rows of every column are on screen at once, so the rules
+ * reach as far as two cards can be seen together.
+ *
+ * Same GARMENT, never:
+ *  - in the same column, within two cards (directly above/below, or with
+ *    one card between);
+ *  - in ANY other column on the same row or the row above/below it — so a
+ *    row never shows a garment twice, edge to edge, and no diagonal does
+ *    either (the columns' staggered glides put those side by side).
+ */
+export const garmentsMustDiffer = (dCol: number, dRow: number) =>
+  dCol === 0 ? dRow !== 0 && Math.abs(dRow) <= 2 : Math.abs(dRow) <= 1;
+/**
+ * Same PHOTO, never within two rows in any column: the very same picture is
+ * never on screen twice. (Three rows is preferred and almost always holds;
+ * it is not a rule only because the smallest set cannot always afford it.)
+ */
+export const photosMustDiffer = (dCol: number, dRow: number) => (dCol !== 0 || dRow !== 0) && Math.abs(dRow) <= 2;
+const PHOTO_REACH = 2;
+const PHOTO_PREFERRED_REACH = 3;
+
 function shuffle<T>(items: T[], random: () => number): T[] {
   const a = items.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -19,23 +42,20 @@ function shuffle<T>(items: T[], random: () => number): T[] {
 
 /**
  * Endless, random photo sequences per column of the "in the real world"
- * gallery, generated lazily row by row. One rule above all: no card ever
- * shows the same garment as a card next to it — directly above or below,
- * beside it on the same row, or diagonally in the next column (the
- * columns' staggered glides put those side by side for part of each
- * cycle). Whichever of two neighbours is generated second checks the
- * first, so every pair is checked once.
+ * gallery, generated lazily row by row, under the rules above. Whichever of
+ * two slots is generated second checks the first, so every pair is checked
+ * once, whatever order the columns are dealt in.
  *
  * The MIDDLE column deals from shuffled decks of the whole set, so every
  * photo passes through the centre once per deck before any repeats. When
- * the cards left in a deck all clash, the next deck is shuffled in early
- * rather than dealing a clash. The other columns pick at random from
- * whatever fits, avoiding their own recent cards.
+ * the cards left in a deck all break a rule, the next deck is shuffled in
+ * early rather than dealing one that does. The other columns pick at random
+ * from whatever fits, avoiding their own recent cards.
  *
- * A clash is only ever dealt when a set has fewer distinct garments than a
- * slot can have neighbours (no collection comes close); checkGallery
- * (scripts/check-gallery-neighbours.mjs) proves the rule holds for the
- * real sets.
+ * A slot can have up to eight garments ruled out around it, and the
+ * smallest set has eleven, so something always fits;
+ * scripts/check-gallery-neighbours.mjs proves the rules hold for the real
+ * sets over many thousands of rows.
  */
 export class Sequences {
   private rows = new Map<number, Photo[]>(); // column -> photo per row
@@ -59,59 +79,55 @@ export class Sequences {
     return list[row];
   }
 
-  /** the garments already placed above / beside / diagonal to this slot */
-  private neighbourShirts(col: number, row: number, list: Photo[]) {
-    const shirts = new Set<string>();
-    if (list[row - 1]) shirts.add(list[row - 1].shirt);
-    for (const c of [col - 1, col + 1]) {
-      const n = this.rows.get(c);
-      for (const r of [row - 1, row, row + 1]) if (n?.[r]) shirts.add(n[r].shirt);
+  /** What the cards already placed around this slot rule out. */
+  private around(col: number, row: number) {
+    const garments = new Set<string>(); // ruled out by the garment rule
+    const near = new Set<Photo>(); // ruled out by the photo rule
+    const far = new Set<Photo>(); // better avoided (the preferred reach)
+    for (const [c, list] of this.rows) {
+      for (let dRow = -PHOTO_PREFERRED_REACH; dRow <= PHOTO_PREFERRED_REACH; dRow++) {
+        const p = list[row + dRow];
+        if (!p || (c === col && dRow === 0)) continue;
+        if (garmentsMustDiffer(c - col, dRow)) garments.add(p.shirt);
+        if (Math.abs(dRow) <= PHOTO_REACH) near.add(p);
+        far.add(p);
+      }
     }
-    return shirts;
+    return { garments, near, far };
   }
 
   private next(col: number, row: number, list: Photo[]): Photo {
-    const clash = this.neighbourShirts(col, row, list);
-    const fits = (p: Photo) => !clash.has(p.shirt);
+    const { garments, near, far } = this.around(col, row);
+    const recent = new Set<Photo>(list.slice(-RECENT));
+    // strictest first; the first two tiers keep every rule, the third only
+    // when a set is too small for the photo rule (never, with these sets)
+    const tiers: ((p: Photo) => boolean)[] = [
+      (p) => !garments.has(p.shirt) && !far.has(p) && !recent.has(p),
+      (p) => !garments.has(p.shirt) && !near.has(p),
+      (p) => !garments.has(p.shirt),
+    ];
 
     if (col === this.middle) {
       if (this.deck.length === 0) this.deck = shuffle(this.photos, this.random);
-      let i = this.deck.findIndex(fits);
+      let i = this.deck.findIndex(tiers[0]);
       if (i === -1) {
         // nothing left in this deck fits: bring the next deck forward and
         // keep the leftovers in it, so they still get their turn
         this.deck = shuffle([...this.deck, ...this.photos], this.random);
-        i = this.deck.findIndex(fits);
+        for (const fits of tiers) {
+          i = this.deck.findIndex(fits);
+          if (i !== -1) break;
+        }
       }
-      if (i === -1) i = 0; // set too small for the rule (never, with these sets)
+      if (i === -1) i = 0; // set too small for the rules (never, with these sets)
       return this.deck.splice(i, 1)[0];
     }
 
-    const recent = new Set<Photo>(list.slice(-RECENT));
     const pick = (pool: Photo[]) => pool[Math.floor(this.random() * pool.length)];
-    const fresh = this.photos.filter((p) => fits(p) && !recent.has(p));
-    if (fresh.length) return pick(fresh);
-    const fitting = this.photos.filter(fits);
-    return pick(fitting.length ? fitting : this.photos);
-  }
-}
-
-/**
- * Every pair of neighbouring slots across `columns` columns and `rows`
- * rows, as the gallery lays them out: above/below, beside, and diagonal
- * into the next column. Used by the check script.
- */
-export function neighbourPairs(columns: number, rows: number): [number, number, number, number][] {
-  const pairs: [number, number, number, number][] = [];
-  for (let c = 0; c < columns; c++) {
-    for (let r = 0; r < rows; r++) {
-      if (r + 1 < rows) pairs.push([c, r, c, r + 1]);
-      if (c + 1 < columns) {
-        for (const dr of [-1, 0, 1]) {
-          if (r + dr >= 0 && r + dr < rows) pairs.push([c, r, c + 1, r + dr]);
-        }
-      }
+    for (const fits of tiers) {
+      const pool = this.photos.filter(fits);
+      if (pool.length) return pick(pool);
     }
+    return pick(this.photos);
   }
-  return pairs;
 }

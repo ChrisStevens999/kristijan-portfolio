@@ -557,6 +557,25 @@ The last planned page. The site had no way to get in touch.
 
 ---
 
+# 2026-11-15
+
+## Phase 3 — Apparel gallery: no repeats on screen
+
+### Changes
+
+- The moving "in the real world" gallery (all three Apparel tabs) deals its photos under stricter rules (gallerySequences.ts). The same garment never appears twice in a row, in any two columns (before, only neighbouring columns were compared, so the left and right columns could match); nor on the row above or below in any column; nor within two cards in its own column (before, only the card directly above). The same photo never comes within two rows of itself in any column, so it is never on screen twice.
+- scripts/check-gallery-neighbours.mjs proves the rules for the real sets: 50 seeds x 400 cycles, 180,900 cards per collection, no breach. The middle column still deals every photo evenly.
+
+### Reason
+
+Duplicates were showing side by side and above or below each other.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
