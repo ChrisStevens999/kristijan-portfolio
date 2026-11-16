@@ -576,6 +576,28 @@ Duplicates were showing side by side and above or below each other.
 
 ---
 
+# 2026-11-16
+
+## Phase 2 — Intro: plays whenever the homepage is opened
+
+### Changes
+
+- The Intro's memory moves from sessionStorage to the page's own memory: it plays on every load of the homepage (visit, reload, restored tab) and not again on in-site returns.
+- Inputs in its first 0.8 s no longer skip it (the tail of a scroll, or the key that reloaded the page, used to end it before it showed). After that any input still skips.
+- The first paint is the intro's own black (.intro-cover) rather than the homepage, so the page no longer flashes before the intro and an early scroll on a slow connection can't cost the visitor the intro. The cover fades by itself after 5 s if the page's code never arrives.
+- The first frame's clock waits for its photograph (up to 3 s), so a slow connection sees the photograph for its full hold.
+- Reduced motion: a calm version (crossfades only) instead of skipping the intro.
+
+### Reason
+
+The intro was reported as never playing.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

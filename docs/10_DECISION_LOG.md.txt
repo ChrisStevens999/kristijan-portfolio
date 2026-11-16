@@ -327,6 +327,18 @@ Requested, after the notebook on kyoosangchoi.com: About as an object the visito
 
 ---
 
+# 2026-11-16
+
+## Decision
+
+The Intro plays every time the homepage is opened at its top: a first visit, a reload, a restored tab. It does not replay when the visitor moves around the site and comes back. It was remembered for the whole browser session before, so reloaded and restored tabs never saw it. Visitors who ask for reduced motion now get a calm version (the same frames and crossfades, no zoom, no slide) instead of no intro at all. It is still skipped for #hash arrivals and by any input, except in its first 0.8 s.
+
+### Reason
+
+The intro was reported as never playing. It is the site's opening statement, so it should be seen whenever the site is opened; a gentle crossfade is within what reduced motion asks for.
+
+---
+
 # Future Entries
 
 Record only meaningful decisions.

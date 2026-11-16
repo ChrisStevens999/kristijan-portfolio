@@ -20,7 +20,7 @@ Rules
 
 • Full screen
 • Cinematic
-• Plays once
+• Plays once each time the homepage is opened (a visit, a reload); not again when returning to it from inside the site
 • Smooth transition into homepage
 • No skip button unless accessibility requires it
 

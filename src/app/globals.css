@@ -75,6 +75,27 @@ html:has(main[data-scroll-snap]) {
   }
 }
 
+/*
+ * The Intro's first paint (src/components/sections/Intro.tsx): black over
+ * the homepage until the page's code decides whether the intro plays. If
+ * that code never arrives, the cover fades away by itself after a few
+ * seconds rather than hiding the site.
+ */
+.intro-cover {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  pointer-events: none;
+  animation: intro-cover-away 600ms ease-out 5s forwards;
+}
+@keyframes intro-cover-away {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
 /* Page arrival fade (PageTransition): pure CSS, so it needs no JavaScript. */
 @keyframes page-fade-in {
   from {
