@@ -3,6 +3,9 @@ import type { StaticImageData } from "next/image";
 import dobermannCampaign from "../../../assets/projects/skateboarding/1 Fav.png";
 import samuraiCampaign from "../../../assets/projects/skateboarding/hf_20260713_144648_eab4affd-b95c-405f-97cd-3f50bb56a7cd.png";
 import damagedGoodsCampaign from "../../../assets/projects/skateboarding/4 5.png";
+import errorCampaign from "../../../assets/projects/skateboarding/campaign-error-404.webp";
+import corruptionCampaign from "../../../assets/projects/skateboarding/campaign-corruption.webp";
+import cobraCampaign from "../../../assets/projects/skateboarding/campaign-cobra.webp";
 
 /**
  * Where a deck goes when picked. Only REAL destinations: an existing
@@ -59,9 +62,13 @@ export const skateDecks: SkateDeck[] = [
     kind: "campaign",
     campaignId: "campaign-samurai",
   }),
-  deck("cobra", "Cobra", "Drop In deck: red cobra and skull graphic", "#cf2314", "#e8442e", { kind: "none" }),
+  deck("cobra", "Cobra", "Drop In deck: red cobra and skull graphic", "#cf2314", "#e8442e", {
+    kind: "campaign",
+    campaignId: "campaign-cobra",
+  }),
   deck("corruption", "Corruption", "Drop In deck: pink figure before a teal Statue of Liberty", "#0e9ca5", "#19b8c2", {
-    kind: "none",
+    kind: "campaign",
+    campaignId: "campaign-corruption",
   }),
   deck("damaged-goods", "Damaged Goods", "Damaged Goods deck: lime lettering around a purple portrait", "#a9d114", "#b6e61f", {
     kind: "project",
@@ -72,11 +79,12 @@ export const skateDecks: SkateDeck[] = [
     campaignId: "campaign-dobermann",
   }),
   deck("error-404", "Error 404", "Drop In deck: a masked face with an error pop-up, blue top", "#165298", "#ff5a3c", {
-    kind: "none",
+    kind: "campaign",
+    campaignId: "campaign-error-404",
   }),
 ];
 
-/** Top to bottom, in the approved order. */
+/** Top to bottom: the first three in the approved order, then the three added 2026-11-23 as supplied. */
 export const skateCampaigns: SkateCampaign[] = [
   {
     id: "campaign-dobermann",
@@ -92,5 +100,20 @@ export const skateCampaigns: SkateCampaign[] = [
     id: "campaign-damaged-goods",
     src: damagedGoodsCampaign,
     alt: "Figure holding the lime Damaged Goods deck horizontally across their face",
+  },
+  {
+    id: "campaign-error-404",
+    src: errorCampaign,
+    alt: "Someone holding the complete Error 404 skateboard upright in front of their face, the board in colour against a black-and-white schoolyard",
+  },
+  {
+    id: "campaign-corruption",
+    src: corruptionCampaign,
+    alt: "A hand resting on the nose of the Corruption skateboard, its teal and pink graphic in colour against black-and-white tarmac",
+  },
+  {
+    id: "campaign-cobra",
+    src: cobraCampaign,
+    alt: "The red Cobra skateboard lying wheels-up on concrete at night, between the feet of someone in blue jeans",
   },
 ];

@@ -7,7 +7,7 @@ import type { Category, Project } from "@/content/types";
 import { DeckWall } from "./DeckWall";
 
 /**
- * Skateboard Designs: the interactive deck wall, then the three campaign
+ * Skateboard Designs: the interactive deck wall, then the campaign
  * photographs — full-bleed, edge to edge, natural proportions, no gaps,
  * cards, headings or copy — in the approved order. Each carries the id the
  * wall's decks and "Scroll for campaigns" control scroll to.
