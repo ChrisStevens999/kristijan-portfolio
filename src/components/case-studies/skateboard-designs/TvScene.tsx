@@ -1,8 +1,8 @@
 "use client";
 
-import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import type { MotionValue } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
@@ -12,24 +12,47 @@ import { TV_MODEL, TV_SCREEN_CLIP } from "@/content/projects/skateboard-designs"
 
 /**
  * The retro TV (public/skateboarding/tv, built by
- * scripts/build-tv-assets.mjs): the stickered CRT turning slowly on its own,
- * its screen playing the campaign clip with a light CRT treatment. Drag
- * sideways to turn it; vertical swipes still scroll the page. No zoom — the
- * wheel belongs to the page.
+ * scripts/build-tv-assets.mjs), shot by the scroll: it arrives showing its
+ * stickered right side, and as the visitor scrolls the camera comes round
+ * to the front and pushes in until the screen (the campaign clip, behind a
+ * light CRT treatment) fills the view. Scrolling back reverses it.
  *
- * Lighting and framing follow the supplied viewer: a room environment for
- * the reflections, one warm key light, a three-quarter view from the front.
+ * The scroll is the only control: no drag, no zoom, and the canvas takes no
+ * pointer events, so the page scrolls freely over it.
  *
  * three.js objects are mutable by design; everything that changes one lives
  * in the helpers below, outside the components.
  */
 
 const FOV = 32;
-/** the supplied viewer's three-quarter view, from the front-right */
-const VIEW = new THREE.Vector3(0.85, 0.18, -0.75).normalize();
+/**
+ * The model's own axes: the screen faces +X and the stickered side is -Z,
+ * the viewer's right when facing the screen. The opening shot looks at that
+ * side, turned a little towards the front so the TV reads as a box, and a
+ * touch from above.
+ */
+const START_AZIMUTH = THREE.MathUtils.degToRad(76);
+const START_ELEVATION = THREE.MathUtils.degToRad(7);
+/** the camera comes round over the first part of the move and pushes in over the last; they overlap */
+const TURN_END = 0.72;
+const PUSH_START = 0.18;
+/** how quickly the camera catches up with the scroll (per second) */
+const FOLLOW = 7;
+/** the screen's share of the view at the end: room for the bezel around it */
+const SCREEN_FIT_DOWN = 1.5;
+const SCREEN_FIT_ACROSS = 1.12;
 
-type Controls = ComponentRef<typeof OrbitControls>;
 type Screen = { mesh: THREE.Mesh; standIn: THREE.Material | THREE.Material[] };
+/** what the camera frames: the whole TV at the start, its screen at the end */
+type Shot = {
+  centre: THREE.Vector3;
+  radius: number;
+  screenCentre: THREE.Vector3;
+  screenWidth: number;
+  screenHeight: number;
+};
+/** the camera's place along the move, eased towards the scroll's */
+type Rig = { at: number | null };
 
 let modelPromise: Promise<GLTF> | null = null;
 function loadModel() {
@@ -120,37 +143,66 @@ function lightWithRoom(scene: THREE.Scene, gl: THREE.WebGLRenderer) {
   };
 }
 
-/**
- * Frame the whole TV in whichever field of view is narrower (a phone in
- * portrait is narrower across than down), from the three-quarter view.
- */
-function frame(
-  camera: THREE.PerspectiveCamera,
-  controls: Controls | null,
-  size: { width: number; height: number },
-  center: THREE.Vector3,
-  radius: number,
-) {
-  const aspect = size.width / Math.max(1, size.height);
-  const vHalf = THREE.MathUtils.degToRad(FOV / 2);
-  const hHalf = Math.atan(Math.tan(vHalf) * aspect);
-  const distance = (radius / Math.sin(Math.min(vHalf, hHalf))) * 0.92;
-  const target = center.clone().add(new THREE.Vector3(0, -radius * 0.06, 0));
-  camera.position.copy(target).add(VIEW.clone().multiplyScalar(distance));
-  camera.near = distance / 50;
-  camera.far = distance * 10;
-  camera.updateProjectionMatrix();
-  if (controls) {
-    controls.target.copy(target);
-    controls.update();
-  }
+/** the TV's bounds and its screen's, measured from the model */
+function measure(root: THREE.Object3D, screens: Screen[]): Shot {
+  root.updateWorldMatrix(true, true);
+  const box = new THREE.Box3().setFromObject(root);
+  const centre = box.getCenter(new THREE.Vector3());
+  const radius = box.getSize(new THREE.Vector3()).length() / 2;
+  // the opening shot aims a little below the middle: the TV's weight is low
+  centre.y -= radius * 0.06;
+
+  const glass = new THREE.Box3();
+  for (const { mesh } of screens) glass.expandByObject(mesh);
+  if (glass.isEmpty()) glass.copy(box);
+  const size = glass.getSize(new THREE.Vector3());
+  const screenCentre = glass.getCenter(new THREE.Vector3());
+  screenCentre.x = glass.max.x; // the front of the glass
+  return { centre, radius, screenCentre, screenWidth: size.z, screenHeight: size.y };
 }
 
-/** OrbitControls claims every touch (touch-action: none); give vertical
- *  swipes back to the page so a phone can still scroll past the TV. */
-const letPageScroll = (el: HTMLElement) => {
-  el.style.touchAction = "pan-y";
-};
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const ease = (v: number) => v * v * (3 - 2 * v);
+const target = new THREE.Vector3();
+const direction = new THREE.Vector3();
+
+/**
+ * Put the camera at `at` along the move (0: the stickered side, the whole
+ * TV in view; 1: square on to the screen, close). Both ends are fitted to
+ * whichever field of view is tighter, so a phone in portrait sees the whole
+ * TV and then the whole screen.
+ */
+function shoot(camera: THREE.PerspectiveCamera, size: { width: number; height: number }, shot: Shot, at: number) {
+  const aspect = size.width / Math.max(1, size.height);
+  const down = THREE.MathUtils.degToRad(FOV / 2);
+  const across = Math.atan(Math.tan(down) * aspect);
+
+  const turn = ease(clamp01(at / TURN_END));
+  const push = ease(clamp01((at - PUSH_START) / (1 - PUSH_START)));
+
+  const far = (shot.radius / Math.sin(Math.min(down, across))) * 0.92;
+  const near = Math.max(
+    (shot.screenHeight / 2 / Math.tan(down)) * SCREEN_FIT_DOWN,
+    (shot.screenWidth / 2 / Math.tan(across)) * SCREEN_FIT_ACROSS,
+  );
+  const distance = THREE.MathUtils.lerp(far, near, push);
+  const azimuth = START_AZIMUTH * (1 - turn);
+  const elevation = START_ELEVATION * (1 - turn);
+
+  target.lerpVectors(shot.centre, shot.screenCentre, push);
+  direction.set(Math.cos(elevation) * Math.cos(azimuth), Math.sin(elevation), -Math.cos(elevation) * Math.sin(azimuth));
+  camera.position.copy(target).addScaledVector(direction, distance);
+  camera.near = near / 20;
+  camera.far = far * 10;
+  camera.updateProjectionMatrix();
+  camera.lookAt(target);
+}
+
+/** ease the rig towards where the scroll is; the first frame starts there */
+function follow(rig: Rig, to: number, dt: number) {
+  rig.at = rig.at === null ? to : rig.at + (to - rig.at) * (1 - Math.exp(-dt * FOLLOW));
+  return rig.at;
+}
 
 function Environment() {
   const gl = useThree((s) => s.gl);
@@ -162,30 +214,26 @@ function Environment() {
 function Tv({
   gltf,
   playing,
+  progress,
   reducedMotion,
   onReady,
 }: {
   gltf: GLTF;
   playing: boolean;
+  progress: MotionValue<number>;
   reducedMotion: boolean;
   onReady: () => void;
 }) {
   const camera = useThree((s) => s.camera as THREE.PerspectiveCamera);
   const size = useThree((s) => s.size);
-  const gl = useThree((s) => s.gl);
-  const controls = useRef<Controls>(null);
-
-  // the model's own bounds: what the camera frames
-  const { center, radius } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    return { center: box.getCenter(new THREE.Vector3()), radius: box.getSize(new THREE.Vector3()).length() / 2 };
-  }, [gltf]);
 
   // the clip behind the CRT shader; until it has a frame, the model's own
   // still frame stays on the screen
   const [video] = useState(screenVideo);
   const crt = useMemo(() => crtFor(video), [video]);
   const screens = useMemo(() => findScreens(gltf.scene), [gltf]);
+  const shot = useMemo(() => measure(gltf.scene, screens), [gltf, screens]);
+  const rig = useRef<Rig>({ at: null });
 
   useEffect(() => {
     const show = () => showOn(screens, crt);
@@ -215,38 +263,28 @@ function Tv({
     [video, crt],
   );
 
-  useEffect(() => frame(camera, controls.current, size, center, radius), [camera, size, center, radius]);
-  useEffect(() => letPageScroll(gl.domElement), [gl]);
   useEffect(() => onReady(), [onReady]);
 
-  useFrame((state) => tick(crt, state.clock.getElapsedTime()));
+  // reduced motion: no camera move, the TV simply faces the visitor
+  useFrame((state, dt) => {
+    tick(crt, state.clock.getElapsedTime());
+    const at = reducedMotion ? 1 : follow(rig.current, clamp01(progress.get()), dt);
+    shoot(camera, size, shot, at);
+  });
 
-  return (
-    <>
-      <primitive object={gltf.scene} />
-      <OrbitControls
-        ref={controls}
-        enableZoom={false}
-        enablePan={false}
-        enableDamping
-        dampingFactor={0.08}
-        autoRotate={!reducedMotion}
-        autoRotateSpeed={1.2}
-        // a turntable: free all the way round, only a little tilt
-        minPolarAngle={Math.PI / 2 - 0.45}
-        maxPolarAngle={Math.PI / 2 + 0.1}
-      />
-    </>
-  );
+  return <primitive object={gltf.scene} />;
 }
 
 export function TvScene({
   running,
+  progress,
   reducedMotion,
   onReady,
 }: {
   /** false while the section is off screen: no frames are drawn and the clip pauses */
   running: boolean;
+  /** the camera move, 0 (the stickered side) to 1 (close on the screen), driven by the scroll */
+  progress: MotionValue<number>;
   reducedMotion: boolean;
   onReady: () => void;
 }) {
@@ -265,11 +303,11 @@ export function TvScene({
       gl={{ antialias: true, alpha: true, toneMappingExposure: 1.05 }}
       dpr={[1, 2]}
       frameloop={running ? "always" : "never"}
-      style={{ background: "transparent", cursor: "grab" }}
+      style={{ background: "transparent", pointerEvents: "none" }}
     >
       <Environment />
       <directionalLight position={[3, 4, -2]} intensity={1.4} color="#fff1e0" />
-      {gltf ? <Tv gltf={gltf} playing={running} reducedMotion={reducedMotion} onReady={onReady} /> : null}
+      {gltf ? <Tv gltf={gltf} playing={running} progress={progress} reducedMotion={reducedMotion} onReady={onReady} /> : null}
     </Canvas>
   );
 }

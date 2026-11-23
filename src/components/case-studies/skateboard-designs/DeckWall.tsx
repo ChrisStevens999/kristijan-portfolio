@@ -48,9 +48,9 @@ const MAX_TILT_DEG = 6;
 /** A hovered deck is lifted and a touch larger on screen than its hit column (DeckScene's lift and scale, seen in perspective). */
 const LIFTED_SCALE = 1.05;
 
-/** down to the TV, where the campaign plays */
+/** down to the end of the TV section, where the camera is on the screen and the campaign plays */
 function scrollToTv(reduceMotion: boolean) {
-  document.getElementById(SKATE_TV_ID)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  document.getElementById(SKATE_TV_ID)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "end" });
 }
 
 /** A deck's column, in plate fractions: where its lamp, hit area and label go. */
