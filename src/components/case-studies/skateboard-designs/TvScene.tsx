@@ -51,6 +51,8 @@ type Shot = {
   screenWidth: number;
   screenHeight: number;
 };
+/** the clip on the screen while the TV is mounted: its video, its shader, and how to take it down */
+type Broadcast = { video: HTMLVideoElement; crt: THREE.ShaderMaterial; end: () => void };
 /** the camera's place along the move, eased towards the scroll's */
 type Rig = { at: number | null };
 
@@ -131,6 +133,41 @@ const showOn = (screens: Screen[], material: THREE.Material) => {
 const showStandIn = (screens: Screen[]) => {
   for (const { mesh, standIn } of screens) mesh.material = standIn;
 };
+
+/**
+ * Put the clip on the screen: a fresh video and shader, shown from the
+ * clip's first frame (the model's still frame stays until then). Made and
+ * taken down as a pair, so a TV that is mounted again gets a clip that
+ * still has its source (a video kept across mounts would have been
+ * released by the first unmount and never play again).
+ */
+function broadcast(screens: Screen[]): Broadcast {
+  const video = screenVideo();
+  const crt = crtFor(video);
+  const show = () => showOn(screens, crt);
+  video.addEventListener("playing", show, { once: true });
+  return {
+    video,
+    crt,
+    end: () => {
+      video.removeEventListener("playing", show);
+      showStandIn(screens);
+      releaseVideo(video);
+      disposeCrt(crt);
+    },
+  };
+}
+/** the 4 s clip loops for as long as the TV is on screen; reduced motion keeps the still frame */
+function tune(on: Broadcast | null, playing: boolean) {
+  if (!on) return;
+  if (!playing) {
+    on.video.pause();
+    return;
+  }
+  on.video.play().catch(() => {
+    /* autoplay refused: the still frame stays */
+  });
+}
 
 function lightWithRoom(scene: THREE.Scene, gl: THREE.WebGLRenderer) {
   const pmrem = new THREE.PMREMGenerator(gl);
@@ -227,47 +264,29 @@ function Tv({
   const camera = useThree((s) => s.camera as THREE.PerspectiveCamera);
   const size = useThree((s) => s.size);
 
-  // the clip behind the CRT shader; until it has a frame, the model's own
-  // still frame stays on the screen
-  const [video] = useState(screenVideo);
-  const crt = useMemo(() => crtFor(video), [video]);
   const screens = useMemo(() => findScreens(gltf.scene), [gltf]);
   const shot = useMemo(() => measure(gltf.scene, screens), [gltf, screens]);
   const rig = useRef<Rig>({ at: null });
 
+  // the clip, looping behind the CRT shader for as long as this TV is mounted
+  const on = useRef<Broadcast | null>(null);
   useEffect(() => {
-    const show = () => showOn(screens, crt);
-    video.addEventListener("playing", show, { once: true });
+    const live = broadcast(screens);
+    on.current = live;
     return () => {
-      video.removeEventListener("playing", show);
-      showStandIn(screens);
+      on.current = null;
+      live.end();
     };
-  }, [video, crt, screens]);
+  }, [screens]);
 
-  // play while on screen; reduced motion keeps the still frame
-  useEffect(() => {
-    if (!playing || reducedMotion) {
-      video.pause();
-      return;
-    }
-    video.play().catch(() => {
-      /* autoplay refused: the still frame stays */
-    });
-  }, [playing, reducedMotion, video]);
-
-  useEffect(
-    () => () => {
-      releaseVideo(video);
-      disposeCrt(crt);
-    },
-    [video, crt],
-  );
+  // it plays while the section is on screen (after the effect above, so the clip is there)
+  useEffect(() => tune(on.current, playing && !reducedMotion), [playing, reducedMotion, screens]);
 
   useEffect(() => onReady(), [onReady]);
 
   // reduced motion: no camera move, the TV simply faces the visitor
   useFrame((state, dt) => {
-    tick(crt, state.clock.getElapsedTime());
+    if (on.current) tick(on.current.crt, state.clock.getElapsedTime());
     const at = reducedMotion ? 1 : follow(rig.current, clamp01(progress.get()), dt);
     shoot(camera, size, shot, at);
   });
