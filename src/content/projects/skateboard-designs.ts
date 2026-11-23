@@ -1,22 +1,10 @@
-import type { StaticImageData } from "next/image";
-
-import dobermannCampaign from "../../../assets/projects/skateboarding/1 Fav.png";
-import samuraiCampaign from "../../../assets/projects/skateboarding/hf_20260713_144648_eab4affd-b95c-405f-97cd-3f50bb56a7cd.png";
-import damagedGoodsCampaign from "../../../assets/projects/skateboarding/4 5.png";
-import errorCampaign from "../../../assets/projects/skateboarding/campaign-error-404.webp";
-import corruptionCampaign from "../../../assets/projects/skateboarding/campaign-corruption.webp";
-import cobraCampaign from "../../../assets/projects/skateboarding/campaign-cobra.webp";
-
 /**
- * Where a deck goes when picked. Only REAL destinations: an existing
- * project page, or one of the campaign photographs further down this same
- * page. A deck with neither is `none` — it still lifts on hover, it just
- * isn't a link (no invented pages or names).
+ * Where a deck goes from its close-up. Only REAL destinations: an existing
+ * project page, or the TV further down this same page, whose screen plays
+ * the campaign photographs. A deck with neither is `none` (no invented
+ * pages or names).
  */
-export type DeckDestination =
-  | { kind: "project"; href: string }
-  | { kind: "campaign"; campaignId: string }
-  | { kind: "none" };
+export type DeckDestination = { kind: "project"; href: string } | { kind: "tv" } | { kind: "none" };
 
 /**
  * A deck on the wall, in 3D: the shared deck model
@@ -38,13 +26,17 @@ export interface SkateDeck {
   destination: DeckDestination;
 }
 
-export interface SkateCampaign {
-  id: string;
-  src: StaticImageData;
-  alt: string;
-}
-
 export const DECK_MODEL = "/skateboarding/deck.glb";
+
+/**
+ * The retro TV under the wall (public/skateboarding/tv, built by
+ * scripts/build-tv-assets.mjs): its screen loops a clip of the six campaign
+ * photographs, which used to follow the wall as full-bleed images.
+ */
+export const TV_MODEL = "/skateboarding/tv/tv.glb";
+export const TV_SCREEN_CLIP = "/skateboarding/tv/screen.mp4";
+/** the TV section's id: what the decks and the wall's footer scroll to */
+export const SKATE_TV_ID = "skate-tv";
 
 const deck = (id: string, title: string, alt: string, edge: string, accent: string, destination: DeckDestination): SkateDeck => ({
   id,
@@ -58,62 +50,14 @@ const deck = (id: string, title: string, alt: string, edge: string, accent: stri
 
 /** Left to right on the wall. */
 export const skateDecks: SkateDeck[] = [
-  deck("ronin", "Ronin", "Drop In deck: pink and blue samurai graphic", "#db1464", "#ff3d8f", {
-    kind: "campaign",
-    campaignId: "campaign-samurai",
-  }),
-  deck("cobra", "Cobra", "Drop In deck: red cobra and skull graphic", "#cf2314", "#e8442e", {
-    kind: "campaign",
-    campaignId: "campaign-cobra",
-  }),
-  deck("corruption", "Corruption", "Drop In deck: pink figure before a teal Statue of Liberty", "#0e9ca5", "#19b8c2", {
-    kind: "campaign",
-    campaignId: "campaign-corruption",
-  }),
+  deck("ronin", "Ronin", "Drop In deck: pink and blue samurai graphic", "#db1464", "#ff3d8f", { kind: "tv" }),
+  deck("cobra", "Cobra", "Drop In deck: red cobra and skull graphic", "#cf2314", "#e8442e", { kind: "tv" }),
+  deck("corruption", "Corruption", "Drop In deck: pink figure before a teal Statue of Liberty", "#0e9ca5", "#19b8c2", { kind: "tv" }),
   deck("damaged-goods", "Damaged Goods", "Damaged Goods deck: lime lettering around a purple portrait", "#a9d114", "#b6e61f", {
     kind: "project",
     href: "/projects/damaged-goods",
   }),
-  deck("dobermann", "Dobermann", "Black deck: snarling dobermann wearing a gold chain", "#111111", "#d7ae57", {
-    kind: "campaign",
-    campaignId: "campaign-dobermann",
-  }),
-  deck("error-404", "Error 404", "Drop In deck: a masked face with an error pop-up, blue top", "#165298", "#ff5a3c", {
-    kind: "campaign",
-    campaignId: "campaign-error-404",
-  }),
+  deck("dobermann", "Dobermann", "Black deck: snarling dobermann wearing a gold chain", "#111111", "#d7ae57", { kind: "tv" }),
+  deck("error-404", "Error 404", "Drop In deck: a masked face with an error pop-up, blue top", "#165298", "#ff5a3c", { kind: "tv" }),
 ];
 
-/** Top to bottom: the first three in the approved order, then the three added 2026-11-23 as supplied. */
-export const skateCampaigns: SkateCampaign[] = [
-  {
-    id: "campaign-dobermann",
-    src: dobermannCampaign,
-    alt: "Hooded figure holding the dobermann deck on the bonnet of a black Mercedes, surrounded by sheep",
-  },
-  {
-    id: "campaign-samurai",
-    src: samuraiCampaign,
-    alt: "Figure holding the pink and blue samurai deck in front of their face while two hands point pistols at it from either side",
-  },
-  {
-    id: "campaign-damaged-goods",
-    src: damagedGoodsCampaign,
-    alt: "Figure holding the lime Damaged Goods deck horizontally across their face",
-  },
-  {
-    id: "campaign-error-404",
-    src: errorCampaign,
-    alt: "Someone holding the complete Error 404 skateboard upright in front of their face, the board in colour against a black-and-white schoolyard",
-  },
-  {
-    id: "campaign-corruption",
-    src: corruptionCampaign,
-    alt: "A hand resting on the nose of the Corruption skateboard, its teal and pink graphic in colour against black-and-white tarmac",
-  },
-  {
-    id: "campaign-cobra",
-    src: cobraCampaign,
-    alt: "The red Cobra skateboard lying wheels-up on concrete at night, between the feet of someone in blue jeans",
-  },
-];

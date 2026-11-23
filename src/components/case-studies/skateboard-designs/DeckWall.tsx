@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 import wall from "../../../../assets/projects/skateboarding/wall-rails.webp";
-import { skateCampaigns, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
+import { SKATE_TV_ID, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
 
 import type { InspectRequest } from "./DeckInspect";
 import type { DeckLayout, DeckSlot } from "./DeckScene";
@@ -48,8 +48,9 @@ const MAX_TILT_DEG = 6;
 /** A hovered deck is lifted and a touch larger on screen than its hit column (DeckScene's lift and scale, seen in perspective). */
 const LIFTED_SCALE = 1.05;
 
-function scrollToCampaign(id: string, reduceMotion: boolean) {
-  document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+/** down to the TV, where the campaign plays */
+function scrollToTv(reduceMotion: boolean) {
+  document.getElementById(SKATE_TV_ID)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 /** A deck's column, in plate fractions: where its lamp, hit area and label go. */
@@ -237,7 +238,7 @@ export function DeckWall() {
   // wall meanwhile (it stays away until the close-up has flown it back)
   const [inspect, setInspect] = useState<InspectRequest | null>(null);
   const [away, setAway] = useState<number | null>(null);
-  const afterReturn = useRef<string | null>(null); // a campaign to scroll to once the deck is back
+  const afterReturn = useRef(false); // scroll down to the TV once the deck is back
 
   const pick = (index: number, from: DOMRect) => {
     setActive(null);
@@ -253,14 +254,14 @@ export function DeckWall() {
         document.getElementById(`deck-${skateDecks[index].id}`)?.focus({ preventScroll: true });
         return null;
       });
-      const campaign = afterReturn.current;
-      afterReturn.current = null;
-      if (campaign) scrollToCampaign(campaign, reduceMotion);
+      const toTv = afterReturn.current;
+      afterReturn.current = false;
+      if (toTv) scrollToTv(reduceMotion);
     },
     [reduceMotion],
   );
-  const toCampaign = useCallback((id: string) => {
-    afterReturn.current = id;
+  const toTv = useCallback(() => {
+    afterReturn.current = true;
     setInspect(null);
   }, []);
 
@@ -351,10 +352,10 @@ export function DeckWall() {
         <p>Pick a board. See it in 3D</p>
         <button
           type="button"
-          onClick={() => scrollToCampaign(skateCampaigns[0].id, reduceMotion)}
+          onClick={() => scrollToTv(reduceMotion)}
           className="cursor-pointer whitespace-nowrap hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid"
         >
-          Scroll for campaigns ↓
+          Watch the campaign ↓
         </button>
       </div>
 
@@ -362,7 +363,7 @@ export function DeckWall() {
         request={inspect}
         onClose={putBack}
         onSettled={settled}
-        onCampaign={toCampaign}
+        onTv={toTv}
         reducedMotion={reduceMotion}
       />
     </section>

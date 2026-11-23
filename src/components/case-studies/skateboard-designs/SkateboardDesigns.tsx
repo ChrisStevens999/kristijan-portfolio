@@ -1,35 +1,20 @@
-import Image from "next/image";
-
 import { ProjectExitNav } from "@/components/ui/ProjectExitNav";
-import { skateCampaigns } from "@/content/projects/skateboard-designs";
 import type { Category, Project } from "@/content/types";
 
 import { DeckWall } from "./DeckWall";
+import { TvSection } from "./TvSection";
 
 /**
- * Skateboard Designs: the interactive deck wall, then the campaign
- * photographs — full-bleed, edge to edge, natural proportions, no gaps,
- * cards, headings or copy — in the approved order. Each carries the id the
- * wall's decks and "Scroll for campaigns" control scroll to.
+ * Skateboard Designs: the interactive deck wall, then the retro TV, whose
+ * screen plays the campaign photographs (they used to follow the wall as
+ * six full-bleed images). The TV section carries the id the wall's decks
+ * and its "Watch the campaign" control scroll to.
  */
 export function SkateboardDesigns({ category, nextProject }: { category?: Category; nextProject?: Project }) {
   return (
     <main className="flex flex-col bg-black text-off-white">
       <DeckWall />
-
-      {skateCampaigns.map((campaign) => (
-        <Image
-          key={campaign.id}
-          id={campaign.id}
-          src={campaign.src}
-          alt={campaign.alt}
-          sizes="100vw"
-          quality={95}
-          placeholder="blur"
-          className="block h-auto w-full"
-        />
-      ))}
-
+      <TvSection />
       <ProjectExitNav category={category} nextProject={nextProject} />
     </main>
   );

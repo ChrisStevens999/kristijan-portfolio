@@ -219,7 +219,7 @@ export function DeckInspect({
   request,
   onClose,
   onSettled,
-  onCampaign,
+  onTv,
   reducedMotion,
 }: {
   /** the deck to show; null asks the open one to fly back */
@@ -227,7 +227,8 @@ export function DeckInspect({
   onClose: () => void;
   /** that deck is back on its rail: the wall may draw it again */
   onSettled: (index: number) => void;
-  onCampaign: (campaignId: string) => void;
+  /** put the deck back, then go down to the TV, where the campaign plays */
+  onTv: () => void;
   reducedMotion: boolean;
 }) {
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
@@ -404,13 +405,13 @@ export function DeckInspect({
           >
             Explore project ↗
           </Link>
-        ) : deck.destination.kind === "campaign" ? (
+        ) : deck.destination.kind === "tv" ? (
           <button
             type="button"
-            onClick={() => onCampaign((deck.destination as { campaignId: string }).campaignId)}
+            onClick={onTv}
             className="pointer-events-auto mt-3 inline-block cursor-pointer text-[10px] tracking-[0.16em] text-off-white/85 uppercase hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-off-white focus-visible:outline-solid sm:text-[11px]"
           >
-            See campaign ↓
+            See it on TV ↓
           </button>
         ) : null}
       </motion.div>

@@ -54,7 +54,7 @@ Status: Complete; the Contact form awaits its access key and the dog its real cu
   - [x] Sticker Archive — autoplaying sticker pole + showcase (2026-08-26 → 2026-09-10)
   - [x] Tag Designs — endless card-stack hero (2026-09-10 → 2026-09-18)
   - [x] Damaged Goods (2026-09-30)
-  - [x] Skateboard Designs — interactive deck wall + campaign panels (2026-09-19)
+  - [x] Skateboard Designs — deck wall in 3D (2026-09-19 → 2026-10-09), then the retro TV playing the campaign in place of the photograph panels (2026-11-23)
   - [x] Apparel display — animated APPAREL intro, 3D Graphic T's, Pattern AOPs and Hoodies tabs (2026-10-02 → 2026-10-07)
   - [x] Neo Tokyo, Hardcore Mentality — homepage Selected Works only, with no case study of their own: they open the Apparel display with that design selected (2026-10-14)
 - [x] Category pages: Illustration has its designed "Projects" grid (2026-08-30); Apparel Design opens Graphic T's directly (2026-10-13); Brand Direction and Creative Exploration keep the minimal listing until designed

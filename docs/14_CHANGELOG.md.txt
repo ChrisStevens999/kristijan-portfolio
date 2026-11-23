@@ -598,6 +598,28 @@ The intro was reported as never playing.
 
 ---
 
+# 2026-11-23
+
+## Phase 3 — Skateboard Designs: the TV replaces the campaign photographs
+
+### Changes
+
+- Skateboard Designs: the six full-bleed campaign photographs under the wall are gone. In their place, one full-screen section with the supplied retro TV in 3D (stickered CRT with a VHS deck), its screen playing a loop of the campaign photographs behind a light CRT treatment (scanlines, vignette, a faint flicker).
+- The TV turns slowly by itself; drag turns it all the way round, with a little tilt. No zoom, and vertical swipes on a phone still scroll the page past it. It is framed whole on any screen, portrait included. Reduced motion: no turning and the model's still frame instead of the clip.
+- The model and clip load only when the section is near, draw only while it is on screen, and are built by scripts/build-tv-assets.mjs: the 11.3 MB GLB ships as 1.7 MB (WebP textures, quantised, meshopt) and the clip as 1.2 MB with no audio.
+- The wall's links follow: decks that opened a photograph now say "See it on TV" in their close-up, and the wall's footer says "Watch the campaign"; both scroll down to the TV.
+- Five photograph files no longer used are removed (the samurai photograph stays: it is the project's thumbnail).
+
+### Reason
+
+The TV was supplied to take the photographs' place.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement
