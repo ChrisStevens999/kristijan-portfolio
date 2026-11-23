@@ -3,7 +3,7 @@
 import { motionValue, useInView, useReducedMotion, type MotionValue } from "framer-motion";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from "react";
 
 import wall from "../../../../assets/projects/skateboarding/wall-rails.webp";
 import { SKATE_TV_ID, skateDecks, type SkateDeck } from "@/content/projects/skateboard-designs";
@@ -22,6 +22,12 @@ const DeckInspect = dynamic(() => import("./DeckInspect").then((m) => m.DeckInsp
  * three quarters — the way the earlier mock-up mounted them. Everything live
  * (the 3D decks, their lamps, hit areas and labels) is placed in the plate's
  * fractions, so it all sits on the rails at every size.
+ *
+ * Phones get the same wall three times over, one above the other: three
+ * rows of two decks, each row on its own strip of the plate (its ceiling
+ * spots, both rails), cut from the plate's middle so the two decks hang
+ * under two of its spots. Each strip is the whole plate's height, so the
+ * decks keep their place on the rails.
  */
 const PLATE_W = 2000;
 const PLATE_H = 1116;
@@ -37,11 +43,42 @@ const HIT_WIDTH = 0.2686; // × --deck-h
 
 const LAYOUT: DeckLayout = {
   aspect: PLATE_ASPECT,
-  centre0: DECK_CENTRE_0,
-  pitch: DECK_PITCH,
-  top: DECK_TOP,
   height: DECK_HEIGHT,
+  places: skateDecks.map((_, i) => ({ x: DECK_CENTRE_0 + DECK_PITCH * i, top: DECK_TOP })),
 };
+
+/** Phones (below md). */
+const PHONE = "(max-width: 767px)";
+const M_COLUMNS = 2;
+const M_ROWS = Math.ceil(skateDecks.length / M_COLUMNS);
+/** a strip is the plate at this width, so most of its sides are off screen */
+const M_PLATE_VW = 240;
+const M_STRIP_VW = M_PLATE_VW / PLATE_ASPECT; // a strip's height
+/** the plate's two middle ceiling spots (plate px): the strip is centred between them and a deck hangs under each */
+const M_SPOTS = [883, 1216];
+const M_PLATE_CENTRE = (M_SPOTS[0] + M_SPOTS[1]) / 2 / PLATE_W; // × plate width
+const M_PITCH = ((M_SPOTS[1] - M_SPOTS[0]) / PLATE_W) * (M_PLATE_VW / 100); // × stage width
+const M_STAGE_K = (M_ROWS * M_STRIP_VW) / 100; // stage height / width
+
+const PHONE_LAYOUT: DeckLayout = {
+  aspect: 1 / M_STAGE_K,
+  height: DECK_HEIGHT / M_ROWS,
+  places: skateDecks.map((_, i) => ({
+    x: 0.5 + ((i % M_COLUMNS) - (M_COLUMNS - 1) / 2) * M_PITCH,
+    top: (Math.floor(i / M_COLUMNS) + DECK_TOP) / M_ROWS,
+  })),
+};
+
+const subscribePhone = (onChange: () => void) => {
+  const query = window.matchMedia(PHONE);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
+const isPhone = () => window.matchMedia(PHONE).matches;
+const notPhone = () => false;
+
+/** the plate as drawn: 240vw wide on phones (three strips of it), up to 116vw from md up */
+const WALL_SIZES = `(max-width: 767px) ${M_PLATE_VW}vw, 116vw`;
 
 /** Tilt after the pointer, degrees (the scene springs it). */
 const MAX_TILT_DEG = 6;
@@ -53,15 +90,25 @@ function scrollToTv(reduceMotion: boolean) {
   document.getElementById(SKATE_TV_ID)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "end" });
 }
 
-/** A deck's column, in plate fractions: where its lamp, hit area and label go. */
+/**
+ * A deck's column, in stage fractions: where its lamp, hit area and label
+ * go. Both layouts are written as custom properties and CSS picks one by
+ * breakpoint (COLUMN), so the server's markup is already right for phones.
+ */
 function columnStyle(index: number): CSSProperties {
+  const wide = LAYOUT.places[index];
+  const phone = PHONE_LAYOUT.places[index];
   return {
-    left: `${(DECK_CENTRE_0 + DECK_PITCH * index) * 100}%`,
-    top: `${DECK_TOP * 100}%`,
-    width: `${DECK_PITCH * 100}%`,
-    transform: "translateX(-50%)",
-  };
+    "--x": `${wide.x * 100}%`,
+    "--top": `${wide.top * 100}%`,
+    "--w": `${DECK_PITCH * 100}%`,
+    "--mx": `${phone.x * 100}%`,
+    "--mtop": `${phone.top * 100}%`,
+    "--mw": `${M_PITCH * 100}%`,
+  } as CSSProperties;
 }
+const COLUMN =
+  "absolute flex justify-center left-[var(--mx)] top-[var(--mtop)] w-[var(--mw)] -translate-x-1/2 md:left-[var(--x)] md:top-[var(--top)] md:w-[var(--w)]";
 
 /**
  * SPOTLIGHT — the wall carries the dim resting ceiling lights; this is the
@@ -71,7 +118,7 @@ function columnStyle(index: number): CSSProperties {
  */
 function Lamp({ index, lit }: { index: number; lit: boolean }) {
   return (
-    <li aria-hidden className="absolute flex justify-center" style={columnStyle(index)}>
+    <li aria-hidden className={COLUMN} style={columnStyle(index)}>
       <span
         className={`pointer-events-none absolute left-1/2 -translate-x-1/2 transition-opacity duration-500 ease-out max-md:opacity-100 ${lit ? "opacity-100" : "opacity-0"}`}
         style={{
@@ -155,7 +202,7 @@ function Deck({
   const number = String(index + 1).padStart(2, "0");
 
   return (
-    <li className="absolute flex snap-center justify-center" style={{ ...columnStyle(index), zIndex: active ? 20 : 1 }}>
+    <li className={COLUMN} style={{ ...columnStyle(index), zIndex: active ? 20 : 1 }}>
       <button
         type="button"
         id={`deck-${deck.id}`}
@@ -222,15 +269,17 @@ function Deck({
  *  - md and up: as wide as the viewport, or a little wider on tall windows
  *    (up to 116vw — the plate has ~7% of bare wall either side of the rails
  *    to give) so the wall fills the height; centred, sides cropped.
- *  - phones: the stage is sized by height and becomes a horizontal
- *    scroll-snap strip — one deck centred, its neighbours peeking in. The
- *    page itself never overflows sideways and scrolls vertically as normal.
+ *  - phones: the stage is as wide as the screen and three strips of the
+ *    plate tall, two decks to a strip (see the geometry above). Nothing
+ *    scrolls sideways; the page scrolls down past the three rows.
  */
 export function DeckWall() {
   const reduceMotion = !!useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const inView = useInView(sectionRef, { margin: "20% 0px" });
   const [active, setActive] = useState<number | null>(null);
+  // which layout the 3D scene hangs the decks in (the DOM's follows CSS)
+  const phone = useSyncExternalStore(subscribePhone, isPhone, notPhone);
   // one pair of tilt values per deck: written by the DOM, read by the scene
   const tilts = useMemo(() => skateDecks.map(() => ({ x: motionValue(0), y: motionValue(0) })), []);
 
@@ -277,16 +326,18 @@ export function DeckWall() {
     <section
       ref={sectionRef}
       aria-labelledby="skateboard-designs-heading"
-      className="relative isolate flex min-h-[100svh] w-full flex-col overflow-clip bg-[#04060a] [--stage-h:74svh] [--stage-w:calc(var(--stage-h)*var(--plate-aspect))] md:[--stage-h:calc(var(--stage-w)/var(--plate-aspect))] md:[--stage-w:clamp(100vw,calc((100svh-44px)*var(--plate-aspect)),116vw)]"
+      // --wall-h is one wall's height: the stage from md up, one strip on phones
+      className="relative isolate flex min-h-[100svh] w-full flex-col overflow-clip bg-[#04060a] [--stage-h:calc(100vw*var(--m-stage-k))] [--stage-w:100vw] [--wall-h:calc(var(--stage-h)/var(--m-rows))] md:[--stage-h:calc(var(--stage-w)/var(--plate-aspect))] md:[--stage-w:clamp(100vw,calc((100svh-44px)*var(--plate-aspect)),116vw)] md:[--wall-h:var(--stage-h)]"
       style={
         {
           "--plate-aspect": PLATE_ASPECT,
-          "--deck-h": `calc(var(--stage-h) * ${DECK_HEIGHT})`,
+          "--m-stage-k": M_STAGE_K,
+          "--m-rows": M_ROWS,
+          "--deck-h": `calc(var(--wall-h) * ${DECK_HEIGHT})`,
         } as CSSProperties
       }
     >
-      {/* On phones this is the swipe strip; from md up it never scrolls. */}
-      <div className="w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] max-md:snap-x max-md:snap-mandatory md:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <div className="w-full">
         {/* md+: centred by offset, and the section CLIPS (overflow: clip, not
             hidden) — a hidden-overflow box is still scrollable by focus or
             scrollIntoView, which would slide the whole wall sideways. */}
@@ -300,24 +351,65 @@ export function DeckWall() {
             fill
             priority
             placeholder="blur"
-            sizes="(max-width: 767px) 140svh, 116vw"
+            sizes={WALL_SIZES}
             quality={90}
             draggable={false}
-            className="object-cover select-none"
+            className="object-cover select-none max-md:hidden"
           />
           {/* the plate's bottom edge melts into the section's own dark */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-[10%]"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[10%] max-md:hidden"
             style={{ background: "linear-gradient(180deg, rgba(4,6,10,0), #04060a)" }}
           />
+          {/* phones: one strip of the plate per row, each melting into the dark above and below it */}
+          <div aria-hidden className="absolute inset-0 md:hidden">
+            {Array.from({ length: M_ROWS }, (_, row) => (
+              <div
+                key={row}
+                className="absolute inset-x-0 overflow-clip"
+                style={{ top: `${(row * 100) / M_ROWS}%`, height: `${100 / M_ROWS}%` }}
+              >
+                <div
+                  className="absolute inset-y-0 left-1/2"
+                  style={{ aspectRatio: PLATE_ASPECT, transform: `translateX(${-M_PLATE_CENTRE * 100}%)` }}
+                >
+                  <Image
+                    src={wall}
+                    alt=""
+                    fill
+                    priority={row === 0}
+                    sizes={WALL_SIZES}
+                    quality={90}
+                    draggable={false}
+                    className="object-cover select-none"
+                  />
+                </div>
+                {row > 0 ? (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-0 h-[5%]"
+                    style={{ background: "linear-gradient(180deg, #04060a, rgba(4,6,10,0))" }}
+                  />
+                ) : null}
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[10%]"
+                  style={{ background: "linear-gradient(180deg, rgba(4,6,10,0), #04060a)" }}
+                />
+              </div>
+            ))}
+          </div>
           <ul aria-hidden className="absolute inset-0">
             {skateDecks.map((deck, i) => (
               <Lamp key={deck.id} index={i} lit={active === i} />
             ))}
           </ul>
           <div className="absolute inset-0">
-            <DeckScene slots={slots} layout={LAYOUT} reducedMotion={reduceMotion} running={inView && away === null} />
+            <DeckScene
+              slots={slots}
+              layout={phone ? PHONE_LAYOUT : LAYOUT}
+              reducedMotion={reduceMotion}
+              running={inView && away === null}
+            />
           </div>
           <ul className="absolute inset-0">
             {skateDecks.map((deck, i) => (
@@ -336,12 +428,11 @@ export function DeckWall() {
         </div>
       </div>
 
-      {/* Heading: drawn over the wall where the mock-up's sat, but outside
-          the strip so it stays put while phones swipe the decks. */}
+      {/* Heading: drawn over the wall where the mock-up's sat (on phones, over the first row's wall). */}
       <h1
         id="skateboard-designs-heading"
         className="font-sans pointer-events-none absolute inset-x-0 px-6 text-center text-3xl leading-none tracking-tight text-white uppercase sm:text-4xl lg:text-5xl"
-        style={{ top: "calc(var(--stage-h) * 0.09)", transform: "translateY(-50%)" }}
+        style={{ top: "calc(var(--wall-h) * 0.09)", transform: "translateY(-50%)" }}
       >
         Skateboard Designs
       </h1>

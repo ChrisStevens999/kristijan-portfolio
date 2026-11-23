@@ -621,6 +621,26 @@ The TV was supplied to take the photographs' place.
 
 ---
 
+# 2026-11-23
+
+## Phase 3 — Skateboard Designs: the deck wall on phones
+
+### Changes
+
+- Phones (below 768 px): the six decks hang in three rows of two instead of a sideways swipe strip. Each row is its own strip of the wall plate (its ceiling spots and both rails), cut from the plate's middle so the two decks hang under two of its spots; the strips melt into the dark between rows. Nothing scrolls sideways; the page scrolls down past the rows to the TV.
+- One canvas still draws all six decks in 3D; the scene's layout is now a list of places per deck (two lists: the row of six, and the phone's three rows), and the hit areas, labels and lamps follow by CSS, so the server's markup is already right for phones.
+- From 768 px up nothing changes.
+
+### Reason
+
+The swipe strip showed one deck at a time; the rows show the set cleanly on a phone.
+
+### Status
+
+✅ Complete
+
+---
+
 # Future Entries
 
 ## 2026-10-07 — About teaser refinement

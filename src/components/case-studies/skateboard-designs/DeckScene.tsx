@@ -23,8 +23,8 @@ import { CAMERA_DISTANCE, DeckLights, dressDeck, FOV, loadModel, loadPrint, setO
  * picked for the close-up (DeckInspect) is hidden here while it is away.
  */
 
-/** Hover feel: lift off the wall (world units = stage heights) and growth; the tilt (degrees) comes from the DOM. */
-const LIFT = 0.06;
+/** Hover feel: lift off the wall (in deck lengths) and growth; the tilt (degrees) comes from the DOM. */
+const LIFT = 0.092;
 const HOVER_SCALE = 1.03;
 /** Settles in ≈300ms with no visible bounce. */
 const LIFT_SPRING = { stiffness: 260, damping: 27, mass: 1 } as const;
@@ -35,14 +35,10 @@ const FADE_S = 0.5;
 export type DeckLayout = {
   /** stage width / height */
   aspect: number;
-  /** first deck's centre, × stage width */
-  centre0: number;
-  /** × stage width */
-  pitch: number;
-  /** deck top, × stage height */
-  top: number;
   /** deck length on the wall, × stage height */
   height: number;
+  /** where each deck hangs: its centre × stage width, its top × stage height */
+  places: { x: number; top: number }[];
 };
 
 export type DeckSlot = {
@@ -104,14 +100,15 @@ function Deck3D({
     advance(performance.now());
   }, [slot.hidden, advance]);
 
-  const x = (layout.centre0 + layout.pitch * index - 0.5) * layout.aspect;
-  const y = 0.5 - (layout.top + layout.height / 2);
+  const place = layout.places[index];
+  const x = (place.x - 0.5) * layout.aspect;
+  const y = 0.5 - (place.top + layout.height / 2);
 
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
     const l = lift.get();
-    g.position.set(x, y, l * LIFT);
+    g.position.set(x, y, l * LIFT * layout.height);
     const s = layout.height * (1 + (HOVER_SCALE - 1) * l);
     g.scale.setScalar(s);
     g.rotation.set(THREE.MathUtils.degToRad(rotateX.get()), -THREE.MathUtils.degToRad(rotateY.get()), 0);
