@@ -2,9 +2,9 @@ import { APPAREL_HERO_LAYERS } from "@/components/categories/apparelHeroLayers";
 import type { Category } from "@/content/types";
 
 import brandDirectionCover from "../../../assets/category covers/5 3.jpg";
-import apparelDesignCover from "../../../assets/category covers/8 5.jpg";
-import illustrationCover from "../../../assets/category covers/11.jpg";
-import creativeExplorationCover from "../../../assets/category covers/7.jpg";
+import apparelDesignCover from "../../../assets/category covers/apparel-design.webp";
+import illustrationCover from "../../../assets/category covers/illustration.webp";
+import creativeExplorationCover from "../../../assets/category covers/creative-exploration.jpg";
 
 /**
  * One entry per creative discipline (03_DESIGN_SYSTEM.md: "chapter covers,
