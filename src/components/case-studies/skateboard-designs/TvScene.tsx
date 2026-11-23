@@ -116,7 +116,7 @@ const tick = (crt: THREE.ShaderMaterial, t: number) => {
   crt.uniforms.t.value = t;
 };
 
-/** the meshes that are the screen (material "Screen"), with the still frame the model ships on them */
+/** the meshes that are the screen (material "Screen"), with the material the model ships on them */
 function findScreens(root: THREE.Object3D) {
   const found: Screen[] = [];
   root.traverse((o) => {
@@ -130,26 +130,38 @@ function findScreens(root: THREE.Object3D) {
 const showOn = (screens: Screen[], material: THREE.Material) => {
   for (const { mesh } of screens) mesh.material = material;
 };
+/** back to the model's own material: what findScreens looks for the next time the TV mounts */
 const showStandIn = (screens: Screen[]) => {
   for (const { mesh, standIn } of screens) mesh.material = standIn;
 };
+/** the set switched off: dark glass until the clip has a frame to show */
+const OFF = new THREE.MeshBasicMaterial({ color: "#060608" });
 
 /**
  * Put the clip on the screen: a fresh video and shader, shown from the
- * clip's first frame (the model's still frame stays until then). Made and
- * taken down as a pair, so a TV that is mounted again gets a clip that
- * still has its source (a video kept across mounts would have been
- * released by the first unmount and never play again).
+ * clip's first frame; the glass is dark until then. (The model's own
+ * screen texture is a still of an earlier cut of the clip, with the logo
+ * elsewhere, so it is never shown.) Made and taken down as a pair, so a TV
+ * that is mounted again gets a clip that still has its source (a video
+ * kept across mounts would have been released by the first unmount and
+ * never play again).
  */
 function broadcast(screens: Screen[]): Broadcast {
   const video = screenVideo();
   const crt = crtFor(video);
-  const show = () => showOn(screens, crt);
-  video.addEventListener("playing", show, { once: true });
+  showOn(screens, OFF);
+  // the first frame, whether the clip is playing or only loaded
+  const show = () => {
+    (crt.uniforms.map.value as THREE.Texture).needsUpdate = true;
+    showOn(screens, crt);
+  };
+  video.addEventListener("loadeddata", show);
+  video.addEventListener("playing", show);
   return {
     video,
     crt,
     end: () => {
+      video.removeEventListener("loadeddata", show);
       video.removeEventListener("playing", show);
       showStandIn(screens);
       releaseVideo(video);
@@ -157,15 +169,31 @@ function broadcast(screens: Screen[]): Broadcast {
     },
   };
 }
-/** the 4 s clip loops for as long as the TV is on screen; reduced motion keeps the still frame */
-function tune(on: Broadcast | null, playing: boolean) {
+/**
+ * The 4 s clip loops for as long as the TV is on screen. Reduced motion
+ * holds its first frame instead: where a browser only fetches a clip once
+ * it is asked to play, that means starting it and stopping at once.
+ */
+function tune(on: Broadcast | null, onScreen: boolean, still: boolean) {
   if (!on) return;
-  if (!playing) {
-    on.video.pause();
+  const { video } = on;
+  if (!onScreen) {
+    video.pause();
     return;
   }
-  on.video.play().catch(() => {
-    /* autoplay refused: the still frame stays */
+  if (still) {
+    if (video.readyState < video.HAVE_CURRENT_DATA) {
+      video
+        .play()
+        .then(() => video.pause())
+        .catch(() => {
+          /* refused: the glass stays dark */
+        });
+    }
+    return;
+  }
+  video.play().catch(() => {
+    /* autoplay refused: the first frame, or dark glass, stays */
   });
 }
 
@@ -280,7 +308,7 @@ function Tv({
   }, [screens]);
 
   // it plays while the section is on screen (after the effect above, so the clip is there)
-  useEffect(() => tune(on.current, playing && !reducedMotion), [playing, reducedMotion, screens]);
+  useEffect(() => tune(on.current, playing, reducedMotion), [playing, reducedMotion, screens]);
 
   useEffect(() => onReady(), [onReady]);
 
